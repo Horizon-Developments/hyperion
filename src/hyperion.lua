@@ -31,11 +31,7 @@ do
   else
     for i, item in ipairs(result) do
       if item.type == "file" then
-        local z = 
-        if (i ~= result) 
-        
-        
-        (function()
+        local fn = (function()
           local ok, err = pcall(function()
             writefile(assets("modules", item.name), game:HttpGet(item.download_url))
           end)
@@ -43,6 +39,9 @@ do
             log("Fetching ", item.download_url, " failed. ERR: ", err)
           end
         end)
+        if (i ~= result) 
+        
+        
       end
     end
   end
