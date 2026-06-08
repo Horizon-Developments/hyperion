@@ -101,7 +101,16 @@ tabs.info:Paragraph({
     Desc = "Full documentation is available on #plugins-dev (our Discord server.)",
 })
 
-
+tabs.info:Dropdown({
+	Title = "Theme",
+	Icon = "palette",
+	Values = { "Hyperion", "Dark", "Light", "Rose", "Plant", "Indigo", "Sky", "Violet", "Amber" },
+	Value = savedTheme,
+	Callback = function(value)
+		writefile(assets("theme.txt"), value)
+		WindUI:SetTheme(value)
+	end
+})
 
 for _, file in ipairs(listfiles(assets("modules"))) do
   local ok, err = task.spawn(pcall, loadstring(readfile(file)), { Tabs = tabs, Window = Window, WindUI = WindUI }))
