@@ -31,6 +31,7 @@ do
   else
     local pending = 0
     for _, item in ipairs(result) do
+      print(table.dump(item))
       if item.type == "file" then
         pending += 1
         task.spawn(function()
