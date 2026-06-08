@@ -50,6 +50,16 @@ end
 
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 
+WindUI:AddTheme({
+	Name = "Hyperion",
+	Accent = Color3.fromHex("#cc0000"),
+	Background = Color3.fromHex("#0a0a0a"),
+	Outline = Color3.fromHex("#cc0000"),
+	Text = Color3.fromHex("#ffffff"),
+	Placeholder = Color3.fromHex("#666666"),
+	Button = Color3.fromHex("#1a1a1a"),
+	Icon = Color3.fromHex("#cc0000"),
+})
 
 local savedTheme = isfile(assets("theme.txt")) and readfile(assets("theme.txt")) or "Hyperion"
 
@@ -61,6 +71,7 @@ local Window = WindUI:CreateWindow({
 	Transparent = true,
 	BackgroundImageTransparency = 0.42,
 	ToggleKey = Enum.KeyCode.RightShift,
+	Theme = savedTheme
 })
 
 local tabs = {}
@@ -105,7 +116,7 @@ tabs.info:Dropdown({
 	Title = "Theme",
 	Icon = "palette",
 	Values = { "Hyperion", "Dark", "Light", "Rose", "Plant", "Indigo", "Sky", "Violet", "Amber" },
-	Value = "Dark",
+	Value = savedTheme,
 	Callback = function(value)
 		writefile(assets("theme.txt"), value)
 		WindUI:SetTheme(value)
