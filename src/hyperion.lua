@@ -31,7 +31,7 @@ do
   else
     for i, item in ipairs(result) do
       if item.type == "file" then
-        function()
+        if (i == #result) then function()
           local ok, err = pcall(function()
             writefile(assets("modules", item.name), game:HttpGet(item.download_url))
           end)
