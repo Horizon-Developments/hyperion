@@ -29,7 +29,7 @@ do
   if not ok then
     log("Failed to fetch built-in modules.")
   else
-    for _, item in ipairs(result) do
+    for i, item in ipairs(result) do
       if item.type == "file" then
         task.spawn(function()
           local ok, err = pcall(function()
