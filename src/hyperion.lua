@@ -41,7 +41,7 @@ do
         end)
       end
     end
-    repeat task.wait() until pending >= 0
+    repeat task.wait() until pending <= 0
   end
 end
 
