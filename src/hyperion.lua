@@ -31,7 +31,8 @@ do
   else
     for i, item in ipairs(result) do
       if item.type == "file" then
-        if (i ~= result)
+        local z = 
+        if (i ~= result) 
         
         
         (function()
