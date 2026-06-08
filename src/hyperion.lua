@@ -39,8 +39,10 @@ do
             log("Fetching ", item.download_url, " failed. ERR: ", err)
           end
         end)
-        if (i == #result)  then
-          
+        if (i ~= #result)  then
+          task.spawn(fn)
+        else 
+          fn()
         end
       end
     end
