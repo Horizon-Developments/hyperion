@@ -97,6 +97,8 @@ tabs.info:Paragraph({
     Desc = "Full documentation is available on #plugins-dev (our Discord server.)",
 })
 
+
+
 for _, file in ipairs(listfiles(assets("modules"))) do
   local ok, err = task.spawn(pcall, loadstring(readfile(file)), { Tabs = tabs, Window = Window, WindUI = WindUI }))
   if not ok then
