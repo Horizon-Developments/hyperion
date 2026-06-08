@@ -1,6 +1,6 @@
 local args = ...
 
-local tabs = args.tabs
+local tabs = args.Tabs
 -- tabs, register or use tabs here.
 local Window = args.Window
 -- wind ui window used by Hyperion
