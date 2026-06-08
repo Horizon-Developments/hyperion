@@ -39,9 +39,9 @@ do
             log("Fetching ", item.download_url, " failed. ERR: ", err)
           end
         end)
-        if (i ~= result) 
-        
-        
+        if (i == #result)  then
+          
+        end
       end
     end
   end
