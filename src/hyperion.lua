@@ -61,7 +61,7 @@ local Window = WindUI:CreateWindow({
 	Transparent = true,
 	BackgroundImageTransparency = 0.42,
 	ToggleKey = Enum.KeyCode.RightShift,
-	Theme = savedTheme
+
 })
 
 local tabs = {}
