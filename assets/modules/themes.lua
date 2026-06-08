@@ -7,9 +7,6 @@ local Window = args.Window
 local WindUI = args.WindUI
 -- WindUi 
 
-[code]
-
-
 tabs.info:Dropdown({
 	Title = "Theme",
 	Icon = "palette",
@@ -18,5 +15,5 @@ tabs.info:Dropdown({
 	Callback = function(value)
 		writefile(assets("theme.txt"), value)
 		WindUI:SetTheme(value)
-	end,
+	end
 })
