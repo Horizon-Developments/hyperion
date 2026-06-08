@@ -49,6 +49,9 @@ end
 
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 
+
+local savedTheme = isfile(assets("theme.txt")) and readfile(assets("theme.txt")) or "Hyperion"
+
 local Window = WindUI:CreateWindow({
 	Title = "Hyperion (Reborn)",
 	Icon = "zap",
@@ -57,6 +60,7 @@ local Window = WindUI:CreateWindow({
 	Transparent = true,
 	BackgroundImageTransparency = 0.42,
 	ToggleKey = Enum.KeyCode.RightShift,
+	Theme = savedTheme
 })
 
 local tabs = {}
