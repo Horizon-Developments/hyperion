@@ -31,6 +31,7 @@ do
     return HttpService:JSONDecode(game:HttpGet("https://api.github.com/repos/Horizon-Developments/hyperion/contents/assets/modules"))
   end)
   if not ok then
+    print(result)
     log("Failed to fetch built-in modules.")
   else
     local pending = 0
