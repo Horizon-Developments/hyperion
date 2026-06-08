@@ -95,7 +95,7 @@ tabs.info:Paragraph({
 })
 
 for _, file in ipairs(listfiles(assets("modules"))) do
-  local ok, err = pcall(loadstring(readfile(file)), { Tabs = tabs, Window = Window, WindUI = WindUI })
+  local ok, err = task.spawn(pcall, loadstring(readfile(file)), { Tabs = tabs, Window = Window, WindUI = WindUI }))
   if not ok then
     warn("Failed to execute:", file, err)
   end
