@@ -29,23 +29,20 @@ do
   if not ok then
     log("Failed to fetch built-in modules.")
   else
-    for i, item in ipairs(result) do
+    local pending = 0
+    for _, item in ipairs(result) do
       if item.type == "file" then
-        local fn = (function()
-          local ok, err = pcall(function()
-            writefile(assets("modules", item.name), game:HttpGet(item.download_url))
-          end)
-          if (not ok) then
-            log("Fetching ", item.download_url, " failed. ERR: ", err)
-          end
+        pending += 1
+        task.spawn(function()
+            pcall(function()
+                writefile(assets("modules", item.name), game:HttpGet(item.download_url))
+            end)
+            pending -= 1
         end)
-        if (i ~= #result)  then
-          task.spawn(fn)
-        else 
-          fn()
-        end
-      end
     end
+end
+repeat task.wait() until pending == 0
+-- all done
   end
 end
 
