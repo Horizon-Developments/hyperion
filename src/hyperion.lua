@@ -24,6 +24,19 @@ do
     writefile(assets(url), game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/main/assets/" .. url))
   end
   
+  local function dump(t, indent)
+    indent = indent or 0
+    local prefix = string.rep("  ", indent)
+    for k, v in pairs(t) do
+        if type(v) == "table" then
+            print(prefix .. tostring(k) .. ":")
+            dump(v, indent + 1)
+        else
+            print(prefix .. tostring(k) .. " = " .. tostring(v))
+        end
+    end
+end
+  
   createfile("hyperion_logo.jpg")
   createfile("discord_invite.txt")
   
