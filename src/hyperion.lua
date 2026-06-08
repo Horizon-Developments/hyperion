@@ -34,15 +34,14 @@ do
       if item.type == "file" then
         pending += 1
         task.spawn(function()
-            pcall(function()
-                writefile(assets("modules", item.name), game:HttpGet(item.download_url))
-            end)
-            pending -= 1
+          pcall(function()
+            writefile(assets("modules", item.name), game:HttpGet(item.download_url))
+          end)
+          pending -= 1
         end)
+      end
     end
-end
-repeat task.wait() until pending == 0
--- all done
+    repeat task.wait() until pending >= 0
   end
 end
 
