@@ -64,7 +64,7 @@ tab:Input({
       Method = "GET"
     })
   if not ok or not res or res.StatusCode ~= 200 or not res.Body then
-    
+    WindUI:Notify({ Title = "Not found", Content = "Nothing came up! try using another keyword.", Duration = 3 })
   end
   
 local d = HttpService:JSONDecode(r.Body).data
