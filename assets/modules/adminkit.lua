@@ -18,7 +18,7 @@ tabs.adminkit = Window:Tab({
 
 local tab = tabs.adminkit
 local toggles = {}
-
+local function cmd()
 
 tab:Dropdown({
   Title = "Anti join*",
