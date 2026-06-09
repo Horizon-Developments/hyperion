@@ -75,7 +75,7 @@ tab:Input({
       print("[HYPERION] ", ok, res, res.StatusCode, res.Body, err)
       WindUI:Notify({ Title = "Not found", Content = "Nothing came up! try using another keyword.", Duration = 3 })
     end
-    
+    print(HttpService:JSONDecode(data))
     if (cache.dropdownG) then cache.dropdownG:Destroy() end
     cache.dropdownG = tab:Dropdown({
       Title = "Copy here",
