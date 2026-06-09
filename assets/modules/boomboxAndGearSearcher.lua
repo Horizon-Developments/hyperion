@@ -64,6 +64,7 @@ tab:Input({
       Method = "GET"
     })
   if not ok or not res or res.StatusCode ~= 200 or not res.Body then
+    print("[HYPERION] ", not ok, not res, res.StatusCode ~= 200 or not res.Body)
     WindUI:Notify({ Title = "Not found", Content = "An error happend and was logged.", Duration = 3 })
   end
   
