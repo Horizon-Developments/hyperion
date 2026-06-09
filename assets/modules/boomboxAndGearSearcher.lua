@@ -59,8 +59,20 @@ tab:Input({
   Type = "Input",
   Placeholder = "Enter keyword here",
   Callback = function(keyword)
-    lrequest("https://catalog.roproxy.com/v1/search/items/details?Category=11&Subcategory=5&Keyword="..HttpService:UrlEncode(keyword).."&Limit=30")
-    
+    local r = httpR({
+    Url = "https://catalog.roproxy.com/v1/search/items/details?Category=11&Subcategory=5&Keyword="
+        .. HttpService:UrlEncode(v)
+        .. "&Limit=30",
+    Method = "GET"
+})
+
+if not r or r.StatusCode ~= 200 or not r.Body then return 1 end
+
+local d = HttpService:JSONDecode(r.Body).data
+if not d or not d[1] then return 2 end
+
+local i = d[1]
+return i.id .. "`5`0"
     
     
     if (cache.dropdownBB) then cache.dropdownBB:Destroy() end
