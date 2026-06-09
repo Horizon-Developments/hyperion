@@ -59,11 +59,11 @@ tab:Input({
   Type = "Input",
   Placeholder = "Enter keyword here",
   Callback = function(keyword)
-    local ok, res = request({
+    local ok, res = pcall(request,{
       Url = "https://catalog.roproxy.com/v1/search/items/details?Category=11&Subcategory=5&Keyword=".. HttpService:UrlEncode(v) .. "&Limit=30",
       Method = "GET"
     })
-   if not res or res.StatusCode ~= 200 or not res.Body then return 1 end
+  if not res or res.StatusCode ~= 200 or not res.Body then return 1 end
 
 local d = HttpService:JSONDecode(r.Body).data
 if not d or not d[1] then return 2 end
