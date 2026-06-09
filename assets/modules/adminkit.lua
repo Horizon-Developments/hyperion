@@ -16,13 +16,14 @@ tabs.adminkit = Window:Tab({
 
 local tab = tabs.adminkit
 
-Tab:Toggle({
-  Title = "Anti joinxl",
+tab:Dropdown({
+  Title = "My List",
   Desc = "Optional description",
-  Icon = "power",
-  Value = false,
+  Values = { "Option A", "Option B", "Option C" },
+  Value = {},
+  Multi = true,
   Callback = function(value)
-    print(value)
+    print(value) -- table of selected values
   end
 })
 
