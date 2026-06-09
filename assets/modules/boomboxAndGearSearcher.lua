@@ -29,6 +29,7 @@ tab:Input({
   Type = "Input",
   Placeholder = "Enter keyword here",
   Callback = function(keyword) 
+    print(pcall(function() end))
     local params = Instance.new("AudioSearchParams")
     params.SearchKeyword = keyword
     local results = AssetService:SearchAudioAsync(params):GetCurrentPage() 
