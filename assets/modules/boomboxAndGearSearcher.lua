@@ -38,12 +38,13 @@ tab:Input({
     end
     if (cache.dropdownBB) then cache.dropdownBB:Destroy() end
     cache.dropdownBB = tab:Dropdown({
-      Title = "Copy an id.",
+      Title = "Copy here",
       Desc = "",
       Values = results,
       Value = nil,
       AllowNone = true,
       Callback = function(option) 
+        f
         setclipboard(option)
         WindUI:Notify({ Title = "Copied!", Content = "Copied to your clipboard.", Duration = 3 })
         Dropdown:Select(nil)
