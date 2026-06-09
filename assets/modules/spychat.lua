@@ -23,12 +23,12 @@ local tab = tabs.spychat
 local toggles = {}
 
 local tcmp = Instance.new("TextChatMessageProperties")
-  tcs.OnIncomingMessage = function(m)
-    if m.Text and m.Text:sub(1, 3) == "hx." and m.TextSource and m.TextSource.UserId == LocalPlayer.UserId then
-      task.spawn(handler, m)
-      m.Text = ""
-    end
-    return tcmp
+tcs.OnIncomingMessage = function(m)
+  if m.Text and m.Text:sub(1, 3) == "hx." and m.TextSource and m.TextSource.UserId == LocalPlayer.UserId then
+    task.spawn(handler, m)
+    m.Text = ""
   end
+  return tcmp
+end
 
 How to make this ilke not effect colors and stuff
