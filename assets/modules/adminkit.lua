@@ -23,7 +23,12 @@ tab:Dropdown({
   Value = {},
   Multi = true,
   Callback = function(value)
-    print(value) -- table of selected values
+    
+    
+    
+    
+    
+    
   end
 })
 
