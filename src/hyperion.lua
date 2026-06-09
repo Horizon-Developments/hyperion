@@ -6,7 +6,6 @@
 end
 getgenv().Hyperion = true
 ]] 
-
 local HttpService = game:GetService("HttpService")
 
 local function assets(...)
@@ -162,7 +161,6 @@ tabs.info:Paragraph({
 })
 
 
-
 tabs.info:Dropdown({
 	Title = "Theme",
 	Icon = "palette",
@@ -175,7 +173,6 @@ tabs.info:Dropdown({
 })
 
 for _, file in ipairs(listfiles(assets("modules"))) do
-  
   local ok, err = pcall(loadstring(readfile(file)), { Tabs = tabs, Window = Window, WindUI = WindUI })
   if not ok then
     warn("Failed to execute:", file, err)
