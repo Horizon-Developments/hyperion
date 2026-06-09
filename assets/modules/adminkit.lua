@@ -26,6 +26,7 @@ local function cmd(c)
 end
 
 toggles.antijoin = {}
+
 tab:Dropdown({
   Title = "Anti join*",
   Desc = "Prevents join og, vc, xl (:",
@@ -33,26 +34,19 @@ tab:Dropdown({
   Value = {},
   Multi = true,
   Callback = function(selected)
-    toggles.antijoin = selected
+    toggles.antijoin = {}
+    for _, v in ipairs(selected) do
+      toggles.antijoin[v] = true
+    end
   end
 })
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 tcs.MessageReceived:Connect(function(msg)
   if not msg.TextSource or msg.TextSource.UserId == localplr.UserId then return end
-  if (toggles.antijoin[msg]) then cmd("reset "..msg.TextSource.Name)
+  local text = msg.Text:lower():gsub("%s+", "")
+  if toggles.antijoin[text] then
+    cmd("reset " .. msg.TextSource.Name)
+  end
 end)
