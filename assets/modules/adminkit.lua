@@ -32,8 +32,8 @@ tab:Dropdown({
   Value = {},
   Multi = true,
   Callback = function(selected)
-    toggles.antijoin = selected
-    toggles.connection
+    toggles.antijoin.selected = selected
+    toggles.antijoin.
     
     
     
