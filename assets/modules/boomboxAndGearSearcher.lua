@@ -76,8 +76,6 @@ tab:Input({
     end
     
     
-    if not d or not d[1] then return 2 end
-
 local i = d[1]
 return i.id .. "`5`0"
     
