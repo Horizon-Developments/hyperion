@@ -35,9 +35,7 @@ tab:Dropdown({
   Multi = true,
   Callback = function(selected)
     toggles.antijoin = {}
-    for _, v in ipairs(selected) do
-      toggles.antijoin[v] = true
-    end
+    toggles.antijoin[ = true
   end
 })
 
