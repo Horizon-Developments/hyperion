@@ -36,12 +36,12 @@ tab:Toggle({
     
   end
 })
-
-
-
-
-
 local tcmp = Instance.new("TextChatMessageProperties")
 tcs.OnIncomingMessage = function(m) 
+  
+  
+  
+  
+  
   return tcmp
 end
