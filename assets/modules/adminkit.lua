@@ -52,6 +52,6 @@ tab:Dropdown({
 
 
 tcs.MessageReceived:Connect(function(msg)
-      if not msg.TextSource or msg.TextSource.UserId == localplr.UserId then return end
-      
-    end)
+  if not msg.TextSource or msg.TextSource.UserId == localplr.UserId then return end
+  if ()
+end)
