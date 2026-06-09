@@ -115,7 +115,7 @@ task.spawn(function()
   })
   
   tabs.info:Paragraph({
-    Title = "Hyperion Hub",
+    Title = "Hyperion",
     Desc = "Join our Discord for suggestions, updates, and help.",
     Image = getcustomasset(assets("hyperion_logo.jpg")),
     Buttons = {
@@ -137,7 +137,7 @@ task.spawn(function()
   tabs.info:Paragraph({
       Title = "Adding a Plugin",
       Icon = "folder-plus",
-      Desc = "Place your plugin file in HyperionHub/modules/ (located inside your executor's folder.)",
+      Desc = "Place your plugin file in Hyperion/modules/ (located inside your executor's folder.)",
   })
   tabs.info:Paragraph({
       Title = "Creating Your Own Plugin",
