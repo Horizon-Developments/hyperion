@@ -10,7 +10,7 @@ local assets = args.Assets
 -- store files in assets("your folder") (don't forget to run makefolder though)
 
 local utils = args.Utils
--- tools to
+-- tools
 
 
 tabs.adminkit = Window:Tab({
