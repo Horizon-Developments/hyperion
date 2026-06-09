@@ -9,8 +9,6 @@ local WindUI = args.WindUI
 local assets = args.Assets
 -- store files in assets("your folder") (don't forget to run makefolder though)
 
-
-
 tabs.spychat = Window:Tab({
   Title = "Spychat (Fixed)",
   Icon = "hat-glasses"
