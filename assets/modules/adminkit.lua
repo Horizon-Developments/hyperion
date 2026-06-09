@@ -42,11 +42,8 @@ tcs.MessageReceived:Connect(function(msg)
   if not msg.TextSource or msg.TextSource.UserId == localplr.UserId then return end
   for text in pairs(toggles.antijoin) do
     if text:find(phrase) then
-    
-  end
-  
-  
-  if toggles.antijoin[msg.Text:lower():gsub("%s+", "")] then
-    cmd("reset " .. msg.TextSource.Name)
+      cmd("reset " .. msg.TextSource.Name)
+      break
+    end
   end
 end)
