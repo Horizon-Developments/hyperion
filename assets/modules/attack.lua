@@ -34,7 +34,8 @@ Tab:Button({
       )
     end)
     if (not ok) then
-      WindUI:Notify({ Title = "Not successful", Content = "Disabled bkit.", Duration = 3 })
+      WindUI:Notify({ Title = "Not successful", Content = "You do not have delete tool in hand", Duration = 3 })
+      return
     end
     WindUI:Notify({ Title = "Sucessful!", Content = "Disabled bkit.", Duration = 3 })
   end
