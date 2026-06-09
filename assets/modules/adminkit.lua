@@ -9,9 +9,13 @@ local WindUI = args.WindUI
 local assets = args.Assets
 -- store files in assets("your folder") (don't forget to run makefolder though)
 
-tabs.attack = Window:Tab({
+tabs.adminkit = Window:Tab({
   Title = "AdminKit",
   Icon = "wrench"
 })
 
-local tab = tabs.ad
+local tab = tabs.adminkit
+
+
+
+
