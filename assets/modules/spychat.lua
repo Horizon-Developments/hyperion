@@ -21,13 +21,18 @@ local tab = tabs.spychat
 local toggles = {}
 
 tab:Toggle({
-  Title = "Toggle",
+  Title = "Spychat",
   Desc = "Toggle Description",
   Icon = "bird",
   Type = "Checkbox",
-  Value = false, -- default value
+  Value = false,
   Callback = function(state) 
-    print("Toggle Activated" .. tostring(state))
+    
+    
+    
+    
+    
+    
   end
 })
 
