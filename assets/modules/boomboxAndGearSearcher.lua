@@ -63,12 +63,13 @@ tab:Input({
       Url = "https://catalog.roproxy.com/v1/search/items/details?Category=11&Subcategory=5&Keyword=".. HttpService:UrlEncode(v) .. "&Limit=30",
       Method = "GET"
     })
-  if not ok or not res or res.StatusCode ~= 200 or not res.Body then
-    print("[HYPERION] ", ok, res, res.StatusCode, res.Body)
-    WindUI:Notify({ Title = "Not found", Content = "An error happend and was logged.", Duration = 3 })
-  end
+    if not ok or not res or res.StatusCode ~= 200 or not res.Body then
+      print("[HYPERION] ", ok, res, res.StatusCode, res.Body, err)
+      WindUI:Notify({ Title = "Not found", Content = "An error happend and was logged.", Duration = 3 })
+      return
+    end
   
-local d = HttpService:JSONDecode(r.Body).data
+  local d = HttpService:JSONDecode(res.Body).data
 if not d or not d[1] then return 2 end
 
 local i = d[1]
