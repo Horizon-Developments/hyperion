@@ -17,8 +17,8 @@ tabs.adminkit = Window:Tab({
 local tab = tabs.adminkit
 
 tab:Dropdown({
-  Title = "Anti",
-  Desc = "Optional description",
+  Title = "Anti join*",
+  Desc = "resets the ",
   Values = { "Anti JoinXL", "Option B", "Option C" },
   Value = {},
   Multi = true,
