@@ -72,7 +72,7 @@ tab:Input({
     
     if (not data or not data[1]) then
       print("[HYPERION] ", ok, res, res.StatusCode, res.Body, err)
-      WindUI:Notify({ Title = "Not found", Content = "An error happend and was logged.", Duration = 3 })
+      WindUI:Notify({ Title = "Not found", Content = "Nothing came up! try using another keyword.", Duration = 3 })
     end
     
     
