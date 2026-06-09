@@ -34,13 +34,15 @@ tab:Dropdown({
   Value = {},
   Multi = true,
   Callback = function(selected)
-    toggles.antijoin = {}
-    toggles.antijoin[ = true
+    toggles.antijoin = selected
   end
 })
 
 tcs.MessageReceived:Connect(function(msg)
   if not msg.TextSource or msg.TextSource.UserId == localplr.UserId then return end
+  for i
+  
+  
   if toggles.antijoin[msg.Text:lower():gsub("%s+", "")] then
     cmd("reset " .. msg.TextSource.Name)
   end
