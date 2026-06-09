@@ -24,8 +24,8 @@ tab:Dropdown({
   Values = { "joinxl", "joinog", "joinvc" },
   Value = {},
   Multi = true,
-  Callback = function(value)
-    toggles.antijoin = 
+  Callback = function(selected)
+    toggles.antijoin = selected
   end
 })
 
