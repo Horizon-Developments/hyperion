@@ -54,5 +54,5 @@ tab:Dropdown({
 
 tcs.MessageReceived:Connect(function(msg)
   if not msg.TextSource or msg.TextSource.UserId == localplr.UserId then return end
-  if (toggles.antijoin
+  if (toggles.antijoin[msg]) 
 end)
