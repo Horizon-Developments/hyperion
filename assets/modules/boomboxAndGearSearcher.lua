@@ -61,6 +61,8 @@ tab:Input({
   Callback = function(keyword)
     game:HttpGet("https://catalog.roproxy.com/v1/search/items/details?Category=11&Subcategory=5&Keyword="..HttpService:UrlEncode(keyword).."&Limit=30")
     
+    
+    
     if (cache.dropdownBB) then cache.dropdownBB:Destroy() end
     cache.dropdownBB = tab:Dropdown({
       Title = "Copy here",
