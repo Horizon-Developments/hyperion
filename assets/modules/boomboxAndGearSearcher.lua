@@ -59,7 +59,7 @@ tab:Input({
   Type = "Input",
   Placeholder = "Enter keyword here",
   Callback = function(keyword)
-    local r = httpR({
+    local res = request({
     Url = "https://catalog.roproxy.com/v1/search/items/details?Category=11&Subcategory=5&Keyword="
         .. HttpService:UrlEncode(v)
         .. "&Limit=30",
