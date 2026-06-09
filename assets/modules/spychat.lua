@@ -36,11 +36,13 @@ tab:Toggle({
     
   end
 })
-local tcmp = Instance.new("TextChatMessageProperties")
+
 tcs.OnIncomingMessage = function(obj) 
+  local tcmp = Instance.new("TextChatMessageProperties")
   local msg = obj.Text
   if msg:find(";") then
-    
+    Instance.new("TextChatMessageProperties")
+  tcmp.PrefixText = "[Tag] " .. m.PrefixText
   end
   
   
