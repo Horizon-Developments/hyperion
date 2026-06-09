@@ -39,6 +39,11 @@ tab:Toggle({
 
 tcs.OnIncomingMessage = function(obj) 
   local tcmp = Instance.new("TextChatMessageProperties")
+  
+  if toggles.
+  
+  
+  
   local msg = obj.Text
   if msg:find(";") then
     tcmp.PrefixText = "<font color=\"#FF0000\">[HIDDEN]</font> " .. m.TextSource.Name .. ": "
