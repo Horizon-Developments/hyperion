@@ -54,7 +54,7 @@ tab:Input({
   Title = "Gear searcher",
   Desc = "Search gears here!",
   Value = "",
-  InputIcon = "music",
+  InputIcon = "settings",
   Type = "Input",
   Placeholder = "Enter keyword here",
   Callback = function(keyword)
