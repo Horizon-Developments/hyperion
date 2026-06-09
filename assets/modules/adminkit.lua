@@ -33,18 +33,14 @@ tab:Dropdown({
   Multi = true,
   Callback = function(selected)
     toggles.antijoin.selected = selected
-    pcall(toggles.antijoin.con)
-    tcs.MessageReceived:Connect(function(msg)
+    pcall(toggles.antijoin.conn)
+    local conn = tcs.MessageReceived:Connect(function(msg)
   if msg.TextSource and msg.TextSource.UserId ~= localplr.UserId then
     if msg.Text:lower() == "hello" then
       tcs.TextChannels.RBXGeneral:SendAsync("hello")
     end
   end
 end)
-    
-    
-    
-    
     
     
   end
