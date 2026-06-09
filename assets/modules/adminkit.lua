@@ -40,7 +40,10 @@ tab:Dropdown({
 
 tcs.MessageReceived:Connect(function(msg)
   if not msg.TextSource or msg.TextSource.UserId == localplr.UserId then return end
-  for 
+  for txt in pairs(toggles.antijoin) do
+    if ()
+    
+  end
   
   
   if toggles.antijoin[msg.Text:lower():gsub("%s+", "")] then
