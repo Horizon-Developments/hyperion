@@ -1,11 +1,8 @@
-
-
-
---[[ if getgenv().Hyperion then
+if getgenv().Hyperion then
   return
 end
 getgenv().Hyperion = true
-]] 
+
 local HttpService = game:GetService("HttpService")
 
 local function assets(...)
