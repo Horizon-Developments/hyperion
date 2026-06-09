@@ -33,9 +33,9 @@ tab:Dropdown({
 
 
 
-local Players = game:GetService("Players")
+local plrs = game:GetService("Players")
 local tcs = game:GetService("TextChatService")
-local localplr = Players.LocalPlayer
+local localplr = plrs.LocalPlayer
 
 tcs.MessageReceived:Connect(function(msg)
   if msg.TextSource and msg.TextSource.UserId ~= localplr.UserId then
