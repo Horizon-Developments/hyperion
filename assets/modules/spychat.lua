@@ -39,8 +39,7 @@ tab:Toggle({
 local tcmp = Instance.new("TextChatMessageProperties")
 tcs.OnIncomingMessage = function(obj) 
   local msg = obj.Text
-  if msg:find(";") then 
-    
+  if msg:find(";") then
     
   end
   
