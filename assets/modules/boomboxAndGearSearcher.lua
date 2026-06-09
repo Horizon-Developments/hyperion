@@ -63,8 +63,10 @@ tab:Input({
       Url = "https://catalog.roproxy.com/v1/search/items/details?Category=11&Subcategory=5&Keyword=".. HttpService:UrlEncode(v) .. "&Limit=30",
       Method = "GET"
     })
-  if not res or res.StatusCode ~= 200 or not res.Body then return 1 end
-
+  if not ok or not res or res.StatusCode ~= 200 or not res.Body then
+    
+  end
+  
 local d = HttpService:JSONDecode(r.Body).data
 if not d or not d[1] then return 2 end
 
