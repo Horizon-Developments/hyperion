@@ -22,7 +22,7 @@ local localplr = plrs.LocalPlayer
 local tab = tabs.adminkit
 local toggles = {}
 local function cmd(c)
-  tcs.TextChannels.RBXGeneral:SendAsync(";"..c.." [GG HYPERION]")
+  tcs.TextChannels.RBXGeneral:SendAsync(";"..c.." [HYPERION REBORN]")
 end
 
 tab:Dropdown({
