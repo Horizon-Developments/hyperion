@@ -25,6 +25,7 @@ local function cmd(c)
   tcs.TextChannels.RBXGeneral:SendAsync(";"..c.." [HYPERION REBORN]")
 end
 
+toggles.antijoin = {}
 tab:Dropdown({
   Title = "Anti join*",
   Desc = "Prevents join* (:",
@@ -53,5 +54,5 @@ tab:Dropdown({
 
 tcs.MessageReceived:Connect(function(msg)
   if not msg.TextSource or msg.TextSource.UserId == localplr.UserId then return end
-  if ()
+  if (toggles.antijoin
 end)
