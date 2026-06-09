@@ -58,9 +58,7 @@ tab:Input({
   Type = "Input",
   Placeholder = "Enter keyword here",
   Callback = function(keyword)
-    local r = https://catalog.roproxy.com/v1/search/items/details?Category=11&Subcategory=5&Keyword="..HttpService:UrlEncode(v).."&Limit=30",
-    Method = "GET"
-})
+    https://catalog.roproxy.com/v1/search/items/details?Category=11&Subcategory=5&Keyword="..HttpService:UrlEncode(v).."&Limit=30"
     if (cache.dropdownBB) then cache.dropdownBB:Destroy() end
     cache.dropdownBB = tab:Dropdown({
       Title = "Copy here",
