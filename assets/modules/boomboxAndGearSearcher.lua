@@ -58,14 +58,9 @@ tab:Input({
   Type = "Input",
   Placeholder = "Enter keyword here",
   Callback = function(keyword)
-    if (keyword == "") then return end
-    local params = Instance.new("AudioSearchParams")
-    params.SearchKeyword = keyword
-    local results = AssetService:SearchAudioAsync(params):GetCurrentPage() 
-    if (#results <= 0) then
-      WindUI:Notify({ Title = "Not found", Content = "Nothing came up! try using another keyword.", Duration = 3 })
-      return
-    end
+    local r = https://catalog.roproxy.com/v1/search/items/details?Category=11&Subcategory=5&Keyword="..HttpService:UrlEncode(v).."&Limit=30",
+    Method = "GET"
+})
     if (cache.dropdownBB) then cache.dropdownBB:Destroy() end
     cache.dropdownBB = tab:Dropdown({
       Title = "Copy here",
