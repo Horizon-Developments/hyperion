@@ -26,7 +26,7 @@ channel.OnIncomingMessage = function(m)
       tcmp.Text = " "
       tcmp.PrefixText = ""
     else
-      local color = getTeamColor(m.TextSource.UserId
+      local color = Players:GetPlayerByUserId(m.TextSource.UserId)
         
         
         
