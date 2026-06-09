@@ -38,11 +38,12 @@ tab:Dropdown({
   end
 })
 
-tcs.MessageReceived:Connect (function(msg)
+tcs.MessageReceived:Connect(function(msg)
   if not msg.TextSource or msg.TextSource.UserId == localplr.UserId then return end
   local text = msg.Text:lower():gsub("%s+", "")
   for _, v in ipairs(toggles.antijoin) do
-    if text == v:lower() then
+    local keyword = v:lower()
+    if text == keyword or text:sub(1, #keyword) == keyword or text:find(keyword, 1, true) then
       cmd("reset " .. msg.TextSource.Name)
       break
     end
