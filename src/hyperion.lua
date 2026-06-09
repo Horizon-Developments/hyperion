@@ -14,7 +14,7 @@ task.spawn(function()
   end
   
   do
-    makefolder("HyperionHub")
+    makefolder("Hyperion")
     makefolder(assets("modules"))
     
     local function createfile(url)
@@ -100,7 +100,7 @@ task.spawn(function()
   	Title = "Hyperion (Reborn)",
   	Icon = "zap",
   	Author = "by horizonscript in discord",
-  	Folder = "HyperionHub",
+  	Folder = "Hyperion",
   	Transparent = true,
   	BackgroundImageTransparency = 0.42,
   	ToggleKey = Enum.KeyCode.RightShift,
