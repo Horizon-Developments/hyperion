@@ -35,14 +35,3 @@ tab:Dropdown({
 
 
 
-local plrs = game:GetService("Players")
-local tcs = game:GetService("TextChatService")
-local localplr = plrs.LocalPlayer
-
-tcs.MessageReceived:Connect(function(msg)
-  if msg.TextSource and msg.TextSource.UserId ~= localplr.UserId then
-    if msg.Text:lower() == "hello" then
-      tcs.TextChannels.RBXGeneral:SendAsync("hello")
-    end
-  end
-end)
