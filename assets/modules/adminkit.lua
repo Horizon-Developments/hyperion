@@ -16,6 +16,9 @@ tabs.adminkit = Window:Tab({
   Icon = "wrench"
 })
 
+local plrs = game:GetService("Players")
+local tcs = game:GetService("TextChatService")
+local localplr = plrs.LocalPlayer
 local tab = tabs.adminkit
 local toggles = {}
 local function cmd(c)
@@ -30,8 +33,6 @@ tab:Dropdown({
   Multi = true,
   Callback = function(selected)
     toggles.antijoin = selected
+    
   end
 })
-
-
-
