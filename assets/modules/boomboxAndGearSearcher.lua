@@ -44,7 +44,7 @@ tab:Input({
       Value = nil,
       AllowNone = true,
       Callback = function(option) 
-        f
+        if (option == nil) then return end
         setclipboard(option)
         WindUI:Notify({ Title = "Copied!", Content = "Copied to your clipboard.", Duration = 3 })
         Dropdown:Select(nil)
