@@ -41,7 +41,7 @@ end
   createfile("discord_invite.txt")
   
   local CACHE_PATH = assets("modules", ".sha_cache.json")
-
+  
   local shaCache = {}
   local cacheOk, cacheData = pcall(function()
     return HttpService:JSONDecode(readfile(CACHE_PATH))
