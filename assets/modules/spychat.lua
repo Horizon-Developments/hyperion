@@ -20,7 +20,16 @@ local localplr = plrs.LocalPlayer
 local tab = tabs.spychat
 local toggles = {}
 
-
+tab:Toggle({
+    Title = "Toggle",
+    Desc = "Toggle Description",
+    Icon = "bird",
+    Type = "Checkbox",
+    Value = false, -- default value
+    Callback = function(state) 
+        print("Toggle Activated" .. tostring(state))
+    end
+})
 
 
 
