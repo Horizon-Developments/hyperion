@@ -26,11 +26,13 @@ Tab:Button({
   Desc = "Perma disables bkit. from pealz",
   Icon = "pen-off",
   Callback = function()
-    local char = localplr.Character
-    char.Delete.Script.Event:FireServer(
-      game:GetService("ReplicatedStorage").Brick,
-      char.HumanoidRootPart.Position
-    )
+    local pcall(function() 
+      local char = localplr.Character
+      char.Delete.Script.Event:FireServer(
+        game:GetService("ReplicatedStorage").Brick,
+        char.HumanoidRootPart.Position
+      )
+    end)
     WindUI:Notify({ Title = "Sucessful!", Content = "Disabled bkit.", Duration = 3 })
   end
 })
