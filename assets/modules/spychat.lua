@@ -26,7 +26,8 @@ tab:Toggle({
   Icon = "bird",
   Type = "Checkbox",
   Value = false,
-  Callback = function(state) 
+  Callback = function(val) 
+    
     
     
     
