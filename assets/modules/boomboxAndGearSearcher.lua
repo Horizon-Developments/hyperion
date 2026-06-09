@@ -68,9 +68,9 @@ tab:Input({
       WindUI:Notify({ Title = "Not found", Content = "An error happend and was logged.", Duration = 3 })
       return
     end
-  
-  local d = HttpService:JSONDecode(res.Body).data
-if not d or not d[1] then return 2 end
+    local d = HttpService:JSONDecode(res.Body).data
+    
+    if not d or not d[1] then return 2 end
 
 local i = d[1]
 return i.id .. "`5`0"
