@@ -21,15 +21,19 @@ local localplr = plrs.LocalPlayer
 
 
 
-tab:Button({ "Disable bkit", "Perma disables bkit. from pealz", "pen-off", function()
-  local char = localplr.Character
-  char.Delete.Script.Event:FireServer(
-    game:GetService("ReplicatedStorage").Brick,
-    char.HumanoidRootPart.Position
-  )
-  WindUI:Notify({ Title = "Sucessful!", Content = "Disabled bkit.", Duration = 3 })
-end})
-
+Tab:Button({
+  Title = "Disable bkit",
+  Desc = "Perma disables bkit. from pealz",
+  Icon = "pen-off",
+  Callback = function()
+    local char = localplr.Character
+    char.Delete.Script.Event:FireServer(
+      game:GetService("ReplicatedStorage").Brick,
+      char.HumanoidRootPart.Position
+    )
+    WindUI:Notify({ Title = "Sucessful!", Content = "Disabled bkit.", Duration = 3 })
+  end
+})
 
 
 
