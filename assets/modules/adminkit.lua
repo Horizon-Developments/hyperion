@@ -17,9 +17,9 @@ tabs.adminkit = Window:Tab({
 local tab = tabs.adminkit
 
 tab:Dropdown({
-  Title = "My List",
+  Title = "Anti",
   Desc = "Optional description",
-  Values = { "Option A", "Option B", "Option C" },
+  Values = { "Anti JoinXL", "Option B", "Option C" },
   Value = {},
   Multi = true,
   Callback = function(value)
