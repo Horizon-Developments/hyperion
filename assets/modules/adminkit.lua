@@ -16,7 +16,15 @@ tabs.adminkit = Window:Tab({
 
 local tab = tabs.adminkit
 
-
+Tab:Toggle({
+  Title = "Anti joinxl",
+  Desc = "Optional description",
+  Icon = "power",
+  Value = false,
+  Callback = function(value)
+    print(value)
+  end
+})
 
 
 
