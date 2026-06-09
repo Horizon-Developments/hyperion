@@ -13,7 +13,7 @@ local assets = args.Assets
 
 tabs.spychat = Window:Tab({
   Title = "Spychat (Fixed)",
-  Icon = "wrench"
+  Icon = "hat-glasses"
 })
 
 local plrs = game:GetService("Players")
