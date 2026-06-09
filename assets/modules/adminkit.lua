@@ -18,7 +18,9 @@ tabs.adminkit = Window:Tab({
 
 local tab = tabs.adminkit
 local toggles = {}
-local function cmd()
+local function cmd(c)
+  tcs.TextChannels.RBXGeneral:SendAsync(c)
+end
 
 tab:Dropdown({
   Title = "Anti join*",
