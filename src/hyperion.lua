@@ -161,6 +161,8 @@ tabs.info:Paragraph({
     Desc = "Full documentation is available on #plugins-dev (our Discord server.)",
 })
 
+
+
 tabs.info:Dropdown({
 	Title = "Theme",
 	Icon = "palette",
