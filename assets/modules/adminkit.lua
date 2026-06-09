@@ -9,6 +9,8 @@ local WindUI = args.WindUI
 local assets = args.Assets
 -- store files in assets("your folder") (don't forget to run makefolder though)
 
+
+
 tabs.adminkit = Window:Tab({
   Title = "AdminKit",
   Icon = "wrench"
@@ -28,12 +30,6 @@ tab:Dropdown({
     toggles.antijoin = selected
   end
 })
-
-
-
-
-
-
 
 
 
