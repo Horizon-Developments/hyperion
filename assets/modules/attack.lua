@@ -19,7 +19,7 @@ local tab = tabs.attack
 local plrs = game:GetService("Players")
 local localplr = plrs.LocalPlayer
 
-
+print(tab)
 
 tab:Button({
   Title = "Disable bkit",
