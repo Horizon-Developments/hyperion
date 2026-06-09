@@ -37,22 +37,14 @@ tab:Dropdown({
 
 
 
-Players.PlayerAdded:Connect(function(player)
-  player.Chatted:Connect(function(msg)
-    if msg:lower() == "hello" then
-      game:GetService("ReplicatedStorage"):WaitForChild("DefaultChatSystemChatEvents")
-        :WaitForChild("SayMessageRequest"):FireServer("hello", "All")
-    end
-  end)
-end)
+local Players = game:GetService("Players")
+local TextChatService = game:GetService("TextChatService")
+local localplr = Players.LocalPlayer
 
-for _, player in ipairs(Players:GetPlayers()) do
-  if player ~= localplr then
-    player.Chatted:Connect(function(msg)
-      if msg:lower() == "hello" then
-        game:GetService("ReplicatedStorage"):WaitForChild("DefaultChatSystemChatEvents")
-          :WaitForChild("SayMessageRequest"):FireServer("hello", "All")
-      end
-    end)
+TextChatService.MessageReceived:Connect(function(msg)
+  if msg.TextSource and msg.TextSource.UserId ~= localplr.UserId then
+    if msg.Text:lower() == "hello" then
+      TextChatService.TextChannels.RBXGeneral:SendAsync("hello")
+    end
   end
-end
+end)
