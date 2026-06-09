@@ -38,7 +38,7 @@ tab:Input({
       return
     end
     if (cache.dropdownBB) then cache.dropdownBB:Destroy() end
-    cache.dropdownBB = Tab:Dropdown({
+    cache.dropdownBB = tab:Dropdown({
       Title = "Copy an id.",
       Desc = "",
       Values = results,
@@ -50,7 +50,7 @@ tab:Input({
         Dropdown:Select(nil)
       end
     })
-    
+    end))
     
     
     
