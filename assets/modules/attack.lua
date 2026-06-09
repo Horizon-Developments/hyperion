@@ -21,7 +21,7 @@ local localplr = plrs.LocalPlayer
 
 
 
-Tab:Button({ "Disable bkit", "Perma disables bkit. from pealz", "pen-off", function()
+tab:Button({ "Disable bkit", "Perma disables bkit. from pealz", "pen-off", function()
   local char = localplr.Character
   char.Delete.Script.Event:FireServer(
     game:GetService("ReplicatedStorage").Brick,
