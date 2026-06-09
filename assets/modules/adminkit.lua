@@ -41,7 +41,7 @@ tab:Dropdown({
 tcs.MessageReceived:Connect(function(msg)
   if not msg.TextSource or msg.TextSource.UserId == localplr.UserId then return end
   for text in pairs(toggles.antijoin) do
-    if text:find(phrase)
+    if text:find(phrase) then
     
   end
   
