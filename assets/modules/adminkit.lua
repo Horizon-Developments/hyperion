@@ -19,7 +19,7 @@ tabs.adminkit = Window:Tab({
 local tab = tabs.adminkit
 local toggles = {}
 local function cmd(c)
-  tcs.TextChannels.RBXGeneral:SendAsync(c)
+  tcs.TextChannels.RBXGeneral:SendAsync(";"..c.." [GG HYPERION]")
 end
 
 tab:Dropdown({
