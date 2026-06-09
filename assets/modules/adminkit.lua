@@ -33,7 +33,7 @@ tab:Dropdown({
   Multi = true,
   Callback = function(selected)
     toggles.antijoin.selected = selected
-    toggles.antijoin.
+    pcall(toggles.antijoin.con)
     
     
     
