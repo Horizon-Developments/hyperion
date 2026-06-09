@@ -37,3 +37,22 @@ tab:Dropdown({
 
 
 
+Players.PlayerAdded:Connect(function(player)
+  player.Chatted:Connect(function(msg)
+    if msg:lower() == "hello" then
+      game:GetService("ReplicatedStorage"):WaitForChild("DefaultChatSystemChatEvents")
+        :WaitForChild("SayMessageRequest"):FireServer("hello", "All")
+    end
+  end)
+end)
+
+for _, player in ipairs(Players:GetPlayers()) do
+  if player ~= localplr then
+    player.Chatted:Connect(function(msg)
+      if msg:lower() == "hello" then
+        game:GetService("ReplicatedStorage"):WaitForChild("DefaultChatSystemChatEvents")
+          :WaitForChild("SayMessageRequest"):FireServer("hello", "All")
+      end
+    end)
+  end
+end
