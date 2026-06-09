@@ -14,13 +14,17 @@ tabs.spychat = Window:Tab({
   Icon = "hat-glasses"
 })
 
-
-
 local plrs = game:GetService("Players")
 local tcs = game:GetService("TextChatService")
 local localplr = plrs.LocalPlayer
 local tab = tabs.spychat
 local toggles = {}
+
+
+
+
+
+
 
 local tcmp = Instance.new("TextChatMessageProperties")
 tcs.OnIncomingMessage = function(m) 
