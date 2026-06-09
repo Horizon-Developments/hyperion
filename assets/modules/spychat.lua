@@ -39,7 +39,12 @@ tab:Toggle({
 
 tcs.OnIncomingMessage = function(obj) 
   local tcmp = Instance.new("TextChatMessageProperties")
-  local color = 
+  local color = (function()
+    
+    
+    
+    
+  end)()
   
   
   
