@@ -15,11 +15,11 @@ local function colorToHex(c)
   return string.format("%02X%02X%02X", math.floor(c.R * 255), math.floor(c.G * 255), math.floor(c.B * 255))
 end
 
--- local existing = getcallbackvalue(channel, "OnIncomingMessage")
+local existing = getcallbackvalue and getcallbackvalue(channel, "OnIncomingMessage")
 
 channel.OnIncomingMessage = function(m)
   local tcmp = existing and existing(m) or Instance.new("TextChatMessageProperties")
-
+  
   if m.TextSource then
     if m.Text and m.Text:sub(1, 3) == "hx." and m.TextSource.UserId == LocalPlayer.UserId then
       task.spawn(handler, m)
