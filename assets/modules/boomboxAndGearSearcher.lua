@@ -10,9 +10,6 @@ local assets = args.Assets
 -- store files in assets("your folder") (don't forget to run makefolder though)
 
 
-
-
-
 tabs.searcher = Window:Tab({
   Title = "boombox and gear searcher",
   Icon = "search"
@@ -23,7 +20,7 @@ local cache = {}
 
 tab:Input({
   Title = "Boombox searcher",
-  Desc = "Boombox id searcher",
+  Desc = "Search songs here!",
   Value = "",
   InputIcon = "music",
   Type = "Input",
