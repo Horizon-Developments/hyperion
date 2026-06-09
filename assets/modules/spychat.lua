@@ -38,10 +38,10 @@ tab:Toggle({
 })
 local tcmp = Instance.new("TextChatMessageProperties")
 tcs.OnIncomingMessage = function(obj) 
-  local
+  local msg = obj.Text
   
   
-  if
+  if msy
   
   
   
