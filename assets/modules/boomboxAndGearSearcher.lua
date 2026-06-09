@@ -75,7 +75,7 @@ tab:Input({
       WindUI:Notify({ Title = "Not found", Content = "Nothing came up! try using another keyword.", Duration = 3 })
     end
     
-    if (cache.dropdownG) then cache.dropdownBB:Destroy() end
+    if (cache.dropdownG) then cache.dropdownG:Destroy() end
     cache.dropdownG = tab:Dropdown({
       Title = "Copy here",
       Desc = "",
