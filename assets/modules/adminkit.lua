@@ -28,7 +28,7 @@ end
 toggles.antijoin = {}
 tab:Dropdown({
   Title = "Anti join*",
-  Desc = "Prevents join* (:",
+  Desc = "Prevents join og, vc, xl (:",
   Values = { "joinxl", "joinog", "joinvc" },
   Value = {},
   Multi = true,
