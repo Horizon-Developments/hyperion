@@ -21,7 +21,7 @@ local localplr = plrs.LocalPlayer
 
 
 
-Tab:Button({
+tab:Button({
   Title = "Disable bkit",
   Desc = "Perma disables bkit. from pealz",
   Icon = "pen-off",
