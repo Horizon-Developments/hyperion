@@ -80,8 +80,8 @@ local i = d[1]
 return i.id .. "`5`0"
     
     
-    if (cache.dropdownBB) then cache.dropdownBB:Destroy() end
-    cache.dropdownBB = tab:Dropdown({
+    if (cache.dropdownG) then cache.dropdownBB:Destroy() end
+    cache.dropdownG = tab:Dropdown({
       Title = "Copy here",
       Desc = "",
       Values = results,
