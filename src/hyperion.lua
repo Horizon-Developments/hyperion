@@ -1,3 +1,4 @@
+task.spawn(function()
 if getgenv().Hyperion then
   return
 end
