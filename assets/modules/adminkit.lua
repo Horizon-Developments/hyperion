@@ -18,7 +18,7 @@ local tab = tabs.adminkit
 
 tab:Dropdown({
   Title = "Anti join*",
-  Desc = "resets the ",
+  Desc = "Prevents join* ",
   Values = { "Anti JoinXL", "Option B", "Option C" },
   Value = {},
   Multi = true,
