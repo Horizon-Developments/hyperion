@@ -1,6 +1,6 @@
 task.spawn(function()
   if getgenv().Hyperion then
-    return
+    --return
   end
   getgenv().Hyperion = true
   
