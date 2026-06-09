@@ -35,9 +35,12 @@ tab:Dropdown({
     toggles.antijoin.selected = selected
     pcall(toggles.antijoin.conn)
     local conn = tcs.MessageReceived:Connect(function(msg)
-      if not msg.TextSource or msg.TextSource.UserId == localplr.UserId then end
+      if not msg.TextSource or msg.TextSource.UserId == localplr.UserId then return end
+      
+      
+      
+      
     end)
-    
     toggles.antijoin.conn = function() conn:Disconnect() end
   end
 })
