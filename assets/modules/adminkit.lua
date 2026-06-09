@@ -38,7 +38,7 @@ tab:Dropdown({
   end
 })
 
-tcs.MessageReceived:Connect(function(msg)
+tcs.MessageReceived:Connect (function(msg)
   if not msg.TextSource or msg.TextSource.UserId == localplr.UserId then return end
   local text = msg.Text:lower():gsub("%s+", "")
   for _, v in ipairs(toggles.antijoin) do
