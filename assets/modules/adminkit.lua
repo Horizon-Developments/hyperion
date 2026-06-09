@@ -35,14 +35,14 @@ tab:Dropdown({
     toggles.antijoin.selected = selected
     pcall(toggles.antijoin.conn)
     local conn = tcs.MessageReceived:Connect(function(msg)
-  if msg.TextSource and msg.TextSource.UserId ~= localplr.UserId then
-    if msg.Text:lower() == "hello" then
-      tcs.TextChannels.RBXGeneral:SendAsync("hello")
-    end
-  end
-end)
+      if msg.TextSource and msg.TextSource.UserId ~= localplr.UserId then
+        if msg.Text:lower() == "hello" then
+          tcs.TextChannels.RBXGeneral:SendAsync("hello")
+        end
+      end
+    end)
     
-    
+    toggles.antijoin.conn = function() conn:Disconnect() end
   end
 })
 
