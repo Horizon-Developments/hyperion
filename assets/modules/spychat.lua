@@ -28,5 +28,3 @@ local tcmp = Instance.new("TextChatMessageProperties")
 tcs.OnIncomingMessage = function(m) 
   return tcmp
 end
-
-How to make this ilke not effect colors and stuff
