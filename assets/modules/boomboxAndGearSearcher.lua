@@ -15,6 +15,7 @@ tabs.searcher = Window:Tab({
   Icon = "search"
 })
 local AssetService = game:GetService("AssetService")
+local HttpService = game:GetService("HttpService")
 local tab = tabs.searcher
 local cache = {}
 
@@ -58,7 +59,7 @@ tab:Input({
   Type = "Input",
   Placeholder = "Enter keyword here",
   Callback = function(keyword)
-    game:HttpGet("https://catalog.roproxy.com/v1/search/items/details?Category=11&Subcategory=5&Keyword="..HttpService:UrlEncode(v).."&Limit=30")
+    game:HttpGet("https://catalog.roproxy.com/v1/search/items/details?Category=11&Subcategory=5&Keyword="..HttpService:UrlEncode(keyword).."&Limit=30")
     
     if (cache.dropdownBB) then cache.dropdownBB:Destroy() end
     cache.dropdownBB = tab:Dropdown({
