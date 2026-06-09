@@ -26,11 +26,18 @@ channel.OnIncomingMessage = function(m)
       tcmp.Text = " "
       tcmp.PrefixText = ""
     else
-      local color = getTeamColor(m.TextSource.UserId)
+      local color = getTeamColor(m.TextSource.UserId
+        
+        
+        
+        
+        
+        
+        
       local hex = colorToHex(color)
       tcmp.PrefixText = string.format('<font color="#%s">%s</font>', hex, m.PrefixText)
     end
   end
-
+  
   return tcmp
 end
