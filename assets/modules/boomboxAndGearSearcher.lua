@@ -70,6 +70,10 @@ tab:Input({
     end
     local data = HttpService:JSONDecode(res.Body).data
     
+    if (not data or not data[1]) then
+      print("[HYPERION] ", ok, res, res.StatusCode, res.Body, err)
+      WindUI:Notify({ Title = "Not found", Content = "An error happend and was logged.", Duration = 3 })
+    end
     
     
     if not d or not d[1] then return 2 end
