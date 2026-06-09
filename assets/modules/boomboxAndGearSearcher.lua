@@ -75,21 +75,16 @@ tab:Input({
       WindUI:Notify({ Title = "Not found", Content = "Nothing came up! try using another keyword.", Duration = 3 })
     end
     
-    
-local i = d[1]
-return i.id .. "`5`0"
-    
-    
     if (cache.dropdownG) then cache.dropdownBB:Destroy() end
     cache.dropdownG = tab:Dropdown({
       Title = "Copy here",
       Desc = "",
-      Values = results,
+      Values = data,
       Value = nil,
       AllowNone = true,
       Callback = function(option) 
         if (option == nil) then return end
-        setclipboard(tostring(option.Id))
+        setclipboard(tostring(option.id))
         WindUI:Notify({ Title = "Copied!", Content = "Copied to your clipboard.", Duration = 3 })
         Dropdown:Select(nil)
       end
