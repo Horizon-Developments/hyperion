@@ -42,29 +42,7 @@ end
   
   local CACHE_PATH = assets("modules", ".sha_cache.json")
 
-local shaCache = {}
-local cacheOk, cacheData = pcall(function()
-  return HttpService:JSONDecode(readfile(CACHE_PATH))
-end)
-if cacheOk and type(cacheData) == "table" then
-  shaCache = cacheData
-end
-
-local ok, result = pcall(function()
-  return HttpService:JSONDecode(game:HttpGet("https://api.github.com/repos/Horizon-Developments/hyperion/contents/assets/modules"))
-end)
-
-if not ok then
-  print(result)
-  log("Failed to fetch built-in modules.")
-else
-  local remoteNames = {}
-  local pending = 0
-
-  for _, item in ipairs(result) do
-    if item.type == "file" then
-      remoteNames[item.name] = true
-      if shaCache[item.name] == item.sha then
+e] == item.sha then
         log("Skipped " .. item.name)
       else
         pending += 1
