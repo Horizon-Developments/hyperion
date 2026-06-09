@@ -40,7 +40,10 @@ tab:Toggle({
 tcs.OnIncomingMessage = function(obj) 
   local tcmp = Instance.new("TextChatMessageProperties")
   
-  if toggles.
+  if not toggles.spychat then 
+    
+    return tcmp
+  end
   
   
   
