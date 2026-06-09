@@ -25,7 +25,8 @@ tab:Input({
   InputIcon = "music",
   Type = "Input",
   Placeholder = "Enter keyword here",
-  Callback = function(keyword) 
+  Callback = function(keyword)
+    if (keyword == "") then return end
     local params = Instance.new("AudioSearchParams")
     params.SearchKeyword = keyword
     local results = AssetService:SearchAudioAsync(params):GetCurrentPage() 
