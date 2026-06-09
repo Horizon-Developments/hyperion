@@ -34,7 +34,8 @@ Tab:Button({
       )
     end)
     if (not ok) then
-      
+      WindUI:Notify({ Title = "Not successful", Content = "Disabled bkit.", Duration = 3 })
+    end
     WindUI:Notify({ Title = "Sucessful!", Content = "Disabled bkit.", Duration = 3 })
   end
 })
