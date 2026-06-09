@@ -11,7 +11,7 @@ local assets = args.Assets
 
 tabs.attack = Window:Tab({
   Title = "AdminKit",
-  Icon = "hand-fist"
+  Icon = "wrench"
 })
 
-local tab = tabs.attack ]]
+local tab = tabs.ad
