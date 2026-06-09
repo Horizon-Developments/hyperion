@@ -158,7 +158,7 @@ task.spawn(function()
   })
   
   for _, file in ipairs(listfiles(assets("modules"))) do
-    local ok, err = pcall(loadstring(readfile(file)), { Tabs = tabs, Window = Window, WindUI = WindUI })
+    local ok, err = pcall(loadstring(readfile(file)), { Tabs = tabs, Window = Window, WindUI = WindUI, Assets = assets })
     if not ok then
       warn("Failed to execute:", file, err)
     end
