@@ -42,7 +42,6 @@ tcs.OnIncomingMessage = function(obj)
   local msg = obj.Text
   if msg:find(";") then
     tcmp.PrefixText = "<font color=\"#FF0000\">[HIDDEN]</font> " .. m.TextSource.Name .. ": "
-    tcmp.PrefixText =  " .. m.PrefixText
   end
   
   
