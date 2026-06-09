@@ -60,7 +60,7 @@ end
   else
     local remoteNames = {}
     local pending = 0
-  
+    
     for _, item in ipairs(result) do
       if item.type == "file" then
         remoteNames[item.name] = true
@@ -78,9 +78,9 @@ end
         end
       end
     end
-  
+    
     repeat task.wait(0.2) until pending <= 0
-  
+    
     for name in pairs(shaCache) do
       if not remoteNames[name] then
         pcall(function() delfile(assets("modules", name)) end)
@@ -88,7 +88,7 @@ end
         log("Deleted " .. name)
       end
     end
-  
+    
     pcall(function()
       writefile(CACHE_PATH, HttpService:JSONEncode(shaCache))
     end)
