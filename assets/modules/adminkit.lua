@@ -28,7 +28,8 @@ tab:Dropdown({
   end
 })
 tab:Divider()
-tab:Button({Title = "Button",
+tab:Button({
+  Title = "Bkit whitelist",
     Desc = "Test Button",
     Locked = false,
     Callback = function()
