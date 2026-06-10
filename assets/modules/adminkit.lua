@@ -17,7 +17,7 @@ local localplr = Helpers.services.players.LocalPlayer
 local toggles = { antijoin = {} }
 
 
-tab:Separator({ Title = "Section Name" })
+tab:Separator({ Title = "" })
 
 tab:Dropdown({
   Title = "Anti join*",
