@@ -8,7 +8,7 @@ local WindUI = args.WindUI
 -- WindUi 
 local assets = args.Assets
 -- store files in assets("your folder") (don't forget to run makefolder though)
-
+--[[
 tabs.spychat = Window:Tab({
   Title = "Spychat (Fixed)",
   Icon = "hat-glasses"
@@ -68,4 +68,4 @@ tcs.OnIncomingMessage = function(obj)
   
   
   return tcmp
-end
+end]]
