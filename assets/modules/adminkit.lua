@@ -28,8 +28,7 @@ tab:Dropdown({
   end
 })
 tab:Divider()
-tab:Paragraph({
-  Àn Title = "test",
+tab:Paragraph({Title = "test",
     Icon = "layers",
     Desc = "test",
   })
