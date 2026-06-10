@@ -27,9 +27,7 @@ tab:Dropdown({
     toggles.antijoin = selected
   end
 })
-tab:Separator({ Title = "Bkit whitelist" })
-
-
+tab:Divider()
 
 
 
