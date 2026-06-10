@@ -26,7 +26,16 @@ local Section = tab:Section({
     TextSize = 17, -- Default Size
     Opened = true,
 })
-Section:
+Section:Dropdown({
+  Title = "Anti join*",
+  Desc = "Prevents join og, vc, xl (:",
+  Values = { "joinxl", "joinog", "joinvc" },
+  Value = {},
+  Multi = true,
+  Callback = function(selected)
+    toggles.antijoin = selected
+  end
+})
 
 Helpers.on("ChatListener", function(msg)
   if not msg.TextSource or msg.TextSource.UserId == localplr.UserId then return end
