@@ -17,17 +17,7 @@ local localplr = Helpers.services.players.LocalPlayer
 local toggles = { antijoin = {} }
 
 
-tab:Dropdown({
-  Title = "Anti join*",
-  Desc = "Prevents join og, vc, xl (:",
-  Values = { "joinxl", "joinog", "joinvc" },
-  Value = {},
-  Multi = true,
-  Callback = function(selected)
-    toggles.antijoin = selected
-  end
-})
-local Section = Tab:Section({ 
+local Section = tab:Section({ 
     Title = "Section",
     Box = false,
     FontWeight = "SemiBold",
@@ -36,6 +26,7 @@ local Section = Tab:Section({
     TextSize = 17, -- Default Size
     Opened = true,
 })
+Section:
 
 Helpers.on("ChatListener", function(msg)
   if not msg.TextSource or msg.TextSource.UserId == localplr.UserId then return end
