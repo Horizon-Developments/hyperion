@@ -16,6 +16,9 @@ local tcs = Helpers.services.textchat
 local localplr = Helpers.services.players.LocalPlayer
 local toggles = { antijoin = {} }
 
+
+tab:Separator({ Title = "Section Name" })
+
 tab:Dropdown({
   Title = "Anti join*",
   Desc = "Prevents join og, vc, xl (:",
@@ -26,19 +29,6 @@ tab:Dropdown({
     toggles.antijoin = selected
   end
 })
-
-tab:Dropdown({
-  Title = "",
-  Desc = "Prevents join og, vc, xl (:",
-  Values = { "joinxl", "joinog", "joinvc" },
-  Value = {},
-  Multi = true,
-  Callback = function(selected)
-    toggles.antijoin = selected
-  end
-})
-
-
 
 
 Helpers.on("ChatListener", function(msg)
