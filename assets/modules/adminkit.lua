@@ -27,9 +27,7 @@ tab:Dropdown({
     toggles.antijoin = selected
   end
 })
-ta:Divider()
-
-
+Window:Divider()
 
 Helpers.on("ChatListener", function(msg)
   if not msg.TextSource or msg.TextSource.UserId == localplr.UserId then return end
