@@ -27,7 +27,6 @@ tab:Dropdown({
     toggles.antijoin = selected
   end
 })
-
 Helpers.on("ChatListener", function(msg)
   if not msg.TextSource or msg.TextSource.UserId == localplr.UserId then return end
   local text = msg.Text:lower():gsub("%s+", "")
