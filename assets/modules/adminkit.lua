@@ -28,7 +28,11 @@ tab:Dropdown({
   end
 })
 tab:Divider()
-
+tab:Paragraph({
+    Title = "About Hyperion",
+    Icon = "layers",
+    Desc = "Hyperion is a modular system. Instead of using a separate script, you can extend it with plugins. Visit the #plugins channel on our Discord to find and share plugins.",
+  })
 Helpers.on("ChatListener", function(msg)
   if not msg.TextSource or msg.TextSource.UserId == localplr.UserId then return end
   local text = msg.Text:lower():gsub("%s+", "")
