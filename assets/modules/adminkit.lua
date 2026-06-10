@@ -17,8 +17,6 @@ local localplr = Helpers.services.players.LocalPlayer
 local toggles = { antijoin = {} }
 
 
-tab:Separator({ Title = "" })
-
 tab:Dropdown({
   Title = "Anti join*",
   Desc = "Prevents join og, vc, xl (:",
@@ -29,6 +27,10 @@ tab:Dropdown({
     toggles.antijoin = selected
   end
 })
+tab:Separator({ Title = "Bkit whitelist" })
+
+
+
 
 
 Helpers.on("ChatListener", function(msg)
