@@ -180,7 +180,7 @@ task.spawn(function()
       if msg.Status ~= Enum.TextChatMessageStatus.Sending and pending_chat_check[msg.Text] == "" then
         pending_chat_check[msg.Text] = msg.Status == Enum.TextChatMessageStatus.Success
       end
-      if (msg.Text:sub(1, 1) == ";") then
+      if (msg.Text:find(";")) then
         props.Text = "" -- hide.
         return props
       end
