@@ -28,11 +28,13 @@ tab:Dropdown({
   end
 })
 tab:Divider()
-tab:Paragraph({Title = "test",
-    Icon = "layers",
-    Desc = "test",
-  })
-
+tab:Button({Title = "Button",
+    Desc = "Test Button",
+    Locked = false,
+    Callback = function()
+        -- ...
+    end
+})
 
 
 
