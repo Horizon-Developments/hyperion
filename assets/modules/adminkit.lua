@@ -29,7 +29,7 @@ tab:Dropdown({
 })
 tab:Divider()
 tab:Paragraph({
-    Title = "test",
+  ÀTitle = "test",
     Icon = "layers",
     Desc = "test",
   })
