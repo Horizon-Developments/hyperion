@@ -13,13 +13,12 @@ tabs.spychat = Window:Tab({
   Title = "Spychat (Fixed)",
   Icon = "hat-glasses"
 })
-dskskks
+
 local plrs = game:GetService("Players")
 local tcs = game:GetService("TextChatService")
 local localplr = plrs.LocalPlayer
 local tab = tabs.spychat
 local toggles = {}
-o
 
 tab:Toggle({
   Title = "Spychat",
