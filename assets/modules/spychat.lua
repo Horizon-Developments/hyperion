@@ -1,71 +1,57 @@
 local args = ...
 
 local tabs = args.Tabs
--- tabs register or use tabs here.
 local Window = args.Window
--- wind ui window used by Hyperion
 local WindUI = args.WindUI
--- WindUi 
 local assets = args.Assets
--- store files in assets("your folder") (don't forget to run makefolder though)
---[[
+local Helpers = args.Helpers
+
 tabs.spychat = Window:Tab({
   Title = "Spychat (Fixed)",
   Icon = "hat-glasses"
 })
 
-local plrs = game:GetService("Players")
-local tcs = game:GetService("TextChatService")
-local localplr = plrs.LocalPlayer
 local tab = tabs.spychat
-local toggles = {}
+local tcs = Helpers.services.textchat
+local spychat = {
+  enabled = false,
+  antispam = false
+}
 
 tab:Toggle({
-  Title = "Spychat",
-  Desc = "Toggle Description",
-  Icon = "bird",
-  Type = "Checkbox",
+  Title = "SpyChat",
+  Desc = "You can see ; commands.",
+  Icon = "hat-glasses",
   Value = false,
-  Callback = function(val) 
-    
-    
-    
-    
-    
-    
-    
+  Callback = function(val)
+    spychat.enabled = val
+  end
+})
+tab:Toggle({
+  Title = "Smart Anti-Spam",
+  Desc = "Ignores repeated messages. If someone sends the same message as their previous one it gets skipped.",
+  Icon = "brain",
+  Value = false,
+  Callback = function(val)
+    spychat.antispam = val
   end
 })
 
-tcs.OnIncomingMessage = function(obj) 
-  local tcmp = Instance.new("TextChatMessageProperties")
-  local color = (function()
-    local player = Players:GetPlayerByUserId(obj.TextSource.UserId)
-    
-    
-    
-    
-    
-  end)()
-  
-  
-  
-  
-  
-  if not toggles.spychat then 
-    
-    return tcmp
+local cache = {}
+Helpers.on("ChatListener", function(msg)
+  local txt = msg.Text
+  if not spychat.enabled or txt:sub(1, 1) ~= ";" then return end
+  if spychat.antispam then
+    if cache[msg.TextSource.Name] == txt then return end
+    cache[msg.TextSource.Name] = txt
   end
-  
-  
-  
-  local msg = obj.Text
-  if msg:find(";") then
-    tcmp.PrefixText = "<font color=\"#FF0000\">[HIDDEN]</font> " .. m.TextSource.Name .. ": "
-  end
-  
-  
-  
-  
-  return tcmp
-end]]
+  local player = Helpers.services.players:GetPlayerByUserId(msg.TextSource.UserId)
+  local char = player and player.Character
+  local namePart = char and char:FindFirstChild("Nombre")
+  local label = namePart and namePart:FindFirstChild("Text1")
+  local color = label and label.TextColor3 or Color3.new(1, 1, 1)
+  local hex = string.format("#%02X%02X%02X", color.R * 255, color.G * 255, color.B * 255)
+  tcs.TextChannels.RBXGeneral:DisplaySystemMessage(
+    string.format("<font color='%s'>%s</font>: %s", hex, player and player.DisplayName or msg.TextSource.Name, txt)
+  )
+end)
