@@ -28,7 +28,7 @@ tab:Dropdown({
 })
 
 tab:Dropdown({
-  Title = "Anti join*",
+  Title = "",
   Desc = "Prevents join og, vc, xl (:",
   Values = { "joinxl", "joinog", "joinvc" },
   Value = {},
