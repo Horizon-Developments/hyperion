@@ -31,7 +31,7 @@ tab:Divider()
 tab:Paragraph({
   Title = "Bkit Whitelist",
   Icon = "toolbox",
-  Desc = "Clearinv's a player if they arent whitelist"
+  Desc = "if a non-whitelisted player has bkit, it clearinv's them"
 })
 tab:Button({
   Title = "Enable",
