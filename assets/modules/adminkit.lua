@@ -29,7 +29,7 @@ tab:Dropdown({
 })
 tab:Divider()
 tab:Paragraph({
-  Title = "Bkit W5çhitelist",
+  Title = "Bkit Whitelist",
   Icon = "toolbox",
   Desc = ""
 })
