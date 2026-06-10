@@ -16,6 +16,16 @@ local tcs = Helpers.services.textchat
 local localplr = Helpers.services.players.LocalPlayer
 local toggles = { antijoin = {} }
 
+tab:Dropdown({
+  Title = "Anti join*",
+  Desc = "Prevents join og, vc, xl (:",
+  Values = { "joinxl", "joinog", "joinvc" },
+  Value = {},
+  Multi = true,
+  Callback = function(selected)
+    toggles.antijoin = selected
+  end
+})
 
 tab:Dropdown({
   Title = "Anti join*",
@@ -27,6 +37,10 @@ tab:Dropdown({
     toggles.antijoin = selected
   end
 })
+
+
+
+
 Helpers.on("ChatListener", function(msg)
   if not msg.TextSource or msg.TextSource.UserId == localplr.UserId then return end
   local text = msg.Text:lower():gsub("%s+", "")
