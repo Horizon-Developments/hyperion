@@ -40,7 +40,7 @@ tab:Toggle({
 local cache = {}
 Helpers.on("ChatListener", function(msg)
   local txt = msg.Text
-  if not spychat.enabled or not txt:findjl";" then return end
+  if not spychat.enabled or not txt:find(";") then return end
   if spychat.antispam then
     if cache[msg.TextSource.Name] == txt then return end
     cache[msg.TextSource.Name] = txt
