@@ -30,8 +30,8 @@ tab:Dropdown({
 tab:Divider()
 tab:Paragraph({
   Title = "Bkit whitelist",
-    Icon = "layers",
-    Desc = "
+  Icon = "toolbox",
+  Desc = ""
 })
 tab:Button({
   Title = "Enable",
