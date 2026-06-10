@@ -29,10 +29,10 @@ tab:Dropdown({
 })
 tab:Divider()
 tab:Paragraph({
-    Title = "About Hyperion",
+  Title = "About Hyperion",
     Icon = "layers",
-    Desc = "Hyperion is a modular system. Instead of using a separate script, you can extend it with plugins. Visit the #plugins channel on our Discord to find and share plugins.",
-  })
+    Desc = "
+})
 tab:Button({
   Title = "Bkit whitelist",
     Desc = "",
