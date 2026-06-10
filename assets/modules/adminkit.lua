@@ -35,11 +35,11 @@ tab:Paragraph({
 })
 tab:Button({
   Title = "Enable",
-    Desc = "",
-    Locked = false,
-    Callback = function()
-        -- ...
-    end
+  Desc = "",
+  Locked = false,
+  Callback = function()
+      -- ...
+  end
 })
 
 
