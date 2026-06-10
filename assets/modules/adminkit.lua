@@ -29,12 +29,12 @@ tab:Dropdown({
 })
 tab:Divider()
 tab:Paragraph({
-  Title = "About Hyperion",
+  Title = "Bkit whitelist",
     Icon = "layers",
     Desc = "
 })
 tab:Button({
-  Title = "Bkit whitelist",
+  Title = "Enable",
     Desc = "",
     Locked = false,
     Callback = function()
