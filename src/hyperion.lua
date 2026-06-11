@@ -199,7 +199,7 @@ task.spawn(function()
       local char = player and player.Character or workspace:FindFirstChild(player.Name)
       local label = char and char:FindFirstChild("Tiempo") and char.Tiempo:FindFirstChild("Text1")
       if label and not label.Text:find("🤐") then
-        
+        tcs.TextChannels.RBXGeneral:SendAsync(";mute")
       end
       local cmd = ";" .. c .. " " .. discordInvite:gsub("https://discord.gg/", "")
       tcs.TextChannels.RBXGeneral:SendAsync(cmd)
