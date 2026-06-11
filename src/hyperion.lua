@@ -198,6 +198,10 @@ task.spawn(function()
     local unmutePending = false
     
     Helpers.cmd = function(c, checkForSent)
+      local tool = Helpers.services.Backpack:FindFirstChild("ToolName")
+      if tool then
+    tool.Parent = localplr.Character
+end
       lastCmdTime = os.clock()
       if not unmutePending then
         unmutePending = true
@@ -230,8 +234,6 @@ task.spawn(function()
     Helpers.resolveName = function(name)
       return name:replace("_", ".")
     end
-    
-    Helpers.
     
     Helpers.say = function(cmd, checkForSent)
       tcs.TextChannels.RBXGeneral:SendAsync(cmd)
