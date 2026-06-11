@@ -241,7 +241,7 @@ task.spawn(function()
       debris = cloneref(game:GetService("Debris")),
       teams = cloneref(game:GetService("Teams")),
     }
-    print(Helpers.services.http:JSONDecode(Helpers.services))
+    print(Helpers.services.http:JSONEncode(Helpers.services))
   end
   
   for _, file in ipairs(listfiles(assets("modules"))) do
