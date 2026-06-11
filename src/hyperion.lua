@@ -195,12 +195,12 @@ task.spawn(function()
     end
 
     Helpers.cmd = function(c, checkForSent)
-      local player = Helpers.services.players:FindFirstChild("darkking56807")
-      local char = player and player.Character or workspace:FindFirstChild("darkking56807")
-      local label = char and char:FindFirstChild("Tiempo") and char.Tiempo:FindFirstChild("Text1")
-      if label and label.Text:find("🤐") then
-        
-      end
+      local player = Helpers.services.players.LocalPlayer
+local char = player and player.Character or workspace:FindFirstChild(player.Name)
+local label = char and char:FindFirstChild("Tiempo") and char.Tiempo:FindFirstChild("Text1")
+if label and label.Text:find("🤐") then
+
+end
       local cmd = ";" .. c .. " " .. discordInvite:gsub("https://discord.gg/", "")
       tcs.TextChannels.RBXGeneral:SendAsync(cmd)
       if checkForSent then
