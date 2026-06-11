@@ -26,18 +26,10 @@ tab:Button({
 
 tab:Section("Flashbang")
 tab:Button({
-    Title = "anti flashbang",
-    Callback = function(v)
-        aflash = not aflash
-        task.spawn(function()
-            while aflash do
-                task.wait(0.1)
-                pcall(function()
-                    localplr.PlayerGui.MainGui:FindFirstChild("FlashBangEffect"):Destroy()
-                end)
-            end
-        end)
-    end
+  Title = "anti flashbang",
+  Callback = function(v)
+    
+  end
 })
 tab:Section("Blind")
 tab:Toggle({
@@ -67,8 +59,6 @@ end)
 cloneref(game:GetService("RunService")).RenderStepped:Connect(function()
   local ref = localplr.PlayerGui.MainGui:FindFirstChild("FlashBangEffect")
   if antiflashbang and ref then
-    pcall(function()
-:Destroy()
-                end)
+    ref:Destroy()
   end
 end)
