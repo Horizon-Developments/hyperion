@@ -67,14 +67,13 @@ tab:Toggle({
   Callback = function(v)
     heart = v
     WindUI:Notify({ Title = "WARNING", Content = "heart attck is named effect, other gears may trigger this.", Duration = 3 })
-        end,
-    })
-    
-    tab:Toggle({
-        Title = "anti FuseBomb",
-        Callback = function(v)
-            bomb = v
-        end,
+  end,
+})
+tab:Toggle({
+  Title = "anti FuseBomb",
+  Callback = function(v)
+    bomb = v
+  end,
     })
     
     tab:Toggle({
