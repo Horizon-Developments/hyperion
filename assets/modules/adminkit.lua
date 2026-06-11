@@ -150,7 +150,7 @@ Helpers.on("ChatListener", function(msg)
   for _, v in ipairs(toggles.antijoin) do
     local keyword = v:lower()
     if text == keyword or text:sub(1, #keyword) == keyword or text:find(keyword, 1, true) then
-      Helpers.cmd("clearinv " .. Helpers.resolveName(name))
+      Helpers.cmd("reset " .. Helpers.resolveName(name))
       break
     end
   end
