@@ -228,7 +228,9 @@ task.spawn(function()
     end
     
     local NotAllowed = {
-      ""
+      a
+      r
+      
     }
     
     Helpers.resolveName = function(name)
