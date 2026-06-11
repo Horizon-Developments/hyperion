@@ -60,20 +60,15 @@ tab:Toggle({
     Title = "anti freeze",
     Callback = function(v)
         afreeze = v
-        task.spawn(function()
-            while afreeze do
-                task.wait(0.1)
-                if localplr.Character:FindFirstChild("Hielo", true) then
-                    localplr.Character:FindFirstChildOfClass("Humanoid").Health = 0
-                end
-            end
-        end)
     end
 })
 cloneref(game:GetService("RunService")).RenderStepped:Connect(function()
   if antifreeze and localplr.Character:FindFirstChild("Hielo", true) then
-    if  then
-                    localplr.Character:FindFirstChildOfClass("Humanoid").Health = 0
-                end
+    localplr.Character:FindFirstChildOfClass("Humanoid").Health = 0
+  end
+end)
+cloneref(game:GetService("RunService")).RenderStepped:Connect(function()
+  if antifreeze and localplr.Character:FindFirstChild("Hielo", true) then
+    localplr.Character:FindFirstChildOfClass("Humanoid").Health = 0
   end
 end)
