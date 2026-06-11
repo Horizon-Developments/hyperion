@@ -246,7 +246,7 @@ task.spawn(function()
     
     Helpers.resolveName = function(name)
       local name = plr.Name:split("_")[1]
-      if (name == )
+      if (NotAllowed[name])
       
     end
     Helpers.say = function(cmd, checkForSent)
