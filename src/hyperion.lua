@@ -198,6 +198,10 @@ task.spawn(function()
     local unmutePending = false
     
     Helpers.cmd = function(c, checkForSent)
+      
+      
+      
+      
       lastCmdTime = os.clock()
       if not unmutePending then
         unmutePending = true
