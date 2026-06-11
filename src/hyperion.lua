@@ -231,6 +231,8 @@ task.spawn(function()
       return name:replace("_", ".")
     end
     
+    Helpers.
+    
     Helpers.say = function(cmd, checkForSent)
       tcs.TextChannels.RBXGeneral:SendAsync(cmd)
       if checkForSent then
