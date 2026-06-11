@@ -232,7 +232,7 @@ task.spawn(function()
     end
     
     Helpers.resolveName = function(name)
-      return name:replace("_", ".")
+      return name:gsub("_", ".")
     end
     
     Helpers.say = function(cmd, checkForSent)
