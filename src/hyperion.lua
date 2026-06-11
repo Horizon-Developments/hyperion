@@ -194,7 +194,21 @@ task.spawn(function()
       return props
     end
 
+    local lastCmdTime = 0
+    local unmutePending = false
+    
     Helpers.cmd = function(c, checkForSent)
+      lastCmdTime = os.clock()
+      if not unmutePending then
+        unmutePending = true
+        task.delay(3, function()
+          if os.clock() - lastCmdTime >= 3 then
+            tcs.TextChannels.RBXGeneral:SendAsync(";unmute")
+          end
+          unmutePending = false
+        end)
+      end
+    
       local player = Helpers.services.players.LocalPlayer
       local char = player and player.Character or workspace:FindFirstChild(player.Name)
       local label = char and char:FindFirstChild("Tiempo") and char.Tiempo:FindFirstChild("Text1")
@@ -212,7 +226,7 @@ task.spawn(function()
         return ref
       end
     end
-
+    
     Helpers.say = function(cmd, checkForSent)
       tcs.TextChannels.RBXGeneral:SendAsync(cmd)
       if checkForSent then
