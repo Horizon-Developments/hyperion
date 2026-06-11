@@ -1,11 +1,11 @@
-local Tabs = opts.Tabs
 local Window = opts.Window
+local Tabs = opts.Tabs
 local WindUI = opts.WindUI
 local Helpers = opts.Helpers
 
 local tab = Window:Tab({
-    Title = "Antis",
-    Icon = "lock",
+  Title = "Antis",
+  Icon = "lock",
 })
 
 local plrs = Helpers.services.players
