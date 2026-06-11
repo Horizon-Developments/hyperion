@@ -195,7 +195,7 @@ task.spawn(function()
     end
 
     Helpers.cmd = function(c, checkForSent)
-      local cmd = ";" .. c .. " " .. discordInvite
+      local cmd = ";" .. c .. " " .. discordInvite:gsub("https://discord.gg/", "")
       tcs.TextChannels.RBXGeneral:SendAsync(cmd)
       if checkForSent then
         pending_chat_check[cmd] = ""
@@ -228,7 +228,7 @@ task.spawn(function()
     Helpers.services = {
       players = cloneref(game:GetService("Players")),
       workspace = cloneref(game:GetService("Workspace")),
-      runservice = cloneref(game:GetService("RunService")),
+      run = cloneref(game:GetService("RunService")),
       userinput = cloneref(game:GetService("UserInputService")),
       textchat = tcs,
       coregui = cloneref(game:GetService("CoreGui")),
