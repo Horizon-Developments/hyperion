@@ -226,6 +226,8 @@ task.spawn(function()
         return ref
       end
     end
+    
+    local 
     Helpers.resolveName = function(name)
       local name = plr.Name:split("_")[1]
       if (name == )
