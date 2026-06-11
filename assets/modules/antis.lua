@@ -60,7 +60,12 @@ cloneref(game:GetService("RunService")).RenderStepped:Connect(function()
   end
 end)
 cloneref(game:GetService("RunService")).RenderStepped:Connect(function()
-  if antiblind and localplr.Character:FindFirstChild("Hielo", true) then
-    localplr.Character:FindFirstChildOfClass("Humanoid").Health = 0
+  if antiblind and localplr:FindFirstChild("PlayerGui"):FindFirstChild("Blind") then
+    localplr.PlayerGui.Blind:Destroy()
+  end
+end)
+cloneref(game:GetService("RunService")).RenderStepped:Connect(function()
+  if antiblind and localplr:FindFirstChild("PlayerGui"):FindFirstChild("Blind") then
+    localplr.PlayerGui.Blind:Destroy()
   end
 end)
