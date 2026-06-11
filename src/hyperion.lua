@@ -241,7 +241,6 @@ task.spawn(function()
       debris = cloneref(game:GetService("Debris")),
       teams = cloneref(game:GetService("Teams")),
     }
-    
   end
   
   for _, file in ipairs(listfiles(assets("modules"))) do
