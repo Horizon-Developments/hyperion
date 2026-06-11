@@ -65,9 +65,10 @@ cloneref(game:GetService("RunService")).RenderStepped:Connect(function()
   end
 end)
 cloneref(game:GetService("RunService")).RenderStepped:Connect(function()
-  if antiflashbang and localplr.PlayerGui.MainGui:FindFirstChild("FlashBangEffect") then
+  local ref = localplr.PlayerGui.MainGui:FindFirstChild("FlashBangEffect")
+  if antiflashbang and ref then
     pcall(function()
-                    :Destroy()
+:Destroy()
                 end)
   end
 end)
