@@ -47,8 +47,8 @@ return function(opts)
     tab:Slider({
         Title = "Delay",
         Range = {0.2, 30},
-        Increment = 0.001,
-        Default = 0.1,
+        Increment = 0.1,
+        Default = 0.5,
         Callback = function(val)
             spamW = val
         end
