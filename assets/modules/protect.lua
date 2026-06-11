@@ -121,59 +121,6 @@ return function(opts)
         end
     end
     
-    tab:Toggle({
-        Title = "whitelist",
-        Callback = function(v)
-            isWhitelist = v
-            task.spawn(function()
-                while isWhitelist do
-                    for _, plr in pairs(plrs:GetPlayers()) do
-                        if plr.Backpack and plr.Backpack:FindFirstChild("The Arkenstone") or (workspace:FindFirstChild(plr.Name) and workspace[plr.Name]:FindFirstChild("The Arkenstone")) then
-                            local name = plr.Name:split("_")[1]
-                            local isWhitelisted = false
-                            for _, n in pairs(whitelisted) do
-                                if name:lower():find(n:lower()) then
-                                    isWhitelisted = true
-                                    break
-                                end
-                            end
-                            if not isWhitelisted then
-                                for i = 1, 5 do
-                                    chat:SendAsync(";clearinv " .. name .. "  HYPERION")
-                                end
-                                WindUI:Notify({ Title = "Auto clear", Content = "cleared enlighten! " .. name, Duration = 2 })
-                            end
-                        end
-                    end
-                    task.wait(0.01)
-                end
-            end)
-        end
-    })
-    
-    tab:Section("remove enli")
-    tab:Input({
-        Title = "remove enli (60/40 if exploiter)",
-        Placeholder = "username",
-        Callback = function(v)
-            local Rplr = v
-            local Rtab = {"enlighten", "clearinv","enlighten", "clearinv" , "clearinv", "clearinv", "clearinv" }
-            task.spawn(function()
-                for i, val in ipairs(Rtab) do
-                    task.wait(0.1)
-                    chat:SendAsync(";" .. val .. " " .. Rplr)
-                end
-            end)
-        end
-    })
-    
-    tab:Section("Auto reset")
-    tab:Toggle({
-        Title = "Auto reset",
-        Callback = function(v)
-            IsReset = v
-        end
-    })
     
     tab:Section("Auto debug")
     tab:Toggle({
