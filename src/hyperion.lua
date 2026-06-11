@@ -226,7 +226,11 @@ task.spawn(function()
         return ref
       end
     end
-    
+    Helpers.resolveName = function(name)
+      local name = plr.Name:split("_")[1]
+      if (name == )
+      
+    end
     Helpers.say = function(cmd, checkForSent)
       tcs.TextChannels.RBXGeneral:SendAsync(cmd)
       if checkForSent then
