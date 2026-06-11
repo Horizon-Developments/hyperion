@@ -85,10 +85,10 @@ tab:Toggle({
   Title = "anti mines",
   Callback = function(v)
     mines = v
-        end,
-    })
-  
-  
+  end,
+})
+
+
 cloneref(game:GetService("RunService")).RenderStepped:Connect(function()
   if antifreeze and localplr.Character:FindFirstChild("Hielo", true) then
     localplr.Character:FindFirstChildOfClass("Humanoid").Health = 0
