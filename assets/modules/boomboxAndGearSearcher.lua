@@ -59,37 +59,40 @@ tab:Input({
   Type = "Input",
   Placeholder = "Enter keyword here",
   Callback = function(keyword)
-    print(pcall(function()
-    local ok, res = pcall(request,{
-      Url = "https://catalog.roproxy.com/v1/search/items/details?Category=11&Subcategory=5&Keyword=".. HttpService:UrlEncode(v) .. "&Limit=30",
+    local ok, res = pcall(request, {
+      Url = "https://catalog.roproxy.com/v1/search/items/details?Category=11&Subcategory=5&Keyword=" .. HttpService:UrlEncode(v) .. "&Limit=30",
       Method = "GET"
     })
     if not ok or not res or res.StatusCode ~= 200 or not res.Body then
-      print("[HYPERION] ", ok, res, res.StatusCode, res.Body, err)
-      WindUI:Notify({ Title = "Not found", Content = "An error happend and was logged.", Duration = 3 })
+      print("[HYPERION]", ok, res)
+      WindUI:Notify({ Title = "Not found", Content = "An error happened and was logged.", Duration = 3 })
       return
     end
     local data = HttpService:JSONDecode(res.Body).data
-    
-    if (not data or not data[1]) then
-      print("[HYPERION] ", ok, res, res.StatusCode, res.Body, err)
-      WindUI:Notify({ Title = "Not found", Content = "Nothing came up! try using another keyword.", Duration = 3 })
+    if not data or not data[1] then
+      WindUI:Notify({ Title = "Not found", Content = "Nothing came up! Try using another keyword.", Duration = 3 })
+      return
     end
-    print(HttpService:JSONDecode(data))
-    if (cache.dropdownG) then cache.dropdownG:Destroy() end
+    local values = {}
+    for _, item in ipairs(data) do
+      table.insert(values, item.name)
+    end
+    if cache.dropdownG then cache.dropdownG:Destroy() end
     cache.dropdownG = tab:Dropdown({
       Title = "Copy here",
       Desc = "",
-      Values = data,
+      Values = values,
       Value = nil,
       AllowNone = true,
-      Callback = function(option) 
-        if (option == nil) then return end
-        setclipboard(tostring(option.id))
-        WindUI:Notify({ Title = "Copied!", Content = "Copied to your clipboard.", Duration = 3 })
-        Dropdown:Select(nil)
+      Callback = function(option)
+        if option == nil then return end
+        local id = option:match("%((%d+)%)")
+        if id then
+          setclipboard(id)
+          WindUI:Notify({ Title = "Copied!", Content = "Copied to your clipboard.", Duration = 3 })
+        end
+        cache.dropdownG:Select(nil)
       end
     })
-  end)) 
   end
 })
