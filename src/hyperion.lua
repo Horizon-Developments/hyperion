@@ -228,7 +228,7 @@ task.spawn(function()
     end
     
     Helpers.resolveName = function(name)
-      local name = plr.Name:split("_")[1]
+      local name = plr.Name:replace("_", ".")
     end
     Helpers.say = function(cmd, checkForSent)
       tcs.TextChannels.RBXGeneral:SendAsync(cmd)
