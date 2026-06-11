@@ -59,15 +59,14 @@ tab:Toggle({
 tab:Toggle({
   Title = "anti rctank",
   Callback = function(v)
-            rc = v
-        end,
-    })
-    
-    tab:Toggle({
-        Title = "anti Heart Attack",
-        Callback = function(v)
-            heart = v
-            WindUI:Notify({ Title = "WARNING", Content = "heart attck is named effect, other gears may trigger this.", Duration = 3 })
+    rc = v
+  end,
+})
+tab:Toggle({
+  Title = "anti Heart Attack",
+  Callback = function(v)
+    heart = v
+    WindUI:Notify({ Title = "WARNING", Content = "heart attck is named effect, other gears may trigger this.", Duration = 3 })
         end,
     })
     
