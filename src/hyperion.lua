@@ -230,7 +230,9 @@ task.spawn(function()
     local NotAllowed = {
       ["a"] = true,
       ["o"] = true,
-      ["o"] = true,
+      ["n"] = true,
+      ["r"] = true,
+      ["me"] = true,
       ["all"] = true,
       ["everyone"] = true,
       ["nearest"] = true,
