@@ -17,18 +17,18 @@ local afreeze = false
 
 tab:Section("Vamp Sword")
 tab:Button({
-    Title = "fix vamp sword (humanoid health = 0 method)",
-    Callback = function(v)
-        game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, true)
-        localplr.Character.Humanoid.Health = 0
-    end
+  Title = "fix vamp sword (humanoid health = 0 method)",
+  Callback = function(v)
+    game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, true)
+    localplr.Character.Humanoid.Health = 0
+  end
 })
 
 tab:Section("Flashbang")
 tab:Button({
   Title = "anti flashbang",
   Callback = function(v)
-    
+    antiflashbang = v
   end
 })
 tab:Section("Blind")
