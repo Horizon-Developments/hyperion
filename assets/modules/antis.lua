@@ -11,9 +11,9 @@ local tab = Window:Tab({
 local plrs = Helpers.services.players
 local localplr = plrs.LocalPlayer
 
-local aflash = false
-local ablind = false
-local afreeze = false
+local antiflashbang = false
+local antiblind = false
+local antifreeze = false
 
 tab:Section("Vamp Sword")
 tab:Button({
