@@ -74,19 +74,17 @@ tab:Toggle({
   Callback = function(v)
     bomb = v
   end,
-    })
-    
-    tab:Toggle({
-        Title = "anti subspace",
-        Callback = function(v)
-            subp = v
-        end,
-    })
-    
-    tab:Toggle({
-        Title = "anti mines",
-        Callback = function(v)
-            mines = v
+})
+tab:Toggle({
+  Title = "anti subspace",
+  Callback = function(v)
+    subp = v
+  end,
+})
+tab:Toggle({
+  Title = "anti mines",
+  Callback = function(v)
+    mines = v
         end,
     })
   
