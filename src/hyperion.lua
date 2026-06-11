@@ -198,7 +198,7 @@ task.spawn(function()
     local unmutePending = false
     
     Helpers.cmd = function(c, checkForSent)
-      local tool = Helpers.services.players.LocalPlayer.Backpack:FindFirstChild("ToolName")
+      local tool = Helpers.services.players.LocalPlayer.Backpack:FindFirstChild("The Arkenstone")
       if tool then
         tool.Parent = localplr.Character
       end
