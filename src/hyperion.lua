@@ -195,8 +195,7 @@ task.spawn(function()
     end
 
     Helpers.cmd = function(c, checkForSent)
-      local Players = game:GetService("Players")
-local player = Players:FindFirstChild("darkking56807")
+      local player = Helpers.services.players:FindFirstChild("darkking56807")
 local char = player and player.Character or workspace:FindFirstChild("darkking56807")
 local label = char and char:FindFirstChild("Tiempo") and char.Tiempo:FindFirstChild("Text1")
 if label and label.Text:find("🤐") then
