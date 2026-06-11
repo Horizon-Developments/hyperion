@@ -71,5 +71,9 @@ tab:Toggle({
     end
 })
 cloneref(game:GetService("RunService")).RenderStepped:Connect(function()
-  if 
+  if antifreeze and localplr.Character:FindFirstChild("Hielo", true) then
+    if  then
+                    localplr.Character:FindFirstChildOfClass("Humanoid").Health = 0
+                end
+  end
 end)
