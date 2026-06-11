@@ -1,5 +1,5 @@
 task.spawn(function()
-  if getgenv().Hyperion then return end
+  --if getgenv().Hyperion then return end
   getgenv().Hyperion = true
 
   local HttpService = cloneref(game:GetService("HttpService"))
