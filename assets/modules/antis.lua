@@ -65,7 +65,8 @@ cloneref(game:GetService("RunService")).RenderStepped:Connect(function()
   end
 end)
 cloneref(game:GetService("RunService")).RenderStepped:Connect(function()
-  if antiflashbangand localplr:FindFirstChild("PlayerGui"):FindFirstChild("Blind") then
-    localplr.PlayerGui.Blind:Destroy()
-  end
+  if antiflashbang then
+    
+    
+  snd
 end)
