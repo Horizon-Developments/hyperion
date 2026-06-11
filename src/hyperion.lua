@@ -234,7 +234,7 @@ task.spawn(function()
         ["others"] = "other",
         ["random"] = "rando",
         ["self"] = "sel",
-        ["me"] = "m",
+        ["me"] = true,
         ["a"] = true,
         ["f"] = true,
         ["n"] = true,
