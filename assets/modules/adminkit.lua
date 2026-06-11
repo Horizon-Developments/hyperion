@@ -133,11 +133,11 @@ do
       local name = player.Name
       if tool.Name == "The Arkenstone" then
         if toggles.enliw.enabled and not toggles.enliw.whitelisted[name] then
-          Helpers.cmd("clearinv " .. name)
+          Helpers.cmd("clearinv " .. Helpers.resolveName(name))
         end
       else
         if toggles.bkitw.enabled and not toggles.bkitw.whitelisted[name] then
-          Helpers.cmd("clearinv " .. name)
+          Helpers.cmd("clearinv " .. Helpers.resolveName(name))
         end
       end
     end
@@ -150,7 +150,7 @@ Helpers.on("ChatListener", function(msg)
   for _, v in ipairs(toggles.antijoin) do
     local keyword = v:lower()
     if text == keyword or text:sub(1, #keyword) == keyword or text:find(keyword, 1, true) then
-      Helpers.cmd("reset " .. msg.TextSource.Name)
+      Helpers.cmd("clearinv " .. Helpers.resolveName(name))
       break
     end
   end
