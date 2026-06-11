@@ -229,9 +229,9 @@ task.spawn(function()
     
     local NotAllowed = {
         ["all"] = "al",
-        ["friends"] = true,
-        ["nearest"] = true,
-        ["others"] = true,
+        ["friends"] = "friend",
+        ["nearest"] = "neares",
+        ["others"] = "other",
         ["random"] = true,
         ["self"] = true,
         ["me"] = true,
