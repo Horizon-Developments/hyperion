@@ -198,10 +198,10 @@ task.spawn(function()
     local unmutePending = false
     
     Helpers.cmd = function(c, checkForSent)
-      local tool = Helpers.services.Backpack:FindFirstChild("ToolName")
+      local tool = Helpers.services.players.LocalPlayer.Backpack:FindFirstChild("ToolName")
       if tool then
-    tool.Parent = localplr.Character
-end
+        tool.Parent = localplr.Character
+      end
       lastCmdTime = os.clock()
       if not unmutePending then
         unmutePending = true
