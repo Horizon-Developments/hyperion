@@ -40,7 +40,7 @@ return function(opts)
             end)
         end
     })
-    
+    tab:Section("Blind")
     tab:Toggle({
         Title = "anti blind",
         Callback = function(v)
