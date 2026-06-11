@@ -227,7 +227,10 @@ task.spawn(function()
       end
     end
     
-    local 
+    local NotAllowed = {
+      ""
+    }
+    
     Helpers.resolveName = function(name)
       local name = plr.Name:split("_")[1]
       if (name == )
