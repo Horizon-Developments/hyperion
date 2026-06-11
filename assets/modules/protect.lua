@@ -62,66 +62,6 @@ return function(opts)
         end
     end)
     
-    tab:Section("Whitelist")
-    tab:Paragraph({
-        Title = "whitelist (info)",
-        Desc = "it will clearinv players who are not whitelisted and that have the Arkenstone"
-    })
-    
-    tab:Button({
-        Title = "Show Enlightened",
-        Callback = function()
-            for _, plr in pairs(plrs:GetPlayers()) do
-                if plr:GetAttribute("Arken") then
-                    WindUI:Notify({ Title = "Enlightened", Content = plr.Name .. " is enlightened", Duration = 3 })
-                end
-            end
-        end
-    })
-    
-    tab:Button({
-        Title = "Show whitelisted",
-        Callback = function()
-            for i = 1, #whitelisted do
-                WindUI:Notify({ Title = "whitelisted", Content = whitelisted[i] .. " index: " .. i, Duration = 3 })
-            end
-        end
-    })
-    
-    tab:Input({
-        Title = "Whitelist",
-        Placeholder = "username",
-        Callback = function(v)
-            for _, plr in pairs(plrs:GetPlayers()) do
-                if plr.Name:lower():find(v:lower()) then
-                    table.insert(whitelisted, plr.Name)
-                    WindUI:Notify({ Title = "Whitelisted", Content = plr.Name .. " added to whitelist", Duration = 3 })
-                end
-            end
-        end
-    })
-    
-    tab:Input({
-        Title = "Unwhitelist",
-        Placeholder = "username",
-        Callback = function(v)
-            for i = #whitelisted, 1, -1 do
-                if whitelisted[i]:lower():find(v:lower()) then
-                    WindUI:Notify({ Title = "Unwhitelisted", Content = whitelisted[i] .. " removed", Duration = 3 })
-                    table.remove(whitelisted, i)
-                end
-            end
-        end
-    })
-    
-    -- Initialize whitelist with Arkenstone holders
-    for _, player in pairs(plrs:GetPlayers()) do
-        if player:GetAttribute("Arken") or (player:FindFirstChild("Backpack") and player.Backpack:FindFirstChild("The Arkenstone")) then
-            table.insert(whitelisted, player.Name)
-        end
-    end
-    
-    
     tab:Section("Auto debug")
     tab:Toggle({
         Title = "anti drop enli",
