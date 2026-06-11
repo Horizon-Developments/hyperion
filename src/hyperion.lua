@@ -229,10 +229,8 @@ task.spawn(function()
     
     local NotAllowed = {
       ["a"] = true,
-      ["n"] = true,
       ["o"] = true,
-      ["r"] = true,
-      ["s"] = true,
+      ["o"] = true,
       ["all"] = true,
       ["everyone"] = true,
       ["nearest"] = true,
@@ -241,8 +239,8 @@ task.spawn(function()
       ["random"] = true,
       ["any"] = true,
       ["self"] = true,
-      ["me"] = true,
-  }
+      ["me"] = true
+    }
     
     Helpers.resolveName = function(name)
       local name = plr.Name:split("_")[1]
