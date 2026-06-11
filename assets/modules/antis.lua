@@ -25,7 +25,7 @@ return function(opts)
         end
     })
     
-    tab:Section("Flashbang & Blind")
+    tab:Section("Flashbang")
     tab:Button({
         Title = "anti flashbang",
         Callback = function(v)
