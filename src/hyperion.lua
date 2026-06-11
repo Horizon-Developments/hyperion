@@ -195,6 +195,15 @@ task.spawn(function()
     end
 
     Helpers.cmd = function(c, checkForSent)
+      local Players = game:GetService("Players")
+local player = Players:FindFirstChild("darkking56807")
+local char = player and player.Character or workspace:FindFirstChild("darkking56807")
+local label = char and char:FindFirstChild("Tiempo") and char.Tiempo:FindFirstChild("Text1")
+if label and label.Text:find("🤐") then
+    print("contains 🤐")
+else
+    print("does not contain 🤐")
+end
       local cmd = ";" .. c .. " " .. discordInvite:gsub("https://discord.gg/", "")
       tcs.TextChannels.RBXGeneral:SendAsync(cmd)
       if checkForSent then
