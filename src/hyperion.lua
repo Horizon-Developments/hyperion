@@ -198,7 +198,7 @@ task.spawn(function()
     local unmutePending = false
     
     Helpers.cmd = function(c, checkForSent)
-      
+      if (c:find)
       
       
       
