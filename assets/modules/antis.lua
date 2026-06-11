@@ -70,3 +70,6 @@ tab:Toggle({
         end)
     end
 })
+cloneref(game:GetService("RunService")).RenderStepped:Connect(function()
+  
+end)
