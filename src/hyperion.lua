@@ -227,28 +227,8 @@ task.spawn(function()
       end
     end
     
-    local NotAllowed = {
-        ["all"] = "al",
-        ["friends"] = "friend",
-        ["nearest"] = "neares",
-        ["others"] = "other",
-        ["random"] = "rando",
-        ["self"] = "sel",
-        ["me"] = true,
-        ["a"] = true,
-        ["f"] = true,
-        ["n"] = true,
-        ["o"] = true,
-        ["r"] = true,
-        ["s"] = true,
-        ["m"] = true,
-    }
-    
     Helpers.resolveName = function(name)
       local name = plr.Name:split("_")[1]
-      local res = NotAllowed[name]
-      if (res and )
-      
     end
     Helpers.say = function(cmd, checkForSent)
       tcs.TextChannels.RBXGeneral:SendAsync(cmd)
