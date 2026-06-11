@@ -41,26 +41,26 @@ tab:Button({
 })
 tab:Section("Blind")
 tab:Toggle({
-    Title = "anti blind",
-    Callback = function(v)
-        ablind = v
-        task.spawn(function()
-            while ablind do
-                task.wait(0.1)
-                if localplr:FindFirstChild("PlayerGui"):FindFirstChild("Blind") then
-                    localplr.PlayerGui.Blind:Destroy()
-                end
-            end
-        end)
-    end
+  Title = "anti blind",
+  Callback = function(v)
+      ablind = v
+      task.spawn(function()
+          while ablind do
+              task.wait(0.1)
+              if localplr:FindFirstChild("PlayerGui"):FindFirstChild("Blind") then
+                  localplr.PlayerGui.Blind:Destroy()
+              end
+          end
+      end)
+  end
 })
 
 tab:Section("Freeze")
 tab:Toggle({
-    Title = "anti freeze",
-    Callback = function(v)
-        afreeze = v
-    end
+  Title = "anti freeze",
+  Callback = function(v)
+    antifreeze = v
+  end
 })
 cloneref(game:GetService("RunService")).RenderStepped:Connect(function()
   if antifreeze and localplr.Character:FindFirstChild("Hielo", true) then
