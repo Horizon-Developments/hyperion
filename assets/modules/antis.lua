@@ -1,4 +1,4 @@
-return function(opts)
+
     local Tabs = opts.Tabs
     local Window = opts.Window
     local WindUI = opts.WindUI
@@ -71,4 +71,3 @@ return function(opts)
             end)
         end
     })
-end
