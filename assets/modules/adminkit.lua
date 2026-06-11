@@ -123,7 +123,7 @@ do
     ["The Arkenstone"] = true
 }
   
-  Helpers.services.runservice.RenderStepped:Connect(function()
+  Helpers.services.run.RenderStepped:Connect(function()
     if not toggles.enliw.enabled and not toggles.bkitw.enabled then return end
     for _, player in ipairs(players:GetPlayers()) do
       local char = player.Character
