@@ -15,7 +15,6 @@ local antiflashbang = false
 local antiblind = false
 local antifreeze = false
 
-tab:Section("Vamp Sword")
 tab:Button({
   Title = "fix vamp sword (humanoid health = 0 method)",
   Callback = function(v)
@@ -24,14 +23,13 @@ tab:Button({
   end
 })
 
-tab:Section("Flashbang")
 tab:Button({
   Title = "anti flashbang",
   Callback = function(v)
     antiflashbang = v
   end
 })
-tab:Section("Blind")
+
 tab:Toggle({
   Title = "anti blind",
   Callback = function(v)
@@ -39,7 +37,6 @@ tab:Toggle({
   end
 })
 
-tab:Section("Freeze")
 tab:Toggle({
   Title = "anti freeze",
   Callback = function(v)
