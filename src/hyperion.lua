@@ -228,20 +228,20 @@ task.spawn(function()
     end
     
     local NotAllowed = {
-      ["a"] = true,
-      ["o"] = true,
-      ["n"] = true,
-      ["r"] = true,
-      ["me"] = true,
-      ["all"] = true,
-      ["everyone"] = true,
-      ["nearest"] = true,
-      ["others"] = true,
-      ["rest"] = true,
-      ["random"] = true,
-      ["any"] = true,
-      ["self"] = true,
-      ["me"] = true
+        ["all"] = "al",
+        ["friends"] = true,
+        ["nearest"] = true,
+        ["others"] = true,
+        ["random"] = true,
+        ["self"] = true,
+        ["me"] = true,
+        ["a"] = true,
+        ["f"] = true,
+        ["n"] = true,
+        ["o"] = true,
+        ["r"] = true,
+        ["s"] = true,
+        ["m"] = true,
     }
     
     Helpers.resolveName = function(name)
