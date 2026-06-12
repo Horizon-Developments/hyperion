@@ -14,9 +14,8 @@ local spamV = false
 local spamW = 0.5
 local spamT = {}
 
-tab:Section("Spammer")
 tab:Paragraph({
-  Title = "spammer (warning)",
+  Title = "Info",
   Desc = "do not add ';', input nil to remove a slot"
 })
 
