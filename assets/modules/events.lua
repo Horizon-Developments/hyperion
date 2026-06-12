@@ -5,10 +5,11 @@ local WindUI = args.WindUI
 local Helpers = args.Helpers
 local Assets = args.Assets
 
-local tab = Window:Tab({
+Tabs.events = Window:Tab({
   Title = "Events",
   Icon = "calendar",
 })
+local tab = Tabs.events
 
 local path = Assets("OnPlayerJoinList.json")
 local tcs = Helpers.services.textchat
@@ -54,7 +55,6 @@ if you type {name} it will be replaced to the players username.
 ]]
 })
 
-tab:Section("On Player Join")
 tab:Input({
   Title = "On Friends Join",
   Placeholder = "",

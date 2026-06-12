@@ -4,10 +4,11 @@ local Tabs = args.Tabs
 local WindUI = args.WindUI
 local Helpers = args.Helpers
 
-local tab = Window:Tab({
+Tabs.antis = Window:Tab({
   Title = "Antis",
   Icon = "lock",
 })
+local tab = Tabs.antis
 
 local plrs = Helpers.services.players
 local localplr = plrs.LocalPlayer
@@ -27,7 +28,6 @@ local function registerWhile(tog, fun, id)
   registered[id] = nil
 end
 
-tab:Section("Auto debug")
 tab:Toggle({
   Title = "anti drop enli",
   Callback = function(v)
