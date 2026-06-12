@@ -165,7 +165,7 @@ tab:Toggle({
       local char = localplr.Character
       local jail = char and char:FindFirstChild("Jail") 
       if jail then
-        
+        jail:Destroy()
       end
     end, "jail")
   end
