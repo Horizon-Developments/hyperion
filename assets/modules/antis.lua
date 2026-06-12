@@ -163,11 +163,8 @@ tab:Toggle({
   Callback = function(v)
     registerWhile(v, function()
       local char = localplr.Character
-      if char and char:FindFirstChild("Hielo", true) then
-        local hum = char:FindFirstChildOfClass("Humanoid")
-        if hum then
-          hum.Health = 0
-        end
+      if char and char:FindFirstChild("Jail") then
+        
       end
     end, "jail")
   end
