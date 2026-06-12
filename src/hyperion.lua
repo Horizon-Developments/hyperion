@@ -201,8 +201,8 @@ task.spawn(function()
         tcs.TextChannels.RBXGeneral:SendAsync(";mute")
         task.wait(0.2)
       end
-
-      local cmd = ";" .. c .. " " .. discordInvite:gsub("https://discord.gg/", "")
+      
+      local cmd = ";" .. c .. " HYPERION")
       tcs.TextChannels.RBXGeneral:SendAsync(cmd)
       if checkForSent then
         pending_chat_check[cmd] = ""
