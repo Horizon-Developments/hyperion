@@ -164,10 +164,6 @@ task.spawn(function()
       if msg.Status ~= Enum.TextChatMessageStatus.Sending and pending_chat_check[msg.Text] == "" then
         pending_chat_check[msg.Text] = msg.Status == Enum.TextChatMessageStatus.Success
       end
-      if msg.Text:find(";") then
-        props.Text = ""
-        return props
-      end
       local player = Helpers.services.players:GetPlayerByUserId(msg.TextSource.UserId)
       local char = player and player.Character
       local label = char and char:FindFirstChild("Nombre") and char.Nombre:FindFirstChild("Text1")
