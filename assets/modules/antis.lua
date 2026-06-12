@@ -163,10 +163,8 @@ tab:Toggle({
   Callback = function(v)
     registerWhile(v, function()
       local char = localplr.Character
-      
-      local char and char:FindFirstChild("Jail") 
-      
-      if and  then
+      local jail = char and char:FindFirstChild("Jail") 
+      if jail then
         
       end
     end, "jail")
