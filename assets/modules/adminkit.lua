@@ -160,7 +160,8 @@ Helpers.on("ChatListener", function(msg)
     if text == keyword or text:sub(1, #keyword) == keyword or text:find(keyword, 1, true) then
       local sender = players:GetPlayerByUserId(msg.TextSource.UserId)
       if not sender then return end
-      Helpers.cmd("reset " .. Helpers.resolveName(sender.Name))
+
+      Helpers.cmd("reset " .. Helpers.resolveName(name))
       break
     end
   end
