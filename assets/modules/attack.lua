@@ -19,8 +19,6 @@ local tab = tabs.attack
 local plrs = game:GetService("Players")
 local localplr = plrs.LocalPlayer
 
-print(tab)
-
 tab:Button({
   Title = "Disable bkit",
   Desc = "Perma disables bkit. from pealz",
@@ -34,11 +32,11 @@ tab:Button({
       )
     end)
     if (not ok) then
-      WindUI:Notify({ Title = "Not successful", Content = "You do not have delete tool in hand", Duration = 3 })
+      WindUI:Notify({ Title = "Not successfull", Content = "You do not have delete tool in hand", Duration = 3 })
       print("ERR: ", err)
       return
     end
-    WindUI:Notify({ Title = "Sucessful!", Content = "Disabled bkit.", Duration = 3 })
+    WindUI:Notify({ Title = "Sucessfull!", Content = "Disabled bkit.", Duration = 3 })
   end
 })
 

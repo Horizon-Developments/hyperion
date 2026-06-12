@@ -96,7 +96,16 @@ toggles.enliw.add = tab:Dropdown({
   end
 })
 tab:Divider()
-
+tab:Button({
+  Title = "Show Enlightened",
+  Callback = function()
+    for _, plr in pairs(Helpers.services.players:GetPlayers()) do
+      if plr:GetAttribute("Arken") then
+        WindUI:Notify({ Title = "Enlightened", Content = plr.Name .. " is enlightened", Duration = 3 })
+      end
+    end
+  end
+})
 
 
 do
@@ -121,27 +130,26 @@ do
     Shovel = true,
     Sign = true,
     ["The Arkenstone"] = true
-}
-  
-cloneref(game:GetService("RunService")).RenderStepped:Connect(function()
-    if not toggles.enliw.enabled and not toggles.bkitw.enabled then return end
-    for _, player in ipairs(players:GetPlayers()) do
-      local char = player.Character
-      if not char then continue end
-      local tool = char:FindFirstChildOfClass("Tool")
-      if not tool or not toolSet[tool.Name] then continue end
-      local name = player.Name
-      if tool.Name == "The Arkenstone" then
-        if toggles.enliw.enabled and not toggles.enliw.whitelisted[name] then
-          Helpers.cmd("clearinv " .. Helpers.resolveName(name))
-        end
-      else
-        if toggles.bkitw.enabled and not toggles.bkitw.whitelisted[name] then
-          Helpers.cmd("clearinv " .. Helpers.resolveName(name))
+  }
+  cloneref(game:GetService("RunService")).RenderStepped:Connect(function()
+      if not toggles.enliw.enabled and not toggles.bkitw.enabled then return end
+      for _, player in ipairs(players:GetPlayers()) do
+        local char = player.Character
+        if not char then continue end
+        local tool = char:FindFirstChildOfClass("Tool")
+        if not tool or not toolSet[tool.Name] then continue end
+        local name = player.Name
+        if tool.Name == "The Arkenstone" then
+          if toggles.enliw.enabled and not toggles.enliw.whitelisted[name] then
+            Helpers.cmd("clearinv " .. Helpers.resolveName(name))
+          end
+        else
+          if toggles.bkitw.enabled and not toggles.bkitw.whitelisted[name] then
+            Helpers.cmd("clearinv " .. Helpers.resolveName(name))
+          end
         end
       end
-    end
-  end)
+    end)
 end
 
 Helpers.on("ChatListener", function(msg)

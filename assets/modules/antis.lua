@@ -1,7 +1,8 @@
-local Window = opts.Window
-local Tabs = opts.Tabs
-local WindUI = opts.WindUI
-local Helpers = opts.Helpers
+local args = ...
+local Window = args.Window
+local Tabs = args.Tabs
+local WindUI = args.WindUI
+local Helpers = args.Helpers
 
 local tab = Window:Tab({
   Title = "Antis",
@@ -10,10 +11,91 @@ local tab = Window:Tab({
 
 local plrs = Helpers.services.players
 local localplr = plrs.LocalPlayer
+local registered = {}
+local function registerWhile(tog, fun, id)
+  if tog then
+    if registered[id] then return end
+    registered[id] = true
+    task.spawn(function()
+      while registered[id] do
+        fun()
+        task.wait(0.1)
+      end
+    end)
+    return
+  end
+  registered[id] = nil
+end
 
-local antiflashbang = false
-local antiblind = false
-local antifreeze = false
+tab:Section("Auto debug")
+tab:Toggle({
+  Title = "anti drop enli",
+  Callback = function(v)
+    registerWhile(v, function() 
+      if workspace:FindFirstChild("The Arkenstone") and workspace["The Arkenstone"]:FindFirstChild("Handle") then
+        Helpers.cmd(";debug")
+        WindUI:Notify({ Title = "Auto Debug", Content = "debuged, The Arkenstone", Duration = 1 })
+      end
+    end, "enli")
+  end
+})
+tab:Toggle({
+  Title = "anti rctank",
+  Callback = function(v)
+    registerWhile(v, function() 
+      workspace:FindFirstChild("Tank") then
+        Helpers.cmd(";debug")
+        WindUI:Notify({ Title = "Auto Debug", Content = "debuged, RcTank", Duration = 1 })
+     end
+    end, "rct")
+  end
+})
+tab:Toggle({
+  Title = "anti Heart Attack",
+  Callback = function(v)
+    registerWhile(v, function() 
+      if workspace:FindFirstChild("Effect") then
+        Helpers.cmd(";debug")
+        WindUI:Notify({ Title = "Auto Debug", Content = "debuged, HeartAttack/Effect", Duration = 1 })
+      end
+    end, "heart")
+    WindUI:Notify({ Title = "WARNING", Content = "heart attck is named effect, other gears may trigger this.", Duration = 3 })
+  end,
+})
+tab:Toggle({
+  Title = "anti FuseBomb",
+  Callback = function(v)
+    registerWhile(v, function() 
+      if workspace:FindFirstChild("FuseBomb") then
+        Helpers.cmd(";debug")
+        WindUI:Notify({ Title = "Auto Debug", Content = "debuged, FuseBomb", Duration = 1 })
+      end
+    end, "bomb")
+  end,
+})
+tab:Toggle({
+  Title = "anti subspace",
+  Callback = function(v)
+  Callback = function(v)
+    registerWhile(v, function() 
+      if workspace:FindFirstChild("SubspaceTripmine") then
+        Helpers.cmd(";debug")
+        WindUI:Notify({ Title = "Auto Debug", Content = "debuged, SubSpace", Duration = 1 })
+      end
+    end, "sptm")
+  end,
+})
+tab:Toggle({
+  Title = "anti mines",
+  Callback = function(v)
+    registerWhile(v, function() 
+      if workspace:FindFirstChild("Mine") then
+        Helpers.cmd(";debug")
+        WindUI:Notify({ Title = "Auto Debug", Content = "debuged, TripMine", Duration = 1 })
+      end
+    end, "mine")
+  end,
+})
 
 tab:Button({
   Title = "fix vamp sword (humanoid health = 0 method)",
@@ -26,82 +108,33 @@ tab:Button({
 tab:Button({
   Title = "anti flashbang",
   Callback = function(v)
-    antiflashbang = v
+    registerWhile(v, function()
+      local ref = localplr.PlayerGui.MainGui:FindFirstChild("FlashBangEffect")
+      if ref then
+        ref:Destroy()
+      end
+    end, "")
   end
 })
 
 tab:Toggle({
   Title = "anti blind",
   Callback = function(v)
-    antiblind = v
+    registerWhile(v, function()
+      if localplr:FindFirstChild("PlayerGui"):FindFirstChild("Blind") then
+        localplr.PlayerGui.Blind:Destroy()
+      end
+    end, "blind")
   end
 })
 
 tab:Toggle({
   Title = "anti freeze",
   Callback = function(v)
-    antifreeze = v
+    registerWhile(v, function()
+      if localplr.Character:FindFirstChild("Hielo", true) then
+        localplr.Character:FindFirstChildOfClass("Humanoid").Health = 0
+      end
+    end, "freeze")
   end
 })
-local bomb = false
-    local heart = false
-    local rc = false
-    local enli = false
-    local subp = false
-    local mines = false
-    
-tab:Toggle({
-  Title = "anti drop enli",
-  Callback = function(v)
-    enli = v
-  end,
-})
-tab:Toggle({
-  Title = "anti rctank",
-  Callback = function(v)
-    rc = v
-  end,
-})
-tab:Toggle({
-  Title = "anti Heart Attack",
-  Callback = function(v)
-    heart = v
-    WindUI:Notify({ Title = "WARNING", Content = "heart attck is named effect, other gears may trigger this.", Duration = 3 })
-  end,
-})
-tab:Toggle({
-  Title = "anti FuseBomb",
-  Callback = function(v)
-    bomb = v
-  end,
-})
-tab:Toggle({
-  Title = "anti subspace",
-  Callback = function(v)
-    subp = v
-  end,
-})
-tab:Toggle({
-  Title = "anti mines",
-  Callback = function(v)
-    mines = v
-  end,
-})
-
-
-cloneref(game:GetService("RunService")).RenderStepped:Connect(function()
-  if antifreeze and localplr.Character:FindFirstChild("Hielo", true) then
-    localplr.Character:FindFirstChildOfClass("Humanoid").Health = 0
-  end
-end)
-cloneref(game:GetService("RunService")).RenderStepped:Connect(function()
-  if antiblind and localplr:FindFirstChild("PlayerGui"):FindFirstChild("Blind") then
-    localplr.PlayerGui.Blind:Destroy()
-  end
-end)
-cloneref(game:GetService("RunService")).RenderStepped:Connect(function()
-  local ref = localplr.PlayerGui.MainGui:FindFirstChild("FlashBangEffect")
-  if antiflashbang and ref then
-    ref:Destroy()
-  end
-end)
