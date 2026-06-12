@@ -36,9 +36,8 @@ tab:Toggle({
           local cmd = spamT[i]
           if cmd then
             sent = true
-            Helpers.cmd(cmd)
+            Helpers.cmd(cmd, true)
             task.wait(spamW)
-
             if not spamV then
               break
             end
