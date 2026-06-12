@@ -103,7 +103,6 @@ tab:Toggle({
     end, "mine")
   end,
 })
-
 tab:Button({
   Title = "fix vamp sword (humanoid health = 0 method)",
   Callback = function()
@@ -116,7 +115,6 @@ tab:Button({
     end
   end
 })
-
 tab:Toggle({
   Title = "anti flashbang",
   Callback = function(v)
@@ -130,7 +128,6 @@ tab:Toggle({
     end, "flash")
   end
 })
-
 tab:Toggle({
   Title = "anti blind",
   Callback = function(v)
