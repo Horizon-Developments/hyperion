@@ -178,41 +178,25 @@ task.spawn(function()
       return props
     end
 
-    local lastCmdTime, unmutePending = 0, false
-
     Helpers.cmd = function(c, checkForSent)
       local tool = localplr.Backpack:FindFirstChild("The Arkenstone")
       if tool then tool.Parent = localplr.Character end
-
-      lastCmdTime = os.clock()
-      if not unmutePending then
-        unmutePending = true
-        task.delay(3, function()
-          if os.clock() - lastCmdTime >= 3 then
-            tcs.TextChannels.RBXGeneral:SendAsync(";unmute")
-          end
-          unmutePending = false
-        end)
-      end
-
-      local char = localplr.Character or workspace:FindFirstChild(localplr.Name)
-      local label = char and char:FindFirstChild("Tiempo") and char.Tiempo:FindFirstChild("Text1")
-      if label and not label.Text:find("🤐") then
-        tcs.TextChannels.RBXGeneral:SendAsync(";mute")
-        task.wait(0.2)
-      end
-      
-      local cmd = ";" .. c .. " HYPERION")
+    
+      local cmd = ";" .. c .. " HYPERION"
       tcs.TextChannels.RBXGeneral:SendAsync(cmd)
+    
       if checkForSent then
         pending_chat_check[cmd] = ""
-        while pending_chat_check[cmd] == "" do task.wait(0.1) end
+        while pending_chat_check[cmd] == "" do
+          task.wait(0.1)
+        end
         local ref = pending_chat_check[cmd]
         pending_chat_check[cmd] = nil
         return ref
       end
     end
-
+    
+    
     Helpers.resolveName = function(name)
       return name:gsub("_", ".")
     end
