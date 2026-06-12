@@ -158,7 +158,7 @@ tab:Toggle({
   Callback = function(v)
     registerWhile(v, function()
       if workspace:FindFirstChild("Mine") then
-        Helpers.cmd(";debug")
+        Helpers.cmd("debug")
         WindUI:Notify({ Title = "Auto Debug", Content = "debugged, TripMine", Duration = 1 })
       end
     end, "mine")

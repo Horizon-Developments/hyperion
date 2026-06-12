@@ -17,6 +17,7 @@ local chat = tcs.TextChannels.RBXGeneral
 local plrs = Helpers.services.players
 local localplr = plrs.LocalPlayer
 local toggles = {}
+local enabled = {}
 local list = {}
 local ddList
 
@@ -62,6 +63,14 @@ tab:Input({
     toggles.OnFriendsJoin = v
   end
 })
+tab:Toggle({
+  Title = "Friends",
+  Value = false,
+  Callback = function(v)
+    enabled.OnFriendsJoin = v
+  end
+})
+
 tab:Input({
   Title = "On Randoms Join",
   Placeholder = "",
@@ -69,6 +78,14 @@ tab:Input({
     toggles.OnRandomsJoin = v
   end
 })
+tab:Toggle({
+  Title = "Randoms",
+  Value = false,
+  Callback = function(v)
+    enabled.OnRandomsJoin = v
+  end
+})
+
 tab:Input({
   Title = "On List Join",
   Placeholder = "",
@@ -76,6 +93,14 @@ tab:Input({
     toggles.OnListJoin = v
   end
 })
+tab:Toggle({
+  Title = "List",
+  Value = false,
+  Callback = function(v)
+    enabled.OnListJoin = v
+  end
+})
+
 tab:Input({
   Title = "Add to list",
   Placeholder = "",
@@ -102,11 +127,11 @@ ddList = tab:Dropdown({
 
 plrs.PlayerAdded:Connect(function(player)
   local name = player.Name
-  if toggles.OnListJoin and list[name] then
+  if enabled.OnListJoin and toggles.OnListJoin and toggles.OnListJoin ~= "" and list[name] then
     Helpers.cmd(toggles.OnListJoin:gsub("{name}", Helpers.resolveName(name)))
-  elseif toggles.OnFriendsJoin and player:IsFriendsWith(localplr.UserId) then
+  elseif enabled.OnFriendsJoin and toggles.OnFriendsJoin and toggles.OnFriendsJoin ~= "" and player:IsFriendsWith(localplr.UserId) then
     Helpers.cmd(toggles.OnFriendsJoin:gsub("{name}", Helpers.resolveName(name)))
-  elseif toggles.OnRandomsJoin then
+  elseif enabled.OnRandomsJoin and toggles.OnRandomsJoin and toggles.OnRandomsJoin ~= "" then
     Helpers.cmd(toggles.OnRandomsJoin:gsub("{name}", Helpers.resolveName(name)))
   end
 end)
