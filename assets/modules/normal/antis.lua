@@ -96,7 +96,7 @@ tab:Toggle({
     registerWhile(v, function()
       local ark = workspace:FindFirstChild("The Arkenstone")
       if ark and ark:FindFirstChild("Handle") then
-        Helpers.cmd(";debug")
+        Helpers.cmd("debug")
         WindUI:Notify({ Title = "Auto Debug", Content = "debugged, The Arkenstone", Duration = 1 })
       end
     end, "enli")
@@ -108,7 +108,7 @@ tab:Toggle({
   Callback = function(v)
     registerWhile(v, function()
       if workspace:FindFirstChild("Tank") then
-        Helpers.cmd(";debug")
+        Helpers.cmd("debug")
         WindUI:Notify({ Title = "Auto Debug", Content = "debugged, RcTank", Duration = 1 })
       end
     end, "rct")
@@ -120,7 +120,7 @@ tab:Toggle({
   Callback = function(v)
     registerWhile(v, function()
       if workspace:FindFirstChild("Effect") then
-        Helpers.cmd(";debug")
+        Helpers.cmd("debug")
         WindUI:Notify({ Title = "Auto Debug", Content = "debugged, HeartAttack/Effect", Duration = 1 })
       end
     end, "heart")
@@ -134,7 +134,7 @@ tab:Toggle({
   Callback = function(v)
     registerWhile(v, function()
       if workspace:FindFirstChild("FuseBomb") then
-        Helpers.cmd(";debug")
+        Helpers.cmd("debug")
         WindUI:Notify({ Title = "Auto Debug", Content = "debugged, FuseBomb", Duration = 1 })
       end
     end, "bomb")
