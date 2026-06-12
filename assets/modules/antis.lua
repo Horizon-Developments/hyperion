@@ -28,7 +28,68 @@ local function registerWhile(tog, fun, id)
   end
   registered[id] = nil
 end
-
+tab:Button({
+  Title = "fix vamp sword (humanoid health = 0 method)",
+  Callback = function()
+    game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, true)
+    local char = localplr.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if hum then
+      hum.Health = 0
+    end
+  end
+})
+tab:Toggle({
+  Title = "anti flashbang",
+  Callback = function(v)
+    registerWhile(v, function()
+      local gui = localplr:FindFirstChild("PlayerGui")
+      local main = gui and gui:FindFirstChild("MainGui")
+      local ref = main and main:FindFirstChild("FlashBangEffect")
+      if ref then
+        ref:Destroy()
+      end
+    end, "flash")
+  end
+})
+tab:Toggle({
+  Title = "anti blind",
+  Callback = function(v)
+    registerWhile(v, function()
+      local gui = localplr:FindFirstChild("PlayerGui")
+      local blind = gui and gui:FindFirstChild("Blind")
+      if blind then
+        blind:Destroy()
+      end
+    end, "blind")
+  end
+})
+tab:Toggle({
+  Title = "anti freeze",
+  Callback = function(v)
+    registerWhile(v, function()
+      local char = localplr.Character
+      if char and char:FindFirstChild("Hielo", true) then
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if hum then
+          hum.Health = 0
+        end
+      end
+    end, "freeze")
+  end
+})
+tab:Toggle({
+  Title = "anti jail",
+  Callback = function(v)
+    registerWhile(v, function()
+      local char = localplr.Character
+      local jail = char and char:FindFirstChild("Jail") 
+      if jail then
+        jail:Destroy()
+      end
+    end, "jail")
+  end
+});
 tab:Toggle({
   Title = "anti drop enli",
   Callback = function(v)
@@ -102,68 +163,4 @@ tab:Toggle({
       end
     end, "mine")
   end,
-})
-tab:Button({
-  Title = "fix vamp sword (humanoid health = 0 method)",
-  Callback = function()
-    game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, true)
-
-    local char = localplr.Character
-    local hum = char and char:FindFirstChildOfClass("Humanoid")
-    if hum then
-      hum.Health = 0
-    end
-  end
-})
-tab:Toggle({
-  Title = "anti flashbang",
-  Callback = function(v)
-    registerWhile(v, function()
-      local gui = localplr:FindFirstChild("PlayerGui")
-      local main = gui and gui:FindFirstChild("MainGui")
-      local ref = main and main:FindFirstChild("FlashBangEffect")
-      if ref then
-        ref:Destroy()
-      end
-    end, "flash")
-  end
-})
-tab:Toggle({
-  Title = "anti blind",
-  Callback = function(v)
-    registerWhile(v, function()
-      local gui = localplr:FindFirstChild("PlayerGui")
-      local blind = gui and gui:FindFirstChild("Blind")
-      if blind then
-        blind:Destroy()
-      end
-    end, "blind")
-  end
-})
-
-tab:Toggle({
-  Title = "anti freeze",
-  Callback = function(v)
-    registerWhile(v, function()
-      local char = localplr.Character
-      if char and char:FindFirstChild("Hielo", true) then
-        local hum = char:FindFirstChildOfClass("Humanoid")
-        if hum then
-          hum.Health = 0
-        end
-      end
-    end, "freeze")
-  end
-})
-tab:Toggle({
-  Title = "anti jail",
-  Callback = function(v)
-    registerWhile(v, function()
-      local char = localplr.Character
-      local jail = char and char:FindFirstChild("Jail") 
-      if jail then
-        jail:Destroy()
-      end
-    end, "jail")
-  end
 })

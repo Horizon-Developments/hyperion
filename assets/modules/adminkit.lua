@@ -107,7 +107,6 @@ tab:Button({
   end
 })
 
-
 do
   local function updateWhitelisted()
     task.defer(function()
