@@ -158,7 +158,9 @@ Helpers.on("ChatListener", function(msg)
   for _, v in ipairs(toggles.antijoin) do
     local keyword = v:lower()
     if text == keyword or text:sub(1, #keyword) == keyword or text:find(keyword, 1, true) then
-      Helpers.cmd("reset " .. Helpers.resolveName(name))
+      local sender = players:GetPlayerByUserId(msg.TextSource.UserId)
+      if not sender then return end
+      Helpers.cmd("reset " .. Helpers.resolveName(sender.Name))
       break
     end
   end
