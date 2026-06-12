@@ -158,3 +158,17 @@ tab:Toggle({
     end, "freeze")
   end
 })
+tab:Toggle({
+  Title = "anti jail",
+  Callback = function(v)
+    registerWhile(v, function()
+      local char = localplr.Character
+      if char and char:FindFirstChild("Hielo", true) then
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if hum then
+          hum.Health = 0
+        end
+      end
+    end, "jail")
+  end
+})
