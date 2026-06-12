@@ -11,7 +11,7 @@ local tab = Window:Tab({
 })
 
 local spamV = false
-local spamW = 0.1
+local spamW = 0.5
 local spamT = {}
 
 tab:Section("Spammer")
@@ -24,17 +24,32 @@ tab:Toggle({
   Title = "spammer",
   Callback = function(v)
     spamV = v
+
+    if not v then
+      return
+    end
+
     task.spawn(function()
-      pcall(function()
-        while spamV do
-          if #spamT > 0 then return end
-          for i, cmd in ipairs(spamT) do
-            task.wait(spamW)
+      while spamV do
+        local sent = false
+
+        for i = 1, 5 do
+          local cmd = spamT[i]
+          if cmd then
+            sent = true
             Helpers.cmd(cmd)
+            task.wait(spamW)
+
+            if not spamV then
+              break
+            end
           end
+        end
+
+        if not sent then
           task.wait(0.1)
         end
-      end)
+      end
     end)
   end
 })
@@ -48,7 +63,9 @@ tab:Slider({
     spamW = val
   end
 })
+
 tab:Section("Command Slots")
+
 for i = 1, 5 do
   tab:Input({
     Title = "slot " .. i,
