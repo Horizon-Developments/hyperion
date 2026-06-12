@@ -181,10 +181,10 @@ task.spawn(function()
     Helpers.cmd = function(c, checkForSent)
       local tool = localplr.Backpack:FindFirstChild("The Arkenstone")
       if tool then tool.Parent = localplr.Character end
-    
+      
       local cmd = ";" .. c .. " HYPERION"
       tcs.TextChannels.RBXGeneral:SendAsync(cmd)
-    
+      
       if checkForSent then
         pending_chat_check[cmd] = ""
         while pending_chat_check[cmd] == "" do
