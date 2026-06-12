@@ -1,13 +1,15 @@
 task.spawn(function()
-  --if getgenv().Hyperion then return end
+  if getgenv().Hyperion then return end
   getgenv().Hyperion = true
 
   local HttpService = cloneref(game:GetService("HttpService"))
   local tcs = cloneref(game:GetService("TextChatService"))
+  local localplr = cloneref(game:GetService("Players")).LocalPlayer
 
   local function assets(...)
     return table.concat({ "Hyperion", ... }, "/")
   end
+
   local function log(...)
     print("[HYPERION]: ", ...)
   end
@@ -15,65 +17,65 @@ task.spawn(function()
   do
     makefolder("Hyperion")
     makefolder(assets("modules"))
+    makefolder(assets("modules", "og"))
+    makefolder(assets("modules", "normal"))
 
     local function createfile(url)
       writefile(assets(url), game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/main/assets/" .. url))
     end
-
     createfile("hyperion_logo.jpg")
     createfile("discord_invite.txt")
 
     local CACHE_PATH = assets("modules", ".sha_cache.json")
     local shaCache = {}
-    local cacheOk, cacheData = pcall(function()
-      return HttpService:JSONDecode(readfile(CACHE_PATH))
-    end)
-    if cacheOk and type(cacheData) == "table" then
-      shaCache = cacheData
-    end
+    local ok, data = pcall(function() return HttpService:JSONDecode(readfile(CACHE_PATH)) end)
+    if ok and type(data) == "table" then shaCache = data end
 
-    local ok, result = pcall(function()
-      return HttpService:JSONDecode(game:HttpGet("https://api.github.com/repos/Horizon-Developments/hyperion/contents/assets/modules"))
-    end)
+    local remoteNames = {}
+    local pending = 0
 
-    if not ok then
-      log("Failed to fetch built-in modules.", result)
-    else
-      local remoteNames = {}
-      local pending = 0
-
-      for _, item in ipairs(result) do
-        if item.type == "file" then
-          remoteNames[item.name] = true
-          if shaCache[item.name] == item.sha then
-            log("Skipped " .. item.name)
-          else
-            pending += 1
-            task.spawn(function()
-              pcall(function()
-                writefile(assets("modules", item.name), game:HttpGet(item.download_url))
-                shaCache[item.name] = item.sha
-              end)
-              pending -= 1
-            end)
-          end
-        end
-      end
-
-      repeat task.wait(0.2) until pending <= 0
-
-      for name in pairs(shaCache) do
-        if not remoteNames[name] then
-          pcall(function() delfile(assets("modules", name)) end)
-          shaCache[name] = nil
-          log("Deleted " .. name)
-        end
-      end
-
-      pcall(function()
-        writefile(CACHE_PATH, HttpService:JSONEncode(shaCache))
+    for _, subdir in ipairs({ "og", "normal" }) do
+      local fetched, result = pcall(function()
+        return HttpService:JSONDecode(game:HttpGet(
+          "https://api.github.com/repos/Horizon-Developments/hyperion/contents/assets/modules/" .. subdir
+        ))
       end)
+      if not fetched then
+        log("Failed to fetch modules/" .. subdir, result)
+        continue
+      end
+      for _, item in ipairs(result) do
+        if item.type ~= "file" then continue end
+        local cacheKey = subdir .. "/" .. item.name
+        remoteNames[cacheKey] = true
+        if shaCache[cacheKey] == item.sha then
+          log("Skipped " .. cacheKey)
+          continue
+        end
+        pending += 1
+        task.spawn(function()
+          pcall(function()
+            writefile(assets("modules", subdir, item.name), game:HttpGet(item.download_url))
+            shaCache[cacheKey] = item.sha
+          end)
+          pending -= 1
+        end)
+      end
     end
+
+    repeat task.wait(0.2) until pending <= 0
+
+    for key in pairs(shaCache) do
+      if remoteNames[key] then continue end
+      local sub, filename = key:match("^([^/]+)/(.+)$")
+      if sub and filename then
+        pcall(function() delfile(assets("modules", sub, filename)) end)
+      end
+      shaCache[key] = nil
+      log("Deleted " .. key)
+    end
+
+    pcall(function() writefile(CACHE_PATH, HttpService:JSONEncode(shaCache)) end)
   end
 
   local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
@@ -103,11 +105,7 @@ task.spawn(function()
   })
 
   local tabs = {}
-
-  tabs.info = Window:Tab({
-    Title = "Main",
-    Icon = "home",
-  })
+  tabs.info = Window:Tab({ Title = "Main", Icon = "home" })
 
   tabs.info:Paragraph({
     Title = "Hyperion",
@@ -124,22 +122,9 @@ task.spawn(function()
       }
     },
   })
-  tabs.info:Paragraph({
-    Title = "About Hyperion",
-    Icon = "layers",
-    Desc = "Hyperion is a modular system. Instead of using a separate script, you can extend it with plugins. Visit the #plugins channel on our Discord to find and share plugins.",
-  })
-  tabs.info:Paragraph({
-    Title = "Adding a Plugin",
-    Icon = "folder-plus",
-    Desc = "Place your plugin file in Hyperion/modules/ (located inside your executor's folder.)",
-  })
-  tabs.info:Paragraph({
-    Title = "Creating Your Own Plugin",
-    Icon = "code-2",
-    Desc = "Full documentation is available on #plugins-dev (our Discord server.)",
-  })
-
+  tabs.info:Paragraph({ Title = "About Hyperion", Icon = "layers", Desc = "Hyperion is a modular system. Instead of using a separate script, you can extend it with plugins. Visit the #plugins channel on our Discord to find and share plugins." })
+  tabs.info:Paragraph({ Title = "Adding a Plugin", Icon = "folder-plus", Desc = "Place your plugin file in Hyperion/modules/ (located inside your executor's folder.)" })
+  tabs.info:Paragraph({ Title = "Creating Your Own Plugin", Icon = "code-2", Desc = "Full documentation is available on #plugins-dev (our Discord server.)" })
   tabs.info:Dropdown({
     Title = "Theme",
     Icon = "palette",
@@ -154,8 +139,9 @@ task.spawn(function()
   local Helpers = {}
   do
     Helpers.log = log
+
     Helpers.selfchat = function(msg, noAdded)
-      if (noAdded) then
+      if noAdded then
         tcs.TextChannels.RBXGeneral:DisplaySystemMessage('<font color="rgb(255,0,0)">[HYPERION]: ' .. msg .. '</font>')
       else
         tcs.TextChannels.RBXGeneral:DisplaySystemMessage(msg)
@@ -173,35 +159,31 @@ task.spawn(function()
         return props
       end
       task.spawn(function()
-        for _, listener in ipairs(ChatListeners) do
-          listener(msg)
-        end
+        for _, listener in ipairs(ChatListeners) do listener(msg) end
       end)
       if msg.Status ~= Enum.TextChatMessageStatus.Sending and pending_chat_check[msg.Text] == "" then
         pending_chat_check[msg.Text] = msg.Status == Enum.TextChatMessageStatus.Success
       end
-      if (msg.Text:find(";")) then
-        props.Text = "" -- hide.
+      if msg.Text:find(";") then
+        props.Text = ""
         return props
       end
       local player = Helpers.services.players:GetPlayerByUserId(msg.TextSource.UserId)
       local char = player and player.Character
-      local namePart = char and char:FindFirstChild("Nombre")
-      local label = namePart and namePart:FindFirstChild("Text1")
+      local label = char and char:FindFirstChild("Nombre") and char.Nombre:FindFirstChild("Text1")
       local color = label and label.TextColor3 or Color3.new(1, 1, 1)
-      local hex = string.format("#%02X%02X%02X", color.R * 255, color.G * 255, color.B * 255)
-      props.PrefixText = string.format("<font color='%s'>%s</font>", hex, player and player.DisplayName or msg.TextSource.Name)
+      props.PrefixText = string.format("<font color='#%02X%02X%02X'>%s</font>",
+        color.R * 255, color.G * 255, color.B * 255,
+        player and player.DisplayName or msg.TextSource.Name)
       return props
     end
 
-    local lastCmdTime = 0
-    local unmutePending = false
-    
+    local lastCmdTime, unmutePending = 0, false
+
     Helpers.cmd = function(c, checkForSent)
-      local tool = Helpers.services.players.LocalPlayer.Backpack:FindFirstChild("The Arkenstone")
-      if tool then
-        tool.Parent = localplr.Character
-      end
+      local tool = localplr.Backpack:FindFirstChild("The Arkenstone")
+      if tool then tool.Parent = localplr.Character end
+
       lastCmdTime = os.clock()
       if not unmutePending then
         unmutePending = true
@@ -212,14 +194,14 @@ task.spawn(function()
           unmutePending = false
         end)
       end
-    
-      local player = Helpers.services.players.LocalPlayer
-      local char = player and player.Character or workspace:FindFirstChild(player.Name)
+
+      local char = localplr.Character or workspace:FindFirstChild(localplr.Name)
       local label = char and char:FindFirstChild("Tiempo") and char.Tiempo:FindFirstChild("Text1")
       if label and not label.Text:find("🤐") then
         tcs.TextChannels.RBXGeneral:SendAsync(";mute")
         task.wait(0.2)
       end
+
       local cmd = ";" .. c .. " " .. discordInvite:gsub("https://discord.gg/", "")
       tcs.TextChannels.RBXGeneral:SendAsync(cmd)
       if checkForSent then
@@ -230,18 +212,18 @@ task.spawn(function()
         return ref
       end
     end
-    
+
     Helpers.resolveName = function(name)
       return name:gsub("_", ".")
     end
-    
-    Helpers.say = function(cmd, checkForSent)
-      tcs.TextChannels.RBXGeneral:SendAsync(cmd)
+
+    Helpers.say = function(text, checkForSent)
+      tcs.TextChannels.RBXGeneral:SendAsync(text)
       if checkForSent then
-        pending_chat_check[cmd] = ""
-        while pending_chat_check[cmd] == "" do task.wait(0.1) end
-        local ref = pending_chat_check[cmd]
-        pending_chat_check[cmd] = nil
+        pending_chat_check[text] = ""
+        while pending_chat_check[text] == "" do task.wait(0.1) end
+        local ref = pending_chat_check[text]
+        pending_chat_check[text] = nil
         return ref
       end
     end
@@ -271,13 +253,11 @@ task.spawn(function()
       teams = cloneref(game:GetService("Teams")),
     }
   end
-  
-  for _, file in ipairs(listfiles(assets("modules"))) do
+
+  for _, file in ipairs(listfiles(assets("modules", game.GameId == 108097274488844 and "og" or "normal"))) do
     if file:match("%.lua$") then
       local ok, err = pcall(loadstring(readfile(file)), { Tabs = tabs, Window = Window, WindUI = WindUI, Assets = assets, Helpers = Helpers })
-      if not ok then
-        warn("Failed to execute:", file, err)
-      end
+      if not ok then warn("Failed to execute:", file, err) end
     end
   end
 end)
