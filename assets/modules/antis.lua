@@ -172,3 +172,4 @@ tab:Toggle({
     end, "jail")
   end
 })
+workspace.darkking56807.Jail:Destroy()
