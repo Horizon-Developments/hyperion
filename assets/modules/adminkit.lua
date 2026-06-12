@@ -152,6 +152,7 @@ do
 end
 
 Helpers.on("ChatListener", function(msg)
+  if not toggles.enliw.enabled and not toggles.bkitw.enabled then return end
   if not msg.TextSource or msg.TextSource.UserId == localplr.UserId then return end
   local text = msg.Text:lower():gsub("%s+", "")
   for _, v in ipairs(toggles.antijoin) do
