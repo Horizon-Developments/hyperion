@@ -157,38 +157,38 @@ tab:Button({
   Locked   = false,
   Callback = function()
     pcall(function()
-    if not selected.file then
-      WindUI:Notify({ Title = "Nothing selected", Content = "Select a build first", Duration = 3 })
-      return
-    end
-    instance = lib.build(SAVE_DIR .. "/" .. file, cfg, function(tool)
-      local result
-      local t = 0
-      repeat
-        result = game.Players.LocalPlayer.Backpack:FindFirstChild(tool, true) or game.Players.LocalPlayer.Character:FindFirstChild(tool, true)
-        if not result then
-          t = t + 0.5
-          if t >= 5 then
-              t = 0
-              WindUI:Notify({
-                Title = "Waiting for " .. tool,
-                Content = tool .. " not found on backpack or character. Waiting...",
-                Duration = 3,
-              })
-          end
-          task.wait(0.5)
-        end
-      until result
-      return result
-    end)
-    task.spawn(function()
-      if not instance:start() then
-        WindUI:Notify({ Title = "Failed", Content = "screenshot /console then send it in #errors (discord) for help ", Duration = 4 })
-      else
-        WindUI:Notify({ Title = "Successful", Content = "Build finished!", Duration = 3 })
+      if not selected.file then
+        WindUI:Notify({ Title = "Nothing selected", Content = "Select a build first", Duration = 3 })
+        return
       end
-    end)
-    WindUI:Notify({ Title = "Building...", Content = "Please wait until its finished", Duration = 3 })
+      instance = lib.build(SAVE_DIR .. "/" .. file, cfg, function(tool)
+        local result
+        local t = 0
+        repeat
+          result = game.Players.LocalPlayer.Backpack:FindFirstChild(tool, true) or game.Players.LocalPlayer.Character:FindFirstChild(tool, true)
+          if not result then
+            t = t + 0.5
+            if t >= 5 then
+                t = 0
+                WindUI:Notify({
+                  Title = "Waiting for " .. tool,
+                  Content = tool .. " not found on backpack or character. Waiting...",
+                  Duration = 3,
+                })
+            end
+            task.wait(0.5)
+          end
+        until result
+        return result
+      end)
+      task.spawn(function()
+        if not instance:start() then
+          WindUI:Notify({ Title = "Failed", Content = "screenshot /console then send it in #errors (discord) for help ", Duration = 4 })
+        else
+          WindUI:Notify({ Title = "Successful", Content = "Build finished!", Duration = 3 })
+        end
+      end)
+      WindUI:Notify({ Title = "Building...", Content = "Please wait until its finished", Duration = 3 })
     end)
   end
 })
