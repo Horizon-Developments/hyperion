@@ -516,9 +516,7 @@ function lib.build(file_path, settings, fetch_tools)
                     end
                     pcall(function()
                         novel = true
-                        if cfg.tp then
-                            localplr.Character.HumanoidRootPart.CFrame = CFrame.new(aPos + Vector3.new(0, 8, 0))
-                        end
+                        tp_to_pos(pos)
                     end)
                     task_wait(1)
                 until not childcube or not childcube.Parent
@@ -540,9 +538,7 @@ function lib.build(file_path, settings, fetch_tools)
                     end
                     pcall(function()
                         novel = true
-                        if cfg.tp then
-                            localplr.Character.HumanoidRootPart.CFrame = CFrame.new(cPos + Vector3.new(0, 8, 0))
-                        end
+                        tp_to_pos(pos)
                     end)
                     task_wait(1)
                 until not childcube or not childcube.Parent
@@ -596,10 +592,9 @@ function lib.build(file_path, settings, fetch_tools)
                         fireEvent("Shape", args)
                         pcall(function()
                             novel = true
-                            if cfg.tp then
-                                local rPos = (childcube and childcube.Position + childcube.Size / 2) or pos
-                                localplr.Character.HumanoidRootPart.CFrame = CFrame.new(rPos + Vector3.new(0, 6, 0))
-                            end
+                            local rPos = (childcube and childcube.Position + childcube.Size / 2) or pos
+                            localplr.Character.HumanoidRootPart.CFrame = CFrame.new(rPos + Vector3.new(0, 6, 0))
+                            tp_to_pos(pos)
                         end)
                         task_wait(resizewait)
                     until args[4] == nil
