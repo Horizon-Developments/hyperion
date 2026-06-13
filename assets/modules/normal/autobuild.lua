@@ -17,10 +17,10 @@ local localplr = players.LocalPlayer
 local tab      = tabs.autobuild
 local elements = {}
 local save = {
-  selected = {},
-  filename = "",
-  
+  save.selected = {},
+  filename = ""
 }
+
 local SAVE_DIR = assets("Builds")
 
 local cfg = {
