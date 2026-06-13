@@ -115,10 +115,7 @@ elements.saveinput = tab:Input({
 
 tab:Divider()
 local selected = nil
-local last = {}
-while task.wait(5) do
-  if #last == #listfiles(SAVE_DIR) then continue end
-  tab:Dropdown({
+tab:Dropdown({
     Title = "Select",
     Desc = "Select from builds in Hyperion/Builds",
     Values = listfiles(SAVE_DIR),
@@ -127,4 +124,3 @@ while task.wait(5) do
       selected = option
     end
   })
-end
