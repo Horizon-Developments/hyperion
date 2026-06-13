@@ -128,10 +128,10 @@ selected.dropdown = tab:Dropdown({
 })
 
 tab:Button({
-    Title = "Button",
-    Desc = "Test Button",
+    Title = "Refresh",
+    Desc = "Refreshes the selected dropdown",
     Locked = false,
     Callback = function()
-        -- ...
+      
     end
 })
