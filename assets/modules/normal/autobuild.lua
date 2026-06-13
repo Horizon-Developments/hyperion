@@ -38,15 +38,14 @@ local function fetch_tools(toolname)
     if not tool then
       local bp = localplr.Backpack:FindFirstChild(toolname)
       if bp then
-          bp.Parent = char
-          tool = bp
+        bp.Parent = char
+        tool = bp
       end
-  end
-
-        if not tool then
-            if elapsed >= 10 then
-                WindUI:Notify({
-                    Title    = "Error",
+    end
+    if not tool then
+      if elapsed >= 10 then
+        WindUI:Notify({
+          Title    = "Error",
                     Content  = "No " .. toolname .. " found! Waiting for " .. toolname,
                     Duration = 3,
                 })
@@ -55,7 +54,7 @@ local function fetch_tools(toolname)
             task.wait(0.5)
             elapsed = elapsed + 0.5
         end
-    end
+  end
 
     return tool:FindFirstChild("origevent") or tool:FindFirstChild("Event", true)
 end
