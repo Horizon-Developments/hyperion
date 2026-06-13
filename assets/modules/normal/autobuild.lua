@@ -51,14 +51,13 @@ players.PlayerRemoving:Connect(refresh)
 
 elements.buildbtn = Tab:Button({
   Title = "Save",
-  Desc = "",
+  Desc = "Save selected player(s) build(s)",
   Locked = false,
   Callback = function()
     elements.buildbtn:Lock()
     elements.buildsdropdown:Lock()
     
-    
-    
+
   end
 })
 
