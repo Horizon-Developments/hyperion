@@ -54,6 +54,10 @@ elements.buildbtn = Tab:Button({
   Desc = "Test Button",
   Locked = false,
   Callback = function()
+    buildbtn:Lock()
+    
+    
+    
     
   end
 })
