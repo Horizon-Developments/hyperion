@@ -16,6 +16,7 @@ local players  = Helpers.services.players
 local localplr = players.LocalPlayer
 local tab      = tabs.autobuild
 local elements = {}
+local selected = {}
 local SAVE_DIR = assets("Builds")
 
 local cfg = {
@@ -26,29 +27,28 @@ local cfg = {
 }
 
 tab:Divider()
-local selected = {}
 
 elements.buildsdropdown = tab:Dropdown({
-    Title = "Builds",
-    Desc = "Select players builds to save"
-    Values = {},
-    Multi = true,
-    AllowNone = true,
-    Callback = function(v) 
-      selected = v
-    end
-  })
-  local function refresh()
-    local t = {}
-    for _, p in ipairs(players:GetPlayers()) do
-      table.insert(t, p.Name)
-    end
-    dropdown:Refresh(t)
+  Title = "Builds",
+  Desc = "Select players builds to save"
+  Values = {},
+  Multi = true,
+  AllowNone = true,
+  Callback = function(v) 
+    selected = v
   end
-  refresh()
-  players.PlayerAdded:Connect(refresh)
-  players.PlayerRemoving:Connect(refresh)
+})
+local function refresh()
+  local t = {}
+  for _, p in ipairs(players:GetPlayers()) do
+    table.insert(t, p.Name)
+  end
+  elements.buildsdropdown:Refresh(t)
 end
+refresh()
+players.PlayerAdded:Connect(refresh)
+players.PlayerRemoving:Connect(refresh)
+
 
 
 
