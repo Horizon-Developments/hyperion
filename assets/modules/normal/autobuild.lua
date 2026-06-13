@@ -28,21 +28,20 @@ local activeBuilder = nil
 local showEnabled   = false
 
 local function fetch_tools(toolname)
-    local char = localplr.Character
-    if not char then return nil end
-
-    local tool
-    local elapsed = 10
-
-    while not tool do
-        tool = char:FindFirstChild(toolname)
-        if not tool then
-            local bp = localplr.Backpack:FindFirstChild(toolname)
-            if bp then
-                bp.Parent = char
-                tool = bp
-            end
-        end
+  local char = localplr.Character
+  if not char then return nil end
+  local tool
+  local elapsed = 10
+  
+  while not tool do
+    tool = char:FindFirstChild(toolname)
+    if not tool then
+      local bp = localplr.Backpack:FindFirstChild(toolname)
+      if bp then
+          bp.Parent = char
+          tool = bp
+      end
+  end
 
         if not tool then
             if elapsed >= 10 then
