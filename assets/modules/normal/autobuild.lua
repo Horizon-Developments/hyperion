@@ -74,7 +74,7 @@ elements.saveinput = tab:Input({
   Type = "Input",
   Placeholder = "Enter text...",
   Callback = function(input) 
-    
+    if (not input or input.length 
   end
 })
 
