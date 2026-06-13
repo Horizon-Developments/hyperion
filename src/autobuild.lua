@@ -172,7 +172,7 @@ local function builder()
 		local data_str
 		if self.file_path:match("%.lz4$") then
 			if lz4decompress then
-				data_str = lz4decompress(file_content)
+				data_str = lz4decompress(file_content, 4)
 			else
 				return nil
 			end
