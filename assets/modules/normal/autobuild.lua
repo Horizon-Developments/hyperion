@@ -17,12 +17,11 @@ local localplr = players.LocalPlayer
 local tab      = tabs.autobuild
 local SAVE_DIR = assets("Builds")
 
--- ── State ─────────────────────────────────────────────────────────────────────
 local cfg = {
-    historymax = 300,
-    resizewait = 0.4,
-    wbs        = false,
-    offset     = Vector3.new(0, 0, 0),
+  historymax = 300,
+  resizewait = 0.4,
+  wbs        = false,
+  offset     = Vector3.new(0, 0, 0),
 }
 local selectedFile  = nil
 local activeBuilder = nil
