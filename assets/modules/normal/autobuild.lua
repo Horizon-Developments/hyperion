@@ -117,7 +117,7 @@ tab:Divider()
 local selected = nil
 tab:Dropdown({
   Title = "Select",
-  Desc = "Dropdown Description",
+  Desc = "Select from builds in ",
   Values = { "Category A", "Category B", "Category C" },
   Value = { "Category A" },
   Multi = true,
