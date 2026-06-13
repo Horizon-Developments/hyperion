@@ -286,3 +286,6 @@ instance_elements.resizewait = tab:Slider({
     Helpers.log(ok, res)
   end
 })
+for _, v in pairs(instance_elements) do
+      v:Lock()
+    end
