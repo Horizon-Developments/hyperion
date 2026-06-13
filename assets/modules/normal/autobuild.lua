@@ -205,8 +205,8 @@ tab:Button({
 
 tab:Divider()
 
-instance_elements.tab:Button({
-  Title    = "Load selected",
+instance_elements.run = tab:Button({
+  Title    = "Run instan",
   Desc     = "Loads file",
   Locked   = false,
   Callback = function()
