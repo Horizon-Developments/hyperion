@@ -123,6 +123,7 @@ elements.builddropdown = tab:Dropdown({
   Value    = listfiles(SAVE_DIR)[1],
   Callback = function(option)
     selected.file = option  -- was: selected = option (destroyed the table)
+    elements.builddropdown:Refresh(listfiles(SAVE_DIR))
   end
 })
 
@@ -145,7 +146,7 @@ tab:Button({
       return
     end
     local file = selected.file
-    pcall(delfile, SAVE_DIR .. "/" .. file)
+    pcall(delfile, file)
     selected.file = nil
     elements.builddropdown:Refresh(listfiles(SAVE_DIR))  -- was: selected.dropdown (crashed)
     WindUI:Notify({ Title = "Deleted.", Content = "Deleted " .. file, Duration = 3 })
