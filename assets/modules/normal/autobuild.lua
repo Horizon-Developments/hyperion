@@ -237,3 +237,13 @@ instance_elements.skip = tab:Button({
   end
 })
 
+instance_elements.preview = tab:Button({
+  Title    = "Skip block",
+  Locked   = false,
+  Callback = function()
+    local ok, res = pcall(function()
+      instance:skip()
+    end)
+    Helpers.log(ok,res)
+  end
+})
