@@ -166,6 +166,8 @@ tab:Button({
         WindUI:Notify({ Title = "Failed", Content = "screenshot /console then send it in #errors (discord) for help ", Duration = 4 })
       end
     end)
+    repeat until
+    
     
   end
 })
