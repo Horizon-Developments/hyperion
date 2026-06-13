@@ -161,7 +161,8 @@ tab:Button({
       return
     end
     instance = lib.build(SAVE_DIR .. "/" .. file, cfg, function()
-      
+      return game.Players.LocalPlayer.Backpack:FindFirstChild(tool, true) or game.Players.LocalPlayer.Character:FindFirstChild(tool, true)
+    end)
     end)
     task.spawn(function()
       if not instance:start() then
