@@ -191,7 +191,7 @@ tab:Button({
       v:Lock()
     end
     
-    instance = nil
+    if not ok then instance = nil end
     Helpers.log(ok,res)
   end
 })
