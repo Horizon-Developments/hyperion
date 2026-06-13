@@ -17,14 +17,7 @@ local players = Helpers.services.players
 local tcs = Helpers.services.textchat
 local localplr = players.LocalPlayer
 local tab = tabs.autobuild
-
-tab:Paragraph({
-  Title = "Credits",
-  Desc = "Credits to areyoumental (areyoumental110 in Discord),\nwe used Extra Stuff's (from areyoumental) source code for this."
-})
-
-
-
+local 
 tab:Slider({
   Title = "Max History",
   Range = {300,10000},
@@ -61,3 +54,7 @@ end)
 
 
 
+tab:Paragraph({
+  Title = "Credits",
+  Desc = "Credits to areyoumental (areyoumental110 in Discord),\nwe used Extra Stuff's (from areyoumental) source code for this."
+})
