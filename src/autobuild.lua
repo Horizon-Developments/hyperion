@@ -20,7 +20,7 @@ local localplr = game.Players.LocalPlayer
 local http     = game:GetService("HttpService")
 
 -- ─── Constants ────────────────────────────────────────────────────────────────
-local SAVE_DIR      = "TheChosenOneBuilds"
+local SAVE_DIR      = assets("Builds")
 local DEFAULT_MULT  = 4
 local DEFAULT_HMAX  = 400
 local DEFAULT_RW    = 0.4
