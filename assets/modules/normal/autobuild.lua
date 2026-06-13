@@ -25,11 +25,11 @@ tab:Paragraph({
 
 tab:Slider({
   Title = "Max History",
-  Min = 0,
+  Min = 200,
   Max = 100,
   Default = 50,
   Callback = function(value)
-      print(value)
+    
   end
 })
 
