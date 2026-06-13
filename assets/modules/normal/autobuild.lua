@@ -19,7 +19,7 @@ local localplr = players.LocalPlayer
 local tab = tabs.autobuild
 local info = {}
 
-info.maxhistory.= tab:Slider({
+info.maxhistory.elemet = tab:Slider({
   Title = "Max History",
   Range = {300,10000},
   Increment = 1,
