@@ -68,8 +68,8 @@ elements.savebtn = tab:Button({
 
 elements.saveinput = tab:Input({
   Title = "Filename",
-  Desc = "A-Z 0-9 ",
-  Value = "Default value",
+  Desc = "A-Z 0-9 only!",
+  Value = "",
   InputIcon = "bird",
   Type = "Input", -- or "Textarea"
   Placeholder = "Enter text...",
