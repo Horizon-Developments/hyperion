@@ -67,7 +67,7 @@ elements.savebtn = tab:Button({
         return
       end
       if (#save.selected == 0) then
-        
+        WindUI:Notify({ Title = "Invaild filename", Content = "Set your filename", Duration = 3 })
       end
       
       
@@ -82,7 +82,7 @@ elements.savebtn = tab:Button({
 elements.saveinput = tab:Input({
   Title = "Filename",
   Desc = "a-z A-Z 0-9 _ only!",
-  Value = nil,
+  Value = {},
   InputIcon = "file-pen",
   Type = "Input",
   Placeholder = "Enter text...",
