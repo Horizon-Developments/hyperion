@@ -123,6 +123,6 @@ tab:Dropdown({
   Multi = false,
   AllowNone = false,
   Callback = function(option) 
-    print("Categories selected: " .. game:GetService("HttpService"):JSONEncode(option)) 
+     Encode(option)) 
   end
 })
