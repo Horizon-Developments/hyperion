@@ -28,20 +28,30 @@ tab:Divider()
 
 
 do
-  local tog = local Dropdown = Tab:Dropdown({
-    Title = "Player Builds",
-    Desc = "Select players builds to save",
+  local dropdown = tab:Dropdown({
+    Title = "",
     Values = (function()
-      
+        local t = {}
+        for _, p in ipairs(Players:GetPlayers()) do
+            table.insert(t, p.Name)
+        end
+        return t
     end)(),
-    Value = {},
     Multi = true,
-    AllowNone = false,
-    Callback = function(option) 
-        -- option is a table: { "Category A", "Category B" }
-        print("Categories selected: " .. game:GetService("HttpService"):JSONEncode(option)) 
+    AllowNone = true,
+    Callback = function() end
+})
+
+local function refresh()
+    local t = {}
+    for _, p in ipairs(Players:GetPlayers()) do
+        table.insert(t, p.Name)
     end
-  })
+    dropdown:Refresh(t)
+end
+
+Players.PlayerAdded:Connect(refresh)
+Players.PlayerRemoving:Connect(refresh)
   
   
 end
