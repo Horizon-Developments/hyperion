@@ -18,7 +18,7 @@ local string_len     = string.len
 
 local localplr = Helpers.services.players.LocalPlayer
 local http     = Helpers.services.http
-
+local coregui = game:GetService("CoreGui")
 -- ─── Constants ────────────────────────────────────────────────────────────────
 local SAVE_DIR      = assets("Builds")
 local DEFAULT_MULT  = 4
@@ -327,7 +327,7 @@ function lib.build(file_path, settings, fetch_tools)
             if not cfg.wbs then continue end
             local newping = -199
             local ok = pcall(function()
-                for _, v in pairs(game:GetService("CoreGui").RobloxGui.PerformanceStats:GetChildren()) do
+                for _, v in pairs(coregui.RobloxGui.PerformanceStats:GetChildren()) do
                     local panel = v:FindFirstChild("StatsMiniTextPanelClass")
                     if panel
                         and panel:FindFirstChild("TitleLabel")
