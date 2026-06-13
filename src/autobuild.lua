@@ -279,11 +279,13 @@ function lib.build(file_path, settings, fetch_tools)
     
     local tp_to_pos = (function()
       local pos;
-      while not stopped and task.wait(0.01) do
-        pcall(function() 
-          localplr.Character.HumanoidRootPart.CFrame = pos
-        end)
-      end
+      task.spawn(function()
+        while not stopped and task.wait(0.01) do
+          pcall(function() 
+            localplr.Character.HumanoidRootPart.CFrame = pos
+          end)
+        end
+      end)
       return function(newpos)
         pos  = CFrame.new(newpos)
       end
