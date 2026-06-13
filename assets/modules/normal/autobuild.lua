@@ -213,7 +213,6 @@ instance_elements.run = tab:Button({
     local ok, res = pcall(function()
       
     end)
-    instance = nil
     Helpers.log(ok,res)
   end
 })
@@ -222,9 +221,8 @@ instance_elements.run = tab:Button({
   Locked   = false,
   Callback = function()
     local ok, res = pcall(function()
-      
+      instance:skip()
     end)
-    instance = nil
     Helpers.log(ok,res)
   end
 })
