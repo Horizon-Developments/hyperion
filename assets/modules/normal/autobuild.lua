@@ -16,7 +16,7 @@ local players  = Helpers.services.players
 local localplr = players.LocalPlayer
 local tab      = tabs.autobuild
 local elements = {}
-local instance;
+local instance
 local instance_elements = {}
 
 local save = {
@@ -36,6 +36,20 @@ local cfg = {
   wbs        = false,
   offset     = Vector3.new(0, 0, 0),
 }
+
+-- strips directory path and extension, e.g. "Builds/house.json" -> "house"
+local function stripname(fullpath)
+  local name = fullpath:match("([^/\\]+)$") or fullpath
+  return name:match("^(.+)%.[^.]+$") or name
+end
+
+local function getfiles()
+  local t = {}
+  for _, f in ipairs(listfiles(SAVE_DIR)) do
+    table.insert(t, stripname(f))
+  end
+  return t
+end
 
 elements.savedropdown = tab:Dropdown({
   Title     = "Builds",
@@ -119,11 +133,11 @@ tab:Divider()
 elements.builddropdown = tab:Dropdown({
   Title    = "Select",
   Desc     = "Select from builds in Hyperion/Builds",
-  Values   = listfiles(SAVE_DIR),
-  Value    = listfiles(SAVE_DIR)[1],
+  Values   = getfiles(),
+  Value    = getfiles()[1],
   Callback = function(option)
-    selected.file = option  -- was: selected = option (destroyed the table)
-    elements.builddropdown:Refresh(listfiles(SAVE_DIR))
+    selected.file = option
+    elements.builddropdown:Refresh(getfiles())
   end
 })
 
@@ -132,7 +146,7 @@ tab:Button({
   Desc     = "Refreshes the selected dropdown",
   Locked   = false,
   Callback = function()
-    elements.builddropdown:Refresh(listfiles(SAVE_DIR))  -- was: selected.dropdown (crashed)
+    elements.builddropdown:Refresh(getfiles())
   end
 })
 
@@ -146,9 +160,9 @@ tab:Button({
       return
     end
     local file = selected.file
-    pcall(delfile, file)
+    pcall(delfile, SAVE_DIR .. "/" .. file .. ".json")
     selected.file = nil
-    elements.builddropdown:Refresh(listfiles(SAVE_DIR))  -- was: selected.dropdown (crashed)
+    elements.builddropdown:Refresh(getfiles())
     WindUI:Notify({ Title = "Deleted.", Content = "Deleted " .. file, Duration = 3 })
   end
 })
@@ -159,7 +173,7 @@ tab:Button({
   Locked   = false,
   Callback = function()
     local ok, res = pcall(function()
-      for _, v in ipairs(instance_elements) do
+      for _, v in pairs(instance_elements) do
         v:Unlock()
       end
       if not selected.file then
@@ -170,16 +184,17 @@ tab:Button({
         local result
         local t = 0
         repeat
-          result = game.Players.LocalPlayer.Backpack:FindFirstChild(tool, true) or game.Players.LocalPlayer.Character:FindFirstChild(tool, true)
+          result = localplr.Backpack:FindFirstChild(tool, true)
+              or localplr.Character:FindFirstChild(tool, true)
           if not result then
             t = t + 0.5
             if t >= 5 then
-                t = 0
-                WindUI:Notify({
-                  Title = "Waiting for " .. tool,
-                  Content = tool .. " not found on backpack or character. Waiting...",
-                  Duration = 3,
-                })
+              t = 0
+              WindUI:Notify({
+                Title   = "Waiting for " .. tool,
+                Content = tool .. " not found on backpack or character. Waiting...",
+                Duration = 3,
+              })
             end
             task.wait(0.5)
           end
@@ -187,12 +202,11 @@ tab:Button({
         return result
       end)
     end)
-    for _, v in ipairs(instance_elements) do
+    for _, v in pairs(instance_elements) do
       v:Lock()
     end
-    
     if not ok then instance = nil end
-    Helpers.log(ok,res)
+    Helpers.log(ok, res)
   end
 })
 
@@ -206,17 +220,20 @@ instance_elements.run = tab:Button({
     local ok, res = pcall(function()
       task.spawn(function()
         if not instance:start() then
-          WindUI:Notify({ Title = "Failed", Content = "screenshot /console then send it in #errors (discord) for help ", Duration = 4 })
+          WindUI:Notify({ Title = "Failed", Content = "screenshot /console then send it in #errors (discord) for help", Duration = 4 })
         else
           WindUI:Notify({ Title = "Successful", Content = "Build finished!", Duration = 3 })
         end
       end)
       WindUI:Notify({ Title = "Building...", Content = "Please wait until its finished", Duration = 3 })
     end)
-    WindUI:Notify({ Title = "Failed", Content = "screenshot /console then send it in #errors (discord) for help ", Duration = 4 })
-    Helpers.log(ok,res)
+    if not ok then
+      WindUI:Notify({ Title = "Failed", Content = "screenshot /console then send it in #errors (discord) for help", Duration = 4 })
+    end
+    Helpers.log(ok, res)
   end
 })
+
 instance_elements.stop = tab:Button({
   Title    = "Stop instance",
   Locked   = false,
@@ -224,7 +241,7 @@ instance_elements.stop = tab:Button({
     local ok, res = pcall(function()
       instance:stop()
     end)
-    Helpers.log(ok,res)
+    Helpers.log(ok, res)
   end
 })
 
@@ -235,23 +252,23 @@ instance_elements.skip = tab:Button({
     local ok, res = pcall(function()
       instance:skip()
     end)
-    Helpers.log(ok,res)
+    Helpers.log(ok, res)
   end
 })
 
 instance_elements.resizewait = tab:Slider({
   Title = "Resize wait",
-  Desc = "how many s wait per resize (0 = ping based) ",
-  Step = 0.1,
+  Desc  = "how many s wait per resize (0 = ping based)",
+  Step  = 0.1,
   Value = {
-    Min = 0,
-    Max = 2,
+    Min     = 0,
+    Max     = 2,
     Default = 0.2,
   },
   Callback = function(val)
     local ok, res = pcall(function()
       instance:set_resize(val)
     end)
-    Helpers.log(ok,res)
+    Helpers.log(ok, res)
   end
 })
