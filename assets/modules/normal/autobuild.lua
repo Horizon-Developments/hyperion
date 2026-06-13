@@ -151,10 +151,10 @@ tab:Button({
 })
 
 tab:Button({
-  Title    = "Delete selected",
+  Title    = "Run selected",
   Desc     = "Deletes file",
   Locked   = false,
-  Callback = function()
+  Callback = function¹
     if not selected.file then
       WindUI:Notify({ Title = "Nothing selected", Content = "Select a build first", Duration = 3 })
       return
