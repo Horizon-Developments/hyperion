@@ -44,7 +44,8 @@ elements.savedropdown = tab:Dropdown({
 })
 local function refresh()
   local t = {}
-  for _, p in ipairs(players:GetPlayers()) do
+  for _, p in ipairs(workspace.Bricks) do
+    if ()
     table.insert(t, p.Name)
   end
   elements.savedropdown:Refresh(t)
@@ -68,7 +69,7 @@ elements.savebtn = tab:Button({
       end
       if (#save.selected == 0) then
         
-      e
+      end
       
       
       lib.save(""
