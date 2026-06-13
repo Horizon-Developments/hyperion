@@ -17,8 +17,9 @@ local players = Helpers.services.players
 local tcs = Helpers.services.textchat
 local localplr = players.LocalPlayer
 local tab = tabs.autobuild
-local 
-tab:Slider({
+local contents = {}
+
+contents.maxhistory = tab:Slider({
   Title = "Max History",
   Range = {300,10000},
   Increment = 1,
