@@ -28,18 +28,18 @@ local activeBuilder = nil
 local showEnabled   = false
 
 local function fetch_tools(toolname)
-    local char = localplr.Character
-    if not char then return nil end
-    local tool = char:FindFirstChild(toolname)
-    if not tool then
-        local bp = localplr.Backpack:FindFirstChild(toolname)
-        if bp then
-            bp.Parent = char
-            tool = bp
-        end
-    end
-    if not tool then return nil end
-    return tool:FindFirstChild("origevent") or (tool:FindFirstChild("Script") and tool.Script:FindFirstChild("Event"))
+  local char = localplr.Character
+  if not char then return nil end
+  local tool = char:FindFirstChild(toolname)
+  if not tool then
+      local bp = localplr.Backpack:FindFirstChild(toolname)
+      if bp then
+        bp.Parent = char
+        tool = bp
+      end
+  end
+  if not tool then return nil end
+  return tool:FindFirstChild("origevent") or tool:FindFirstChild("Event", true)
 end
 
 
