@@ -256,6 +256,17 @@ instance_elements.skip = tab:Button({
   end
 })
 
+instance_elements.show = tab:Button({
+  Title    = "Skip block",
+  Locked   = false,
+  Callback = function()
+    local ok, res = pcall(function()
+      instance:show()
+    end)
+    Helpers.log(ok, res)
+  end
+})
+
 instance_elements.resizewait = tab:Slider({
   Title = "Resize wait",
   Desc  = "how many s wait per resize (0 = ping based)",
