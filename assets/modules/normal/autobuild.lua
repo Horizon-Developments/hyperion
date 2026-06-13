@@ -25,7 +25,7 @@ tab:Paragraph({
 
 tab:Input({
   Title = "Max history",
-  Placeholder = "",
+  Placeholder = "300-30000",
   Callback = function(v)
     toggles.OnFriendsJoin = v
   end
