@@ -127,3 +127,11 @@ selected.dropdown = tab:Dropdown({
   end
 })
 
+tab:Button({
+    Title = "Button",
+    Desc = "Test Button",
+    Locked = false,
+    Callback = function()
+        -- ...
+    end
+})
