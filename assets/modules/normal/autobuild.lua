@@ -163,6 +163,8 @@ tab:Button({
     task.spawn(function()
       if not instance:start() then
         WindUI:Notify({ Title = "Failed", Content = "screenshot /console then send it in #errors (discord) for help ", Duration = 4 })
+      else
+        WindUI:Notify({ Title = "Failed", Content = "screenshot /console then send it in #errors (discord) for help ", Duration = 4 })
       end
     end)
     repeat task.wait(0.5) until instance
