@@ -159,8 +159,9 @@ tab:Button({
       WindUI:Notify({ Title = "Nothing selected", Content = "Select a build first", Duration = 3 })
       return
     end
+    local instance;
     task.spawn(function()
-      lib.build
+      instance = lib.build()
     end)
     
   end
