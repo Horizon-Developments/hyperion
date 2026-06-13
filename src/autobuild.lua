@@ -288,7 +288,7 @@ function lib.build(file_path, settings, fetch_tools)
       end)
       return function(newpos)
         pos  = CFrame.new(newpos)
-        task.wai
+        task.wait(0.01)
       end
     end)()
     
