@@ -50,16 +50,14 @@ local function fetch_tools(toolname)
           Duration = 3,
         })
         elapsed = 0
-        end
-        task.wait(0.5)
-        elapsed = elapsed + 0.5
+      end
+      task.wait(0.5)
+      elapsed = elapsed + 0.5
     end
   end
-
-    return tool:FindFirstChild("origevent") or tool:FindFirstChild("Event", true)
+  return tool:FindFirstChild("origevent") or tool:FindFirstChild("Event", true)
 end
 
--- ── Build list ────────────────────────────────────────────────────────────────
 local function listBuilds()
     local ok, files = pcall(listfiles, SAVE_DIR .. "/")
     if not ok or type(files) ~= "table" then return {} end
