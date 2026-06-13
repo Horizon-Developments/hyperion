@@ -64,7 +64,17 @@ elements.buildbtn = Tab:Button({
   end
 })
 
-
+local Input = Tab:Input({
+  Title = "Input",
+  Desc = "Input Description",
+  Value = "Default value",
+  InputIcon = "bird",
+  Type = "Input", -- or "Textarea"
+  Placeholder = "Enter text...",
+  Callback = function(input) 
+      print("text entered: " .. input)
+  end
+})
 
 
 
