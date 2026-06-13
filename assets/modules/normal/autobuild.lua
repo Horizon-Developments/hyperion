@@ -243,7 +243,7 @@ instance_elements.run = tab:Button({
   Locked   = false,
   Callback = function()
     for _, v in pairs(instance_elements) do
-      v:Lock()
+      v:unLock()
     end
     local ok, res = pcall(function()
       task.spawn(function()
@@ -260,7 +260,7 @@ instance_elements.run = tab:Button({
     end
     Helpers.log(ok, res)
     for _, v in pairs(instance_elements) do
-      v:Unlock()
+      v:Lock()
     end
   end
 })
