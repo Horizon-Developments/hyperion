@@ -278,6 +278,7 @@ function lib.build(file_path, settings, fetch_tools)
     local oldprt      = nil
     local cubehistory = {}
     local historynum  = 0
+    local prttable    = nil  -- ghost preview parts from instance:show()
 
     local resizewait = cfg.resizewait  -- kept separate; ping loop may update it
     
@@ -646,9 +647,19 @@ function lib.build(file_path, settings, fetch_tools)
         return cfg
     end
 
-    -- Halts the running build loop after the current block completes.
+    -- Halts the build loop and tears down all live resources.
     function instance:stop()
-        stopped = true
+        stopped     = true
+        pingRunning = false
+        cubechild:Disconnect()
+        highlight:Destroy()
+        if oldprt then oldprt:Destroy() end
+        if prttable then
+            for _, p in pairs(prttable) do
+                if p and p.Parent then p:Destroy() end
+            end
+            prttable = nil
+        end
     end
 
     --[[
@@ -690,16 +701,64 @@ function lib.build(file_path, settings, fetch_tools)
             buildblock(blockPos, blockMat, blockCol, nil, blockSz, nil, origmat, sprays, anchored, collide)
         end
 
-        stopped = false
+        self:stop()
+        return self
     end
 
-    -- Disconnects all listeners and destroys owned instances. Call on unload.
-    function instance:destroy()
-        stopped     = true
-        pingRunning = false
-        cubechild:Disconnect()
-        highlight:Destroy()
-        if oldprt then oldprt:Destroy() end
+    -- ── Spawns / tears down a client-side ghost preview of the saved build. ──
+    -- Mirrors "Display Whole Build" from the original script.
+    -- show(true)  → creates semi-transparent preview parts (only you see them).
+    -- show(false) → destroys existing preview parts.
+    function instance:show(bool)
+        -- always tear down whatever is currently visible
+        if prttable then
+            for _, p in pairs(prttable) do
+                if p and p.Parent then p:Destroy() end
+            end
+            prttable = nil
+        end
+        if not bool then return self end
+
+        local path = SAVE_DIR .. "/" .. file_path .. ".json"
+        local raw  = readfile(path)
+        if not raw then
+            warn("[builder] show: file not found: " .. path)
+            return self
+        end
+        local builddata = http:JSONDecode(raw)
+        if not builddata then
+            warn("[builder] show: decode failed: " .. path)
+            return self
+        end
+
+        local parts = {}
+        for _, v in pairs(builddata) do
+            local posses   = v.p or v.pos
+            local blockPos = CFrame.new(posses[1], posses[2], posses[3]).Position + cfg.offset
+            local blockCol = Color3.fromRGB(table_unpack(v.c or v.color))
+            local blockMat = v.m or v.mat
+            local blockSz  = (v.s or v.size) and Vector3.new(table_unpack(v.s or v.size)) or nil
+            local anch     = v.a ~= nil and v.a or v.anchored
+            local col      = v.cc ~= nil and v.cc or v.collide
+            local p = createpartrepl(blockPos, blockSz, blockCol, SWAPPED[blockMat], 0.5, anch, col, v.sp or v.sprayed)
+            table_insert(parts, p)
+        end
+        prttable = parts
+        return self
+    end
+
+    -- Skips the block currently being placed/resized.
+    function instance:skip()
+        skipblock = true
+        return self
+    end
+
+    -- Sets the per-step resize delay in seconds (mirrors "Wait before resizing").
+    -- Also updates cfg so :settings() reflects the change.
+    function instance:set_resize(val)
+        resizewait     = val
+        cfg.resizewait = val
+        return self
     end
 
     return instance
