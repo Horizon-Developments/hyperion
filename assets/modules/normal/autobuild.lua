@@ -39,7 +39,7 @@ local function fetch_tools(toolname)
       end
   end
   if not tool then return nil end
-  return tool:FindFirstChild("origevent") or tool:FindFirstChild("Event", true)
+  local tool:FindFirstChild("origevent") or tool:FindFirstChild("Event", true) 
 end
 
 
