@@ -24,12 +24,12 @@ tab:Paragraph({
 })
 
 tab:Slider({
-  Title = "Max History",
-  Min = 200,
-  Max = 100,
-  Default = 50,
-  Callback = function(value)
-    
+  Title = "Delay",
+  Range = {0.2, 30},
+  Increment = 0.1,
+  Default = 0.5,
+  Callback = function(val)
+    spamW = val
   end
 })
 
