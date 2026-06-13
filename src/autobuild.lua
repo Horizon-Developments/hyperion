@@ -277,8 +277,9 @@ function lib.build(file_path, settings, fetch_tools)
 
     local resizewait = cfg.resizewait  -- kept separate; ping loop may update it
     
-    task.spawn
     local tp_to_pos = (function()
+      local pos;
+      
       
       return function(pos)
         localplr.Character.HumanoidRootPart.CFrame = CFrame.new(pos)
