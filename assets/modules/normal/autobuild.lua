@@ -117,7 +117,7 @@ elements.saveinput = tab:Input({
 
 tab:Divider()
 
-selected.tab:Dropdown({
+selected.dropdown = tab:Dropdown({
   Title = "Select",
   Desc = "Select from builds in Hyperion/Builds",
   Values = listfiles(SAVE_DIR),
