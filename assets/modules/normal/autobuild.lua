@@ -253,6 +253,9 @@ instance_elements.run = tab:Button({
       WindUI:Notify({ Title = "Failed", Content = "screenshot /console then send it in #errors (discord) for help", Duration = 4 })
     end
     Helpers.log(ok, res)
+    for _, v in pairs(instance_elements) do
+      v:Lock()
+    end
   end
 })
 
