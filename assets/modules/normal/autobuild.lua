@@ -132,7 +132,7 @@ tab:Button({
   Desc = "Deletes file",
   Locked = false,
   Callback = function()
-    pcall(delfile, selected)
+    pcall(delfile, assetsselected)
     selected.dropdown:Refresh(listfiles(SAVE_DIR))
     WindUI:Notify({ Title = "Deleted.", Content = "Deleted " .. selected, Duration = 3 })
   end
