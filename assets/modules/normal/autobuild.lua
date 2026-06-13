@@ -68,8 +68,9 @@ elements.savebtn = tab:Button({
       end
       if (#save.selected == 0) then
         WindUI:Notify({ Title = "No selected players", Content = "Select players", Duration = 3 })
+        return
       end
-      
+    
       
       lib.save(""
     end))
