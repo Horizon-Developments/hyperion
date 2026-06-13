@@ -237,7 +237,7 @@ instance_elements.skip = tab:Button({
   end
 })
 
-instance_elements.preview = tab:Button({
+instance_elements.preview = tab:Toggle({
   Title = "Preview build",
   Desc = "Shows a preview of the load (only you can see)",
   Type = "Checkbox",
@@ -249,3 +249,4 @@ instance_elements.preview = tab:Button({
     Helpers.log(ok,res)
   end
 })
+
