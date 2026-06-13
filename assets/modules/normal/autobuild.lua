@@ -56,8 +56,11 @@ elements.buildbtn = Tab:Button({
   Callback = function()
     elements.buildbtn:Lock()
     elements.buildsdropdown:Lock()
-    
-
+    pcall(function()
+      
+    end)
+    elements.buildbtn:Unlock()
+    elements.buildsdropdown:Lock()
   end
 })
 
