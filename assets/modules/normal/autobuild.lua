@@ -64,7 +64,7 @@ elements.buildbtn = Tab:Button({
   end
 })
 
-local Input = Tab:Input({
+elements.saveinput = Tab:Input({
   Title = "Input",
   Desc = "Input Description",
   Value = "Default value",
