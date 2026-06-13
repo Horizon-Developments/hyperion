@@ -24,8 +24,8 @@ tab:Paragraph({
 })
 
 tab:Slider({
-  Title = "Delay",
-  Range = {0.2, 30},
+  Title = "Max History",
+  Range = {300,10000},
   Increment = 0.1,
   Default = 0.5,
   Callback = function(val)
