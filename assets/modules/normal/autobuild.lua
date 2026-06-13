@@ -154,7 +154,7 @@ tab:Button({
   Title    = "Run selected",
   Desc     = "Deletes file",
   Locked   = false,
-  Callback = function¹
+  Callback = function()
     if not selected.file then
       WindUI:Notify({ Title = "Nothing selected", Content = "Select a build first", Duration = 3 })
       return
