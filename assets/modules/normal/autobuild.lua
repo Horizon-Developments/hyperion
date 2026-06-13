@@ -32,14 +32,14 @@ local function fetch_tools(toolname)
   if not char then return nil end
   
   local function find()
-      local inChar = char:FindFirstChild(toolname)
-      if inChar then return inChar end
-      
-      local inBackpack = localplr.Backpack:FindFirstChild(toolname)
-      if inBackpack then
-          inBackpack.Parent = char
-          return inBackpack
-      end
+    local inChar = char:FindFirstChild(toolname)
+    if inChar then return inChar end
+    
+    local inBackpack = localplr.Backpack:FindFirstChild(toolname)
+    if inBackpack then
+        inBackpack.Parent = char
+        return inBackpack
+    end
   end
   
   local elapsed = 10
