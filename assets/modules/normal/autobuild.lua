@@ -49,14 +49,14 @@ refresh()
 players.PlayerAdded:Connect(refresh)
 players.PlayerRemoving:Connect(refresh)
 
-elements.savebtn = Tab:Button({
+elements.savebtn = tab:Button({
   Title = "Save",
   Desc = "Save selected player(s) build(s)",
   Locked = false,
   Callback = function()
     elements.savebtn:Lock()
     elements.savedropdown:Lock()
-    elements.
+    elements.elements.saveinput:Loxo
     print(pcall(function()
       lib.save(file_path
     end))
@@ -65,7 +65,7 @@ elements.savebtn = Tab:Button({
   end
 })
 
-elements.saveinput = Tab:Input({
+elements.saveinput = tab:Input({
   Title = "Input",
   Desc = "Input Description",
   Value = "Default value",
