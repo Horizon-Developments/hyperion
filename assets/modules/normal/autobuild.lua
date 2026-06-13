@@ -168,6 +168,6 @@ tab:Button({
         WindUI:Notify({ Title = "Successful", Content = "Build finished!", Duration = 3 })
       end
     end)
-    WindUI:Notify({ Title = "Successful", Content = "Build finished!", Duration = 3 })
+    WindUI:Notify({ Title = "Building...", Content = "Build finished!", Duration = 3 })
   end
 })
