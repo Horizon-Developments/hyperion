@@ -27,7 +27,6 @@ local selectedFile  = nil
 local activeBuilder = nil
 local showEnabled   = false
 
--- ── Tool fetcher ──────────────────────────────────────────────────────────────
 local function fetch_tools(toolname)
     local char = localplr.Character
     if not char then return nil end
@@ -40,9 +39,9 @@ local function fetch_tools(toolname)
         end
     end
     if not tool then return nil end
-    return tool:FindFirstChild("origevent")
-        or (tool:FindFirstChild("Script") and tool.Script:FindFirstChild("Event"))
+    return tool:FindFirstChild("origevent") or (tool:FindFirstChild("Script") and tool.Script:FindFirstChild("Event"))
 end
+
 
 -- ── Build list ────────────────────────────────────────────────────────────────
 local function listBuilds()
