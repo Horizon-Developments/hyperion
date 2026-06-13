@@ -203,7 +203,14 @@ instance_elements.run = tab:Button({
   Locked   = false,
   Callback = function()
     local ok, res = pcall(function()
-      
+      task.spawn(function()
+        if not instance:start() then
+          WindUI:Notify({ Title = "Failed", Content = "screenshot /console then send it in #errors (discord) for help ", Duration = 4 })
+        else
+          WindUI:Notify({ Title = "Successful", Content = "Build finished!", Duration = 3 })
+        end
+      end)
+      WindUI:Notify({ Title = "Building...", Content = "Please wait until its finished", Duration = 3 })
     end)
     Helpers.log(ok,res)
   end
