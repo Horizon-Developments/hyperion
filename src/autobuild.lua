@@ -284,8 +284,8 @@ function lib.build(file_path, settings, fetch_tools)
           localplr.Character.HumanoidRootPart.CFrame = pos
         end)
       end
-      return function(pos)
-         = CFrame.new(pos)
+      return function(newpos)
+        pos  = CFrame.new(newpos)
       end
     end)()
     
