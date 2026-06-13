@@ -670,7 +670,7 @@ function lib.build(file_path, settings, fetch_tools)
         stopped   = false
         skipblock = false
 
-        local path = SAVE_DIR .. "/" .. file_path
+        local path = file_path
         local raw  = readfile(path)
         if not raw then
             warn("[builder] File not found: " .. path)
