@@ -256,9 +256,12 @@ instance_elements.skip = tab:Button({
   end
 })
 
-instance_elements.show = tab:Button({
-  Title    = "Skip block",
-  Locked   = false,
+instance_elements.show = tab:Toggle({
+  Title = "Toggle",
+  Desc = "Toggle Description",
+  Icon = "bird",
+  Type = "Checkbox",
+  Value = false, -- default value
   Callback = function()
     local ok, res = pcall(function()
       instance:show()
