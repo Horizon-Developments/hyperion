@@ -264,6 +264,7 @@ function lib.build(file_path, settings, fetch_tools)
         resizewait = settings.resizewait or DEFAULT_RW,
         wbs        = settings.wbs        or false,
     }
+    
     local function tp_to_pos(pos)
       localplr.Character.HumanoidRootPart.CFrame = CFrame.new(pos)
     end
