@@ -257,7 +257,7 @@ instance_elements.skip = tab:Button({
 })
 
 instance_elements.show = tab:Toggle({
-  Title = "Toggle",
+  Title = "Show preview",
   Desc = "Toggle Description",
   Icon = "bird",
   Type = "Checkbox",
