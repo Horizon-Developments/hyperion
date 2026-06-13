@@ -135,3 +135,12 @@ tab:Button({
     selected.dropdown:Refresh(listfiles(SAVE_DIR))
   end
 })
+
+tab:Button({
+  Title = "Refresh",
+  Desc = "Refreshes the selected dropdown",
+  Locked = false,
+  Callback = function()
+    selected.dropdown:Refresh(listfiles(SAVE_DIR))
+  end
+})
