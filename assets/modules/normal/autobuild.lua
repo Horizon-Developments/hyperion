@@ -67,7 +67,7 @@ elements.savebtn = tab:Button({
         return
       end
       if (#save.selected == 0) then
-        WindUI:Notify({ Title = "Invaild filename", Content = "Set your filename", Duration = 3 })
+        WindUI:Notify({ Title = "No selected players", Content = "Set your filename", Duration = 3 })
       end
       
       
