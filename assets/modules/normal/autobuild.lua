@@ -31,8 +31,10 @@ do
   local tog = local Dropdown = Tab:Dropdown({
     Title = "Player Builds",
     Desc = "Select players builds to save",
-    Values = ,
-    Value = { "Category A" },
+    Values = (function()
+      
+    end)(),
+    Value = {},
     Multi = true,
     AllowNone = false,
     Callback = function(option) 
