@@ -50,12 +50,12 @@ players.PlayerAdded:Connect(refresh)
 players.PlayerRemoving:Connect(refresh)
 
 elements.buildbtn = Tab:Button({
-  Title = "Button",
+  Title = "",
   Desc = "Test Button",
   Locked = false,
   Callback = function()
-    buildbtn:Lock()
-    
+    elements.buildbtn:Lock()
+    elements.buildsdropdown:Lock()
     
     
     
