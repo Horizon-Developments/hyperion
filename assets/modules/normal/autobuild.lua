@@ -20,5 +20,5 @@ local tab = tabs.autobuild
 
 tabs.info:Paragraph({
   Title = "Credits",
-  Desc = "Credits to areyoumental (areyoumental110 in discord),\nwe used a modified "
+  Desc = "Credits to areyoumental (areyoumental110 in discord),\nwe used Extra stuff's (from areyoumental) source code for this."
 })
