@@ -593,8 +593,7 @@ function lib.build(file_path, settings, fetch_tools)
                         pcall(function()
                             novel = true
                             local rPos = (childcube and childcube.Position + childcube.Size / 2) or pos
-                            localplr.Character.HumanoidRootPart.CFrame = CFrame.new(rPos + Vector3.new(0, 6, 0))
-                            tp_to_pos(pos)
+                            tp_to_pos(CFrame.new(rPos + Vector3.new(0, 6, 0)))
                         end)
                         task_wait(resizewait)
                     until args[4] == nil
