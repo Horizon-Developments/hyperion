@@ -16,13 +16,16 @@ local players  = Helpers.services.players
 local localplr = players.LocalPlayer
 local tab      = tabs.autobuild
 local elements = {}
+
 local save = {
   selected = {},
   filename = ""
 }
+
 local selected = {
-  selected = nil
+  file = nil
 }
+
 local SAVE_DIR = assets("Builds")
 
 local cfg = {
@@ -31,12 +34,6 @@ local cfg = {
   wbs        = false,
   offset     = Vector3.new(0, 0, 0),
 }
-
-
-
-
-
-
 
 elements.savedropdown = tab:Dropdown({
   Title     = "Builds",
@@ -117,33 +114,39 @@ elements.saveinput = tab:Input({
 
 tab:Divider()
 
-selected.dropdown = tab:Dropdown({
-  Title = "Select",
-  Desc = "Select from builds in Hyperion/Builds",
-  Values = listfiles(SAVE_DIR),
-  Value = listfiles(SAVE_DIR)[1],
-  Callback = function(option) 
-    selected = option
+elements.builddropdown = tab:Dropdown({
+  Title    = "Select",
+  Desc     = "Select from builds in Hyperion/Builds",
+  Values   = listfiles(SAVE_DIR),
+  Value    = listfiles(SAVE_DIR)[1],
+  Callback = function(option)
+    selected.file = option  -- was: selected = option (destroyed the table)
   end
 })
 
 tab:Button({
-  Title = "Delete selected",
-  Desc = "Deletes file",
-  Locked = false,
+  Title    = "Delete selected",
+  Desc     = "Deletes file",
+  Locked   = false,
   Callback = function()
-    pcall(delfile, SAVE_DIR .. "/" .. selected)
-    selected.dropdown:Refresh(listfiles(SAVE_DIR))
-    WindUI:Notify({ Title = "Deleted.", Content = "Deleted " .. selected, Duration = 3 })
+    if not selected.file then
+      WindUI:Notify({ Title = "Nothing selected", Content = "Select a build first", Duration = 3 })
+      return
+    end
+    local file = selected.file
+    pcall(delfile, file)
+    selected.file = nil
+    elements.builddropdown:Refresh(listfiles(SAVE_DIR))  -- was: selected.dropdown (crashed)
+    WindUI:Notify({ Title = "Deleted.", Content = "Deleted " .. file, Duration = 3 })
   end
 })
 
 tab:Button({
-  Title = "Refresh",
-  Desc = "Refreshes the selected dropdown",
-  Locked = false,
+  Title    = "Refresh",
+  Desc     = "Refreshes the selected dropdown",
+  Locked   = false,
   Callback = function()
-    selected.dropdown:Refresh(listfiles(SAVE_DIR))
+    elements.builddropdown:Refresh(listfiles(SAVE_DIR))  -- was: selected.dropdown (crashed)
   end
 })
 
