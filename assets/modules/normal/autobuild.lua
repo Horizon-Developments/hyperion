@@ -115,6 +115,7 @@ elements.saveinput = tab:Input({
 
 tab:Divider()
 local selected = nil
+local last = nil
 while task.wait(5) do
   tab:Dropdown({
     Title = "Select",
