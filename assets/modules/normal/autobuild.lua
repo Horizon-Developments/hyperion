@@ -24,7 +24,7 @@ local cfg = {
   offset     = Vector3.new(0, 0, 0),
 }
 
-
+tab:Divider()
 
 
 
