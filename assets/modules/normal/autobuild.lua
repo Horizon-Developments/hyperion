@@ -17,7 +17,7 @@ local players = Helpers.services.players
 local tcs = Helpers.services.textchat
 local localplr = players.LocalPlayer
 local tab = tabs.autobuild
-local info = {}
+local settings = {}
 
 tab:Slider({
   Title = "Max History",
@@ -25,7 +25,7 @@ tab:Slider({
   Increment = 1,
   Default = 300,
   Callback = function(val)
-    
+    settings.historymax = val
   end
 })
 
@@ -39,7 +39,6 @@ tab:Slider({
 
 
 local builder = lib.build("my_build", {
-    tp = true,
     offset = Vector3.new(0, 0, 0),
     mult = 4,
     historymax = 400,
