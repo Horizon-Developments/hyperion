@@ -246,7 +246,10 @@ instance_elements.resizewait = tab:Slider({
     Max = 2,
     Default = 0.2,
   },
-  Callback = function(value)
-    
+  Callback = function(val)
+    local ok, res = pcall(function()
+      instance:set_resize(val)
+    end)
+    Helpers.log(ok,res)
   end
 })
