@@ -239,7 +239,7 @@ instance_elements.skip = tab:Button({
 
 instance_elements.preview = tab:Button({
   Title = "Preview build",
-  Desc = "Toggle Description",
+  Desc = "Shows a preview of the load (only you can see)",
   Type = "Checkbox",
   Value = false,
   Callback = function()
