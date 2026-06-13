@@ -25,7 +25,7 @@ local cfg = {
 }
 
 tab:Divider()
-
+local selected = {}
 
 do
   local dropdown = tab:Dropdown({
@@ -40,19 +40,19 @@ do
     end)(),
     Multi = true,
     AllowNone = true,
-    Callback = function() end
-})
-
-local function refresh()
+    Callback = function() 
+      
+    end
+  })
+  local function refresh()
     local t = {}
     for _, p in ipairs(Players:GetPlayers()) do
-        table.insert(t, p.Name)
+      table.insert(t, p.Name)
     end
     dropdown:Refresh(t)
-end
-
-Players.PlayerAdded:Connect(refresh)
-Players.PlayerRemoving:Connect(refresh)
+  end
+  Players.PlayerAdded:Connect(refresh)
+  Players.PlayerRemoving:Connect(refresh)
 end
 
 
