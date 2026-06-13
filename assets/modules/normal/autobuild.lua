@@ -243,8 +243,8 @@ instance_elements.resizewait = tab:Slider({
     Step = 0.1,
     Value = {
         Min = 0.1,
-        Max = 120,
-        Default = 70,
+        Max = 2,
+        Default = 0.2,
     },
     Callback = function(value)
         print(value)
