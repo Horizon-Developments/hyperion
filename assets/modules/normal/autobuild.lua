@@ -224,7 +224,7 @@ tab:Button({
             task.wait(0.5)
           end
         until result
-        return result
+        return result:FindFirstChild("Event")
       end)
     end)
     for _, v in pairs(instance_elements) do
