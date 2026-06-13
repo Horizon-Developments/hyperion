@@ -170,9 +170,9 @@ tab:Button({
           if t >= 5 then
               t = 0
               WindUI:Notify({
-                  Title = "Waiting for " .. tool,
-                  Content = tool .. " not found on backpack or character. Waiting...",
-                  Duration = 3,
+                Title = "Waiting for " .. tool,
+                Content = tool .. " not found on backpack or character. Waiting...",
+                Duration = 3,
               })
           end
           task.wait(0.5)
@@ -185,6 +185,7 @@ tab:Button({
         WindUI:Notify({ Title = "Failed", Content = "screenshot /console then send it in #errors (discord) for help ", Duration = 4 })
       else
         WindUI:Notify({ Title = "Successful", Content = "Build finished!", Duration = 3 })
+        instance = nil
       end
     end)
     WindUI:Notify({ Title = "Building...", Content = "Please wait until its finished", Duration = 3 })
