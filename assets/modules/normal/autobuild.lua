@@ -161,9 +161,7 @@ tab:Button({
     end
     local instance;
     task.spawn(function()
-      instance = lib.build(SAVE_DIR .. "/" .. file, {
-        
-      })
+      instance = lib.build(SAVE_DIR .. "/" .. file, cfg)
     end)
     
   end
