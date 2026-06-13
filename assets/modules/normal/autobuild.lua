@@ -20,4 +20,5 @@ local tab = tabs.autobuild
 
 tabs.info:Paragraph({
   Title = "Credits",
-  Desc = "" })
+  Desc = "Credits to areyoumental"
+})
