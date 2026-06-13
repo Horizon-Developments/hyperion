@@ -159,10 +159,7 @@ tab:Button({
       WindUI:Notify({ Title = "Nothing selected", Content = "Select a build first", Duration = 3 })
       return
     end
-    local file = selected.file
-    pcall(delfile, file)
-    selected.file = nil
-    elements.builddropdown:Refresh(listfiles(SAVE_DIR))  -- was: selected.dropdown (crashed)
-    WindUI:Notify({ Title = "Deleted.", Content = "Deleted " .. file, Duration = 3 })
+    lib.build
+    
   end
 })
