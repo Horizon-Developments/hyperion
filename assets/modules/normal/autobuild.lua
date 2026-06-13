@@ -54,14 +54,14 @@ elements.savebtn = tab:Button({
   Desc = "Save selected player(s) build(s)",
   Locked = false,
   Callback = function()
-    elements.savebtn:Lock()
-    elements.saveinput:Lock()
     elements.savedropdown:Lock()
+    elements.saveinput:Lock()
+    elements.savebtn:Lock()
     print(pcall(function()
-      lib.save(file_path
+      
     end))
     elements.savebtn:Unlock()
-    elements.saveinput:Lock()
+    elements.saveinput:Unlock()
     elements.savedropdown:Unlock()
   end
 })
