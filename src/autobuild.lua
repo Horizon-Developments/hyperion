@@ -719,7 +719,7 @@ function lib.build(file_path, settings, fetch_tools)
         end
         if not bool then return self end
 
-        local path = SAVE_DIR .. "/" .. file_path .. ".json"
+        local path = file_path
         local raw  = readfile(path)
         if not raw then
             warn("[builder] show: file not found: " .. path)
