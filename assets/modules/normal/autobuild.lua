@@ -160,7 +160,9 @@ tab:Button({
       WindUI:Notify({ Title = "Nothing selected", Content = "Select a build first", Duration = 3 })
       return
     end
-    instance = lib.build(SAVE_DIR .. "/" .. file, cfg)
+    instance = lib.build(SAVE_DIR .. "/" .. file, cfg, function()
+      
+    end)
     task.spawn(function()
       if not instance:start() then
         WindUI:Notify({ Title = "Failed", Content = "screenshot /console then send it in #errors (discord) for help ", Duration = 4 })
