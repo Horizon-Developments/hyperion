@@ -28,7 +28,7 @@ local cfg = {
 
 tab:Divider()
 
-elements.buildsdropdown = tab:Dropdown({
+elements.savedropdown = tab:Dropdown({
   Title = "Builds",
   Desc = "Select players builds to save"
   Values = {},
@@ -43,24 +43,25 @@ local function refresh()
   for _, p in ipairs(players:GetPlayers()) do
     table.insert(t, p.Name)
   end
-  elements.buildsdropdown:Refresh(t)
+  elements.savedropdown:Refresh(t)
 end
 refresh()
 players.PlayerAdded:Connect(refresh)
 players.PlayerRemoving:Connect(refresh)
 
-elements.buildbtn = Tab:Button({
+elements.savebtn = Tab:Button({
   Title = "Save",
   Desc = "Save selected player(s) build(s)",
   Locked = false,
   Callback = function()
-    elements.buildbtn:Lock()
-    elements.buildsdropdown:Lock()
+    elements.savebtn:Lock()
+    elements.savedropdown:Lock()
+    elements.
     print(pcall(function()
       lib.save(file_path
     end))
-    elements.buildbtn:Unlock()
-    elements.buildsdropdown:Unlock()
+    elements.savebtn:Unlock()
+    elements.savedropdown:Unlock()
   end
 })
 
