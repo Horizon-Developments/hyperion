@@ -72,6 +72,7 @@ elements.savebtn = tab:Button({
       end
       
       lib.save(save.filename, save.selected)
+      WindUI:Notify({ Title = "No selected players", Content = "", Duration = 3 })
     end))
     elements.savebtn:Unlock()
     elements.saveinput:Unlock()
