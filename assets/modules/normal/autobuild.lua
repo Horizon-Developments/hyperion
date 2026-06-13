@@ -75,7 +75,7 @@ elements.saveinput = tab:Input({
   Placeholder = "Enter text...",
   Callback = function(input) 
     if (not input or #input == 0) then return end
-    
+    return input:match("^[%w_]+$") ~= nil
     
     
   end
