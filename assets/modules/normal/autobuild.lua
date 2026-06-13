@@ -240,10 +240,6 @@ instance_elements.skip = tab:Button({
 instance_elements. = tab:Slider({
     Title = "Slider",
     Desc = "Slider Description",
-    
-    -- To make float number supported, 
-    -- make the Step a float number.
-    -- example: Step = 0.1
     Step = 1,
     Value = {
         Min = 20,
