@@ -237,7 +237,7 @@ instance_elements.skip = tab:Button({
   end
 })
 
-instance_elements. = tab:Slider({
+instance_elements.resizewait = tab:Slider({
     Title = "Slider",
     Desc = "Slider Description",
     Step = 1,
