@@ -206,8 +206,8 @@ tab:Button({
 tab:Divider()
 
 instance_elements.run = tab:Button({
-  Title    = "Run instan",
-  Desc     = "Loads file",
+  Title    = "Run instance",
+  Desc     = ""
   Locked   = false,
   Callback = function()
     local ok, res = pcall(function()
