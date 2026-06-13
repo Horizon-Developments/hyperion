@@ -67,8 +67,8 @@ elements.savebtn = tab:Button({
 })
 
 elements.saveinput = tab:Input({
-  Title = "Input",
-  Desc = "Input Description",
+  Title = "Filename",
+  Desc = "A-Z 0-9 ",
   Value = "Default value",
   InputIcon = "bird",
   Type = "Input", -- or "Textarea"
