@@ -242,6 +242,9 @@ instance_elements.run = tab:Button({
   Desc     = "auto build",
   Locked   = false,
   Callback = function()
+    for _, v in pairs(instance_elements) do
+      v:Lock()
+    end
     local ok, res = pcall(function()
       task.spawn(function()
         if not instance:start() then
