@@ -11,10 +11,11 @@ tabs.adminkit = Window:Tab({
   Icon = "wrench"
 })
 
-local tab = tabs.adminkit
-local tcs = Helpers.services.textchat
+local autobuild = loadstring(game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/src/autobuild.lua"))(...)
 local players = Helpers.services.players
+local tcs = Helpers.services.textchat
 local localplr = players.LocalPlayer
+local tab = tabs.adminkit
 
 
 
