@@ -276,7 +276,13 @@ function lib.build(file_path, settings, fetch_tools)
     local historynum  = 0
 
     local resizewait = cfg.resizewait  -- kept separate; ping loop may update it
-
+    
+    
+    local function tp_to_pos(pos)
+      localplr.Character.HumanoidRootPart.CFrame = CFrame.new(pos)
+    end
+    
+    
     -- ── Highlight (block being painted) ──────────────────────────────────────
     local highlight = Instance.new("Highlight")
     highlight.Parent           = game.CoreGui
