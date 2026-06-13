@@ -115,13 +115,14 @@ elements.saveinput = tab:Input({
 
 tab:Divider()
 local selected = nil
-tab:Dropdown({
-  Title = "Select",
-  Desc = "Select from builds in Hyperion/Builds",
-  Values = listfiles(SAVE_DIR),
-  Value = listfiles(SAVE_DIR)[1],
-  Callback = function(option) 
-    selected = option
-  end
-})
-
+while task.wait(5) do
+  tab:Dropdown({
+    Title = "Select",
+    Desc = "Select from builds in Hyperion/Builds",
+    Values = listfiles(SAVE_DIR),
+    Value = listfiles(SAVE_DIR)[1],
+    Callback = function(option) 
+      selected = option
+    end
+  })
+end
