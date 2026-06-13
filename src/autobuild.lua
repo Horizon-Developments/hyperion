@@ -136,7 +136,7 @@ local function builder()
 			local base_path = file_path:gsub("%.json$", ""):gsub("%.lz4$", "")
 			
 			if lz4compress and lz4decompress then
-				writefile(base_path .. ".lz4", lz4compress(json_str))
+				writefile(base_path .. ".lz4", lz4compress(json_str, 1))
 			else
 				writefile(base_path .. ".json", json_str)
 			end
