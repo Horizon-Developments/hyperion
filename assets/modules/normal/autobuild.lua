@@ -117,9 +117,7 @@ tab:Divider()
 local selected = nil
 local last = {}
 while task.wait(5) do
-  if #last == #listfiles(SAVE_DIR)
-  
-  
+  if #last == #listfiles(SAVE_DIR) then continue end
   tab:Dropdown({
     Title = "Select",
     Desc = "Select from builds in Hyperion/Builds",
