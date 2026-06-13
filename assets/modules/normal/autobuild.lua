@@ -17,6 +17,7 @@ local localplr = players.LocalPlayer
 local tab      = tabs.autobuild
 local elements = {}
 local instance;
+local instance_elements = {}
 
 local save = {
   selected = {},
