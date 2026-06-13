@@ -45,8 +45,7 @@ elements.savedropdown = tab:Dropdown({
 local function refresh()
   local t = {}
   for _, p in ipairs(workspace.Bricks) do
-    if (#p:GetChildren() == 0)
-    table.insert(t, p.Name)
+    if (#p:GetChildren() == 0) then table.insert(t, p.Name) end
   end
   elements.savedropdown:Refresh(t)
 end
