@@ -36,8 +36,6 @@ local cfg = {
 
 
 
-tab:Divider()
-
 elements.savedropdown = tab:Dropdown({
   Title     = "Builds",
   Desc      = "Select players builds to save",
@@ -114,3 +112,5 @@ elements.saveinput = tab:Input({
     save.filename = input
   end
 })
+
+tab:Divider()
