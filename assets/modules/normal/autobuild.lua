@@ -27,21 +27,41 @@ local selectedFile  = nil
 local activeBuilder = nil
 local showEnabled   = false
 
-local function fetch_tools(toolname)
-  local char = localplr.Character
-  if not char then return nil end
-  local tool = char:FindFirstChild(toolname)
-  if not tool then
-      local bp = localplr.Backpack:FindFirstChild(toolname)
-      if bp then
-        bp.Parent = char
-        tool = bp
-      end
-  end
-  if not tool then return nil end
-  local tool:FindFirstChild("origevent") or tool:FindFirstChild("Event", true) 
-end
+local StarterGui = game:GetService("StarterGui")
 
+local function fetch_tools(toolname)
+    local char = localplr.Character
+    if not char then return nil end
+
+    local tool
+    local elapsed = 10  -- start at 10 so the first notification fires immediately
+
+    while not tool do
+        tool = char:FindFirstChild(toolname)
+        if not tool then
+            local bp = localplr.Backpack:FindFirstChild(toolname)
+            if bp then
+                bp.Parent = char
+                tool = bp
+            end
+        end
+
+        if not tool then
+            if elapsed >= 10 then
+                StarterGui:SetCore("SendNotification", {
+                    Title    = "Error",
+                    Text     = "No " .. toolname .. " found! Waiting for " .. toolname,
+                    Duration = 3,
+                })
+                elapsed = 0
+            end
+            task.wait(0.5)
+            elapsed = elapsed + 0.5
+        end
+    end
+
+    return tool:FindFirstChild("origevent") or tool:FindFirstChild("Event", true)
+end
 
 -- ── Build list ────────────────────────────────────────────────────────────────
 local function listBuilds()
