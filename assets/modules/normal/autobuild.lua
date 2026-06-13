@@ -258,13 +258,13 @@ instance_elements.skip = tab:Button({
 
 instance_elements.show = tab:Toggle({
   Title = "Show preview",
-  Desc = "Toggle Description",
+  Desc = "Shows fake blocks for preview (only you can see)",
   Icon = "bird",
   Type = "Checkbox",
   Value = false, -- default value
-  Callback = function()
+  Callback = function(b)
     local ok, res = pcall(function()
-      instance:show()
+      instance:show(b)
     end)
     Helpers.log(ok, res)
   end
