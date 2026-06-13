@@ -29,8 +29,8 @@ tab:Divider()
 
 do
   local tog = local Dropdown = Tab:Dropdown({
-    Title = "Dropdown (Multi)",
-    Desc = "Dropdown Description",
+    Title = "Player Builds",
+    Desc = "Select players builds to save",
     Values = { "Category A", "Category B", "Category C" },
     Value = { "Category A" },
     Multi = true,
