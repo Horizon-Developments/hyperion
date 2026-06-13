@@ -114,7 +114,7 @@ elements.saveinput = tab:Input({
 })
 
 tab:Divider()
-
+local selected = nil
 tab:Dropdown({
   Title = "Select",
   Desc = "Dropdown Description",
