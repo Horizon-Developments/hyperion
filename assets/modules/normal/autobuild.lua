@@ -121,6 +121,7 @@ tab:Dropdown({
   Values = listfiles(SAVE_DIR),
   Value = listfiles(SAVE_DIR)[1],
   Callback = function(option) 
-     Encode(option)) 
+    selected = option
   end
 })
+
