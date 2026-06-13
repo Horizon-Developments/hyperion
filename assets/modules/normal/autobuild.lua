@@ -31,13 +31,7 @@ do
   local dropdown = tab:Dropdown({
     Title = "Builds",
     Desc = "Select players builds to save"
-    Values = (function()
-      local t = {}
-      for _, p in ipairs(players:GetPlayers()) do
-        table.insert(t, p.Name)
-      end
-      return t
-    end)(),
+    Values = {},
     Multi = true,
     AllowNone = true,
     Callback = function(v) 
@@ -51,6 +45,7 @@ do
     end
     dropdown:Refresh(t)
   end
+  refresh()
   players.PlayerAdded:Connect(refresh)
   players.PlayerRemoving:Connect(refresh)
 end
