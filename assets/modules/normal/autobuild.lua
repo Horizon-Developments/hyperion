@@ -31,10 +31,10 @@ do
   local tog = local Dropdown = Tab:Dropdown({
     Title = "Player Builds",
     Desc = "Select players builds to save",
-    Values = { "Category A", "Category B", "Category C" },
+    Values = ,
     Value = { "Category A" },
     Multi = true,
-    AllowNone = true,
+    AllowNone = false,
     Callback = function(option) 
         -- option is a table: { "Category A", "Category B" }
         print("Categories selected: " .. game:GetService("HttpService"):JSONEncode(option)) 
