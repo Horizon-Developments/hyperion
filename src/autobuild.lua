@@ -235,7 +235,7 @@ function lib.save(file_path, players)
             end
         end
     end
-    writefile(file_path, http:JSONEncode(builddata))
+    writefile(SAVE_DIR .. "/" .. file_path .. ".json", http:JSONEncode(builddata))
 end
 
 -- ═══════════════════════════════════════════════════════════════════════════════
