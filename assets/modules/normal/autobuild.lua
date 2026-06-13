@@ -68,7 +68,7 @@ elements.savebtn = tab:Button({
 
 elements.saveinput = tab:Input({
   Title = "Filename",
-  Desc = "A-Z 0-9 only!",
+  Desc = "a-z A-Z 0-9 _ only!",
   Value = nil,
   InputIcon = "file-pen",
   Type = "Input",
@@ -79,7 +79,6 @@ elements.saveinput = tab:Input({
       WindUI:Notify({ Title = "Invaild file name", Content = "Filenames can only be a-z A-Z 0-9 _", Duration = 3 })
       return
     end
-    
     
   end
 })
