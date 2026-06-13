@@ -213,6 +213,7 @@ instance_elements.run = tab:Button({
       end)
       WindUI:Notify({ Title = "Building...", Content = "Please wait until its finished", Duration = 3 })
     end)
+    WindUI:Notify({ Title = "Failed", Content = "screenshot /console then send it in #errors (discord) for help ", Duration = 4 })
     Helpers.log(ok,res)
   end
 })
