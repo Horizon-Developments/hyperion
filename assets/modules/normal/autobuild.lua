@@ -25,7 +25,10 @@ local cfg = {
 }
 
 tab:Divider()
-
+local Paragraph = Tab:Paragraph({
+    Title = "Paragraph with Image, Thumbnail, Buttons",
+    Desc = "Test Paragraph",
+})
 
 
 
