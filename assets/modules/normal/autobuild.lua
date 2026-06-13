@@ -27,14 +27,12 @@ local selectedFile  = nil
 local activeBuilder = nil
 local showEnabled   = false
 
-local StarterGui = game:GetService("StarterGui")
-
 local function fetch_tools(toolname)
     local char = localplr.Character
     if not char then return nil end
 
     local tool
-    local elapsed = 10  -- start at 10 so the first notification fires immediately
+    local elapsed = 10
 
     while not tool do
         tool = char:FindFirstChild(toolname)
@@ -48,9 +46,9 @@ local function fetch_tools(toolname)
 
         if not tool then
             if elapsed >= 10 then
-                StarterGui:SetCore("SendNotification", {
+                WindUI:Notify({
                     Title    = "Error",
-                    Text     = "No " .. toolname .. " found! Waiting for " .. toolname,
+                    Content  = "No " .. toolname .. " found! Waiting for " .. toolname,
                     Duration = 3,
                 })
                 elapsed = 0
