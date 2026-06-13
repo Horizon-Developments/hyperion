@@ -18,3 +18,4 @@ local tcs = Helpers.services.textchat
 local localplr = players.LocalPlayer
 local tab = tabs.autobuild
 
+tabs.info:Paragraph({ Title = "Credits", Icon = "layers", Desc = "Hyperion is a modular system. Instead of using a separate script, you can extend it with plugins. Visit the #plugins channel on our Discord to find and share plugins." })
