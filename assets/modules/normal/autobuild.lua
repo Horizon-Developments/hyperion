@@ -119,9 +119,9 @@ tab:Dropdown({
   Title = "Select",
   Desc = "Select from builds in Hyperion/Builds",
   Values = listfiles(SAVE_DIR),
-  Value = ,
-  Multi = true,
-  AllowNone = true,
+  Value = listfiles(SAVE_DIR)[1],
+  Multi = false,
+  AllowNone = false,
   Callback = function(option) 
     print("Categories selected: " .. game:GetService("HttpService"):JSONEncode(option)) 
   end
