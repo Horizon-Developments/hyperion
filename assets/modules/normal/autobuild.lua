@@ -216,11 +216,11 @@ instance_elements.run = tab:Button({
   end
 })
 instance_elements.stop = tab:Button({
-  Title    = "Skip block",
+  Title    = "Stop instance",
   Locked   = false,
   Callback = function()
     local ok, res = pcall(function()
-      instance:skip()
+      instance:stop()
     end)
     Helpers.log(ok,res)
   end
