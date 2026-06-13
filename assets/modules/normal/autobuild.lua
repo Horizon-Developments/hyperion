@@ -128,8 +128,8 @@ selected.dropdown = tab:Dropdown({
 })
 
 tab:Button({
-  Title = "Refresh",
-  Desc = "Refreshes the selected dropdown",
+  Title = "Delete selected",
+  Desc = "Deletes file",
   Locked = false,
   Callback = function()
     selected.dropdown:Refresh(listfiles(SAVE_DIR))
