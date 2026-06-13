@@ -1,3 +1,8 @@
+local args = ...
+
+local assets = args.Assets
+local Helpers = args.Helpers
+
 local lib = {}
 
 -- ─── Localised globals ────────────────────────────────────────────────────────
