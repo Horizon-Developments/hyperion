@@ -16,6 +16,7 @@ local players  = Helpers.services.players
 local localplr = players.LocalPlayer
 local tab      = tabs.autobuild
 local elements = {}
+local instance;
 
 local save = {
   selected = {},
