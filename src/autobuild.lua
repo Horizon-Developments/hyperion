@@ -16,7 +16,7 @@ local string_sub     = string.sub
 local string_gsub    = string.gsub
 local string_len     = string.len
 
-local localplr = game.Players.LocalPlayer
+local localplr = Helpers.services.
 local http     = game:GetService("HttpService")
 
 -- ─── Constants ────────────────────────────────────────────────────────────────
