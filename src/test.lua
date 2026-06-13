@@ -4,10 +4,10 @@ if isfile("HYPBuild.lz4") then
   local builder = autobuild.build("mybuild", {
     tp = true,
     offset = Vector3.new(0,0,0)
-}, function(tool)
-    return game.Players.LocalPlayer.Backpack:FindFirstChild(tool, true)
-        or game.Players.LocalPlayer.Character:FindFirstChild(tool, true)
-end)
+  }, function(tool)
+    return game.Players.LocalPlayer.Backpack:FindFirstChild(tool, true) or game.Players.LocalPlayer.Character:FindFirstChild(tool, true)
+  end)
+  
   print("DONE")
 else
   print("SAVE BUILD")
