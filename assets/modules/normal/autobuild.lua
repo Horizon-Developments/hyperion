@@ -153,7 +153,7 @@ tab:Button({
 
 tab:Button({
   Title    = "Load selected",
-  Desc     = "Deletes file",
+  Desc     = "Loads file",
   Locked   = false,
   Callback = function()
     local ok, res = pcall(function()
