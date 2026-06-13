@@ -158,6 +158,9 @@ tab:Button({
   Locked   = false,
   Callback = function()
     local ok, res = pcall(function()
+      for _, v in ipairs(instance_elements) do
+        
+      end
       if not selected.file then
         WindUI:Notify({ Title = "Nothing selected", Content = "Select a build first", Duration = 3 })
         return
