@@ -205,7 +205,7 @@ tab:Button({
 
 tab:Divider()
 
-tab:Button({
+instance_elements.tab:Button({
   Title    = "Load selected",
   Desc     = "Loads file",
   Locked   = false,
