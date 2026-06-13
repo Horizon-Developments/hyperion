@@ -227,9 +227,6 @@ tab:Button({
         return result:FindFirstChild("Event", true)
       end)
     end)
-    for _, v in pairs(instance_elements) do
-      v:Lock()
-    end
     if not ok then instance = nil end
     Helpers.log(ok, res)
   end
