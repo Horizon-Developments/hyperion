@@ -83,11 +83,7 @@ elements.saveinput = tab:Input({
       WindUI:Notify({ Title = "Invaild file name", Content = "Filenames can only be a-z A-Z 0-9 _", Duration = 3 })
       return
     end
-    
-    
-    
-    
-    
+    save.filename = input
   end
 })
 
