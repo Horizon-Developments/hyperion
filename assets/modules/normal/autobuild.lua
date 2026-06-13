@@ -49,7 +49,14 @@ refresh()
 players.PlayerAdded:Connect(refresh)
 players.PlayerRemoving:Connect(refresh)
 
-
+local Button = Tab:Button({
+  Title = "Button",
+  Desc = "Test Button",
+  Locked = false,
+  Callback = function()
+      -- ...
+  end
+})
 
 
 
