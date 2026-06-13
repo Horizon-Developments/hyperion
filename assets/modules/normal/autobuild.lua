@@ -55,12 +55,13 @@ elements.savebtn = tab:Button({
   Locked = false,
   Callback = function()
     elements.savebtn:Lock()
+    elements.saveinput:Lock()
     elements.savedropdown:Lock()
-    elements.elements.saveinput:Loxo
     print(pcall(function()
       lib.save(file_path
     end))
     elements.savebtn:Unlock()
+    elements.saveinput:Lock()
     elements.savedropdown:Unlock()
   end
 })
