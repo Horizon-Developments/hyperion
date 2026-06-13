@@ -45,20 +45,20 @@ local function fetch_tools(toolname)
     local elapsed = 10
     local tool = find()
 
-    while not tool do
+      while not tool do
         if elapsed >= 10 then
           WindUI:Notify({
             Title    = "Error",
             Content  = "No " .. toolname .. " found! Waiting for " .. toolname,
             Duration = 3,
-            })
-            elapsed = 0
+          })
+         elapsed = 0
         end
         task.wait(0.5)
         elapsed += 0.5
         tool = find()
-    end
-    return tool:FindFirstChild("origevent") or tool:FindFirstChild("Event", true)
+      end
+      return tool:FindFirstChild("origevent") or tool:FindFirstChild("Event", true)
 end
 
 
