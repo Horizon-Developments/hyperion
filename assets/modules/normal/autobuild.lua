@@ -20,7 +20,9 @@ local save = {
   selected = {},
   filename = ""
 }
-
+local selected = {
+  selected = nil
+}
 local SAVE_DIR = assets("Builds")
 
 local cfg = {
@@ -124,4 +126,12 @@ tab:Dropdown({
     selected = option
   end
 })
-
+tab:Dropdown({
+    Title = "Select",
+    Desc = "Select from builds in Hyperion/Builds",
+    Values = listfiles(SAVE_DIR),
+    Value = listfiles(SAVE_DIR)[1],
+    Callback = function(option) 
+      selected = option
+    end
+  })
