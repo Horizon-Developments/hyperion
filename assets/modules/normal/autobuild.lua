@@ -76,7 +76,7 @@ elements.saveinput = tab:Input({
   Callback = function(input) 
     if (not input or #input == 0) then return end
     if (input:match("^[%w_]+$") ~= nil) then
-      WindUI:Notify({ Title = "Invaild file name", Content = "", Duration = 3 })
+      WindUI:Notify({ Title = "Invaild file name", Content = "Filenames can only be a-z A-Z 0-9 _", Duration = 3 })
       return
     end
     
