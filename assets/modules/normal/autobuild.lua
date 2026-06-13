@@ -242,7 +242,7 @@ instance_elements.preview = tab:Button({
   Locked   = false,
   Callback = function()
     local ok, res = pcall(function()
-      instance:skip()
+      instance:show(bool)
     end)
     Helpers.log(ok,res)
   end
