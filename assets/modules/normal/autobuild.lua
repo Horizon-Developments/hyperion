@@ -62,11 +62,9 @@ elements.savebtn = tab:Button({
     elements.saveinput:Lock()
     elements.savebtn:Lock()
     print(pcall(function()
+      if ()
       
-      
-      
-      
-      lib.save(
+      lib.save(""
     end))
     elements.savebtn:Unlock()
     elements.saveinput:Unlock()
