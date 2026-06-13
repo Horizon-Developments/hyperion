@@ -134,7 +134,7 @@ tab:Button({
   Callback = function()
     
     selected.dropdown:Refresh(listfiles(SAVE_DIR))
-    WindUI:Notify({ Title = "Deleted.", Content = "Deleted ", Duration = 3 })
+    WindUI:Notify({ Title = "Deleted.", Content = "Deleted " .. selected, Duration = 3 })
   end
 })
 
