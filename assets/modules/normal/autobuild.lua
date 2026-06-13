@@ -163,7 +163,7 @@ tab:Button({
     task.spawn(function()
       instance = lib.build(SAVE_DIR .. "/" .. file, cfg):start()
       if not instance then
-        WindUI:Notify({ Title = "Failed", Content = "screenshot /console ", Duration = 3 })
+        WindUI:Notify({ Title = "Failed", Content = "screenshot /console then send it in #errors (discord) for help ", Duration = 4 })
       end
     end)
     
