@@ -163,8 +163,7 @@ tab:Button({
     task.spawn(function()
       instance = lib.build(SAVE_DIR .. "/" .. file, cfg):start()
       if not instance then
-        
-        
+        WindUI:Notify({ Title = "Failed", Content = "Select a build first", Duration = 3 })
       end
     end)
     
