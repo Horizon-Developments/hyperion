@@ -1,4 +1,4 @@
-local autobuild = loadstring(game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/src/autobuild.lua"))()
+local autobuild = loadstring(game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/src/autobuild.lua"))(...)
 
 if isfile("HYPBuild.lz4") then
     print("LOAD BUILD")
