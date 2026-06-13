@@ -66,7 +66,9 @@ elements.savebtn = tab:Button({
         WindUI:Notify({ Title = "Invaild filename", Content = "Set your filename", Duration = 3 })
         return
       end
-      if (save.)
+      if (#save.selected == 0) then
+        
+      e
       
       
       lib.save(""
