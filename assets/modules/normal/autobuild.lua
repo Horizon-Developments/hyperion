@@ -27,13 +27,13 @@ local cfg = {
 tab:Divider()
 
 
-Tab:Toggle({
+do
+  local tog = tab:Toggle({
     Title = "Live Update Bricks",
     Desc = "keeps models processed every frame",
     Icon = "bird",
     Type = "Checkbox",
     Value = false,
-
     Callback = function(state)
         enabled = state
         if state then
@@ -45,8 +45,7 @@ Tab:Toggle({
     end
 })
 
-
-
+end
 
 
 
