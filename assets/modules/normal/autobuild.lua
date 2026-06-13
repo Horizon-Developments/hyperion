@@ -13,6 +13,7 @@ tabs.autobuild = Window:Tab({
 
 --// Main logic here.
 local builder = loadstring(game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/src/autobuild.lua"))(...)
+
 local players = Helpers.services.players
 local tcs = Helpers.services.textchat
 local localplr = players.LocalPlayer
