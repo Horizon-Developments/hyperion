@@ -167,7 +167,10 @@ tab:Button({
         WindUI:Notify({ Title = "Successful", Content = "Build finished!", Duration = 3 })
       end
     end)
-    repeat task.wait(0.5) until instance
+    
+    
+    
+    
     
   end
 })
