@@ -185,14 +185,6 @@ tab:Button({
         until result
         return result
       end)
-      task.spawn(function()
-        if not instance:start() then
-          WindUI:Notify({ Title = "Failed", Content = "screenshot /console then send it in #errors (discord) for help ", Duration = 4 })
-        else
-          WindUI:Notify({ Title = "Successful", Content = "Build finished!", Duration = 3 })
-        end
-      end)
-      WindUI:Notify({ Title = "Building...", Content = "Please wait until its finished", Duration = 3 })
     end)
     for _, v in ipairs(instance_elements) do
       v:Lock()
@@ -216,7 +208,7 @@ instance_elements.run = tab:Button({
     Helpers.log(ok,res)
   end
 })
-instance_elements.run = tab:Button({
+instance_elements.skip = tab:Button({
   Title    = "Skip block",
   Locked   = false,
   Callback = function()
