@@ -60,7 +60,7 @@ elements.buildbtn = Tab:Button({
       
     end)
     elements.buildbtn:Unlock()
-    elements.buildsdropdown:Lock()
+    elements.buildsdropdown:Unlock()
   end
 })
 
