@@ -16,7 +16,7 @@ local players  = Helpers.services.players
 local localplr = players.LocalPlayer
 local tab      = tabs.autobuild
 local elements = {}
-local selected = {}
+local save = {}
 local SAVE_DIR = assets("Builds")
 
 local cfg = {
