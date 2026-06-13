@@ -12,13 +12,42 @@ tabs.autobuild = Window:Tab({
 })
 
 --// Main logic here.
-local autobuild = loadstring(game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/src/autobuild.lua"))(...)
+local builder = loadstring(game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/src/autobuild.lua"))(...)
 local players = Helpers.services.players
 local tcs = Helpers.services.textchat
 local localplr = players.LocalPlayer
 local tab = tabs.autobuild
 
-tabs.info:Paragraph({
+tab:Paragraph({
   Title = "Credits",
-  Desc = "Credits to areyoumental (areyoumental110 in discord),\nwe used Extra stuff's (from areyoumental) source code for this."
+  Desc = "Credits to areyoumental (areyoumental110 in Discord),\nwe used Extra Stuff's (from areyoumental) source code for this."
 })
+
+
+
+
+
+
+
+
+
+
+
+
+local builder = lib.build("my_build", {
+    tp = true,
+    offset = Vector3.new(0, 0, 0),
+    mult = 4,
+    historymax = 400,
+    resizewait = 0.4,
+    wbs = false
+}, function(toolname)
+    return get_tool(toolname)
+end)
+
+
+
+
+
+
+
