@@ -160,7 +160,7 @@ tab:Button({
       WindUI:Notify({ Title = "Nothing selected", Content = "Select a build first", Duration = 3 })
       return
     end
-    instance = lib.build(SAVE_DIR .. "/" .. file, cfg, function()
+    instance = lib.build(SAVE_DIR .. "/" .. file, cfg, function(tool)
       return game.Players.LocalPlayer.Backpack:FindFirstChild(tool, true) or game.Players.LocalPlayer.Character:FindFirstChild(tool, true)
     end)
     task.spawn(function()
