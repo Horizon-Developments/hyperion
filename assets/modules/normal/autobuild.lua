@@ -23,13 +23,15 @@ tab:Paragraph({
   Desc = "Credits to areyoumental (areyoumental110 in Discord),\nwe used Extra Stuff's (from areyoumental) source code for this."
 })
 
+
+
 tab:Slider({
   Title = "Max History",
   Range = {300,10000},
-  Increment = 0.1,
-  Default = 0.5,
+  Increment = 1,
+  Default = 300,
   Callback = function(val)
-    spamW = val
+    
   end
 })
 
