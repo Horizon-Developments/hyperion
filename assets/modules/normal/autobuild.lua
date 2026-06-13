@@ -237,16 +237,20 @@ instance_elements.skip = tab:Button({
   end
 })
 
-instance_elements.preview = tab:Toggle({
-  Title = "Preview build",
-  Desc = "Shows a preview of the load (only you can see)",
-  Type = "Checkbox",
-  Value = false,
-  Callback = function()
-    local ok, res = pcall(function()
-      instance:show(bool)
-    end)
-    Helpers.log(ok,res)
-  end
+local Slider = tab:Slider({
+    Title = "Slider",
+    Desc = "Slider Description",
+    
+    -- To make float number supported, 
+    -- make the Step a float number.
+    -- example: Step = 0.1
+    Step = 1,
+    Value = {
+        Min = 20,
+        Max = 120,
+        Default = 70,
+    },
+    Callback = function(value)
+        print(value)
+    end
 })
-
