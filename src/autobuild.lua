@@ -266,7 +266,7 @@ function lib.build(file_path, settings, fetch_tools)
         wbs        = settings.wbs        or false,
     }
     local function tp_to_pos()
-      
+      localplr.Character.HumanoidRootPart.CFrame = CFrame.new(pos)
     end
 
     -- ── Mutable build state ───────────────────────────────────────────────────
