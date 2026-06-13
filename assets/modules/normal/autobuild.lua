@@ -33,10 +33,10 @@ do
     Desc = "Select players builds to save"
     Values = (function()
       local t = {}
-        for _, p in ipairs(Players:GetPlayers()) do
-            table.insert(t, p.Name)
-        end
-        return t
+      for _, p in ipairs(Players:GetPlayers()) do
+        table.insert(t, p.Name)
+      end
+      return t
     end)(),
     Multi = true,
     AllowNone = true,
@@ -53,8 +53,6 @@ end
 
 Players.PlayerAdded:Connect(refresh)
 Players.PlayerRemoving:Connect(refresh)
-  
-  
 end
 
 
