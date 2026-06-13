@@ -239,7 +239,11 @@ instance_elements.skip = tab:Button({
 
 instance_elements.preview = tab:Button({
   Title    = "Preview build",
-  Locked   = false,
+  Title = "Toggle",
+  Desc = "Toggle Description",
+  Icon = "bird",
+  Type = "Checkbox",
+  Value = false, -- default value
   Callback = function()
     local ok, res = pcall(function()
       instance:show(bool)
