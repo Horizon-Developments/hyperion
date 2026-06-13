@@ -40,8 +40,8 @@ do
     end)(),
     Multi = true,
     AllowNone = true,
-    Callback = function() 
-      
+    Callback = function(v) 
+      selected = v
     end
   })
   local function refresh()
