@@ -207,7 +207,7 @@ tab:Divider()
 
 instance_elements.run = tab:Button({
   Title    = "Run instance",
-  Desc     = ""
+  Desc     = "auto build",
   Locked   = false,
   Callback = function()
     local ok, res = pcall(function()
