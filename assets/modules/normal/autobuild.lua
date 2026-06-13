@@ -29,8 +29,8 @@ tab:Divider()
 
 do
   local tog = tab:Toggle({
-    Title = "Live Update Bricks",
-    Desc = "keeps models processed every frame",
+    Title = "Player Builds",
+    Desc = "",
     Icon = "bird",
     Type = "Checkbox",
     Value = false,
