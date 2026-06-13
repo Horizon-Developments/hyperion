@@ -69,9 +69,9 @@ elements.savebtn = tab:Button({
 elements.saveinput = tab:Input({
   Title = "Filename",
   Desc = "A-Z 0-9 only!",
-  Value = "",
+  Value = "diu",
   InputIcon = "bird",
-  Type = "Input", -- or "Textarea"
+  Type = "Input",
   Placeholder = "Enter text...",
   Callback = function(input) 
       print("text entered: " .. input)
