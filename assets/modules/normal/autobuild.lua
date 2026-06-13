@@ -238,7 +238,7 @@ instance_elements.skip = tab:Button({
 })
 
 instance_elements.preview = tab:Button({
-  Title    = "Skip block",
+  Title    = "Preview build",
   Locked   = false,
   Callback = function()
     local ok, res = pcall(function()
