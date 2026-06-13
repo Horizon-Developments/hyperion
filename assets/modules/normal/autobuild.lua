@@ -120,8 +120,6 @@ tab:Dropdown({
   Desc = "Select from builds in Hyperion/Builds",
   Values = listfiles(SAVE_DIR),
   Value = listfiles(SAVE_DIR)[1],
-  Multi = false,
-  AllowNone = false,
   Callback = function(option) 
      Encode(option)) 
   end
