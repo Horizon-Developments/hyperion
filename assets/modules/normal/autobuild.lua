@@ -161,7 +161,25 @@ tab:Button({
       return
     end
     instance = lib.build(SAVE_DIR .. "/" .. file, cfg, function(tool)
-      return game.Players.LocalPlayer.Backpack:FindFirstChild(tool, true) or game.Players.LocalPlayer.Character:FindFirstChild(tool, true)
+        local result
+        local t = 0
+        repeat
+            result = game.Players.LocalPlayer.Backpack:FindFirstChild(tool, true)
+                or game.Players.LocalPlayer.Character:FindFirstChild(tool, true)
+            if not result then
+                t = t + 0.5
+                if t >= 5 then
+                    t = 0
+                    WindUI:Notify({
+                        Title = "Waiting for " .. tool,
+                        Content = tool .. " not found on backpack or character. Waiting...",
+                        Duration = 3,
+                    })
+                end
+                task.wait(0.5)
+            end
+        until result
+        return result
     end)
     task.spawn(function()
       if not instance:start() then
