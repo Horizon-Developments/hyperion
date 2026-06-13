@@ -28,23 +28,20 @@ tab:Divider()
 
 
 do
-  local tog = tab:Toggle({
-    Title = "Player Builds",
-    Desc = "",
-    Icon = "bird",
-    Type = "Checkbox",
-    Value = false,
-    Callback = function(state)
-        enabled = state
-        if state then
-            update()
-        elseif conn then
-            conn:Disconnect()
-            conn = nil
-        end
+  local tog = local Dropdown = Tab:Dropdown({
+    Title = "Dropdown (Multi)",
+    Desc = "Dropdown Description",
+    Values = { "Category A", "Category B", "Category C" },
+    Value = { "Category A" },
+    Multi = true,
+    AllowNone = true,
+    Callback = function(option) 
+        -- option is a table: { "Category A", "Category B" }
+        print("Categories selected: " .. game:GetService("HttpService"):JSONEncode(option)) 
     end
-})
-
+  })
+  
+  
 end
 
 
