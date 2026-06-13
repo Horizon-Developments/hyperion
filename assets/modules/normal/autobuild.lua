@@ -199,8 +199,8 @@ tab:Button({
   Callback = function()
     local ok, res = pcall(function()
       for _, v in pairs(instance_elements) do
-        v:Uck()
-      en
+        v:Lock()
+      end
       if not selected.file then
         WindUI:Notify({ Title = "Nothing selected", Content = "Select a build first", Duration = 3 })
         return
@@ -228,7 +228,7 @@ tab:Button({
       end)
     end)
     for _, v in pairs(instance_elements) do
-      v:Lock()
+      v:Unlock()
     end
     if not ok then instance = nil end
     Helpers.log(ok, res)
