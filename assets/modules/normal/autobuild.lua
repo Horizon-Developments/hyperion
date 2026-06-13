@@ -63,7 +63,7 @@ elements.savebtn = tab:Button({
     elements.savebtn:Lock()
     print(pcall(function()
       if (save.filename == "") then
-        WindUI:Notify({ Title = "", Content = "Filenames can only be a-z A-Z 0-9 _", Duration = 3 })
+        WindUI:Notify({ Title = "Invaild filename", Content = "Filenames can only be a-z A-Z 0-9 _", Duration = 3 })
         return
       end
       
