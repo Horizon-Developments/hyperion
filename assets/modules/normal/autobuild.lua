@@ -23,7 +23,13 @@ tab:Paragraph({
   Desc = "Credits to areyoumental (areyoumental110 in Discord),\nwe used Extra Stuff's (from areyoumental) source code for this."
 })
 
-
+tab:Input({
+  Title = "Max history",
+  Placeholder = "",
+  Callback = function(v)
+    toggles.OnFriendsJoin = v
+  end
+})
 
 
 
