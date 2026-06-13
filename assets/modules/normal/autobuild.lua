@@ -7,7 +7,7 @@ local assets = args.Assets
 local Helpers = args.Helpers
 
 tabs.autobuild = Window:Tab({
-  Title = "AdminKit",
+  Title = "Autobuild",
   Icon = "blocks"
 })
 
