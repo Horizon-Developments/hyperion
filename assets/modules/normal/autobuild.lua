@@ -1,5 +1,4 @@
 local args = ...
-task.spawn(function()
 local tabs   = args.Tabs
 local Window = args.Window
 local WindUI = args.WindUI
@@ -316,4 +315,3 @@ instance_elements.resizewait = tab:Slider({
 for _, v in pairs(instance_elements) do
   v:Lock()
 end
-end)
