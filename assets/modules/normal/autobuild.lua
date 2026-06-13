@@ -37,19 +37,42 @@ local cfg = {
   offset     = Vector3.new(0, 0, 0),
 }
 
--- strips directory path and extension, e.g. "Builds/house.json" -> "house"
+-- ── file list cache ──────────────────────────────────────────────────────────
+-- Populated lazily on first use; updated incrementally on save/delete.
+-- Only re-scanned from disk when the user hits Refresh explicitly.
+
+local file_cache = nil  -- nil = dirty, table = valid
+
 local function stripname(fullpath)
   local name = fullpath:match("([^/\\]+)$") or fullpath
   return name:match("^(.+)%.[^.]+$") or name
 end
 
 local function getfiles()
-  local t = {}
-  for _, f in ipairs(listfiles(SAVE_DIR)) do
-    table.insert(t, stripname(f))
+  if not file_cache then
+    file_cache = {}
+    for _, f in ipairs(listfiles(SAVE_DIR)) do
+      table.insert(file_cache, stripname(f))
+    end
   end
-  return t
+  return file_cache
 end
+
+local function cache_add(name)
+  getfiles()
+  for _, v in ipairs(file_cache) do
+    if v == name then return end
+  end
+  table.insert(file_cache, name)
+end
+
+local function cache_remove(name)
+  if not file_cache then return end
+  for i, v in ipairs(file_cache) do
+    if v == name then table.remove(file_cache, i); return end
+  end
+end
+-- ─────────────────────────────────────────────────────────────────────────────
 
 elements.savedropdown = tab:Dropdown({
   Title     = "Builds",
@@ -101,7 +124,8 @@ elements.savebtn = tab:Button({
         end
       end
 
-      lib.save(save.filename, instances)
+      lib.save(save.filename, instances)  -- one disk write
+      cache_add(save.filename)            -- update list in memory
 
       WindUI:Notify({ Title = "Created successfully", Content = "Its at Hyperion/Builds", Duration = 3 })
     end))
@@ -133,11 +157,11 @@ tab:Divider()
 elements.builddropdown = tab:Dropdown({
   Title    = "Select",
   Desc     = "Select from builds in Hyperion/Builds",
-  Values   = getfiles(),
+  Values   = getfiles(),  -- one listfiles() call at startup
   Value    = getfiles()[1],
   Callback = function(option)
     selected.file = option
-    elements.builddropdown:Refresh(getfiles())
+    -- no Refresh here; cache is already current
   end
 })
 
@@ -146,7 +170,8 @@ tab:Button({
   Desc     = "Refreshes the selected dropdown",
   Locked   = false,
   Callback = function()
-    elements.builddropdown:Refresh(getfiles())
+    file_cache = nil                                      -- force re-scan
+    elements.builddropdown:Refresh(getfiles())           -- one listfiles()
   end
 })
 
@@ -160,9 +185,10 @@ tab:Button({
       return
     end
     local file = selected.file
-    pcall(delfile, SAVE_DIR .. "/" .. file .. ".json")
+    pcall(delfile, SAVE_DIR .. "/" .. file .. ".json")  -- one disk delete
+    cache_remove(file)                                   -- update list in memory
     selected.file = nil
-    elements.builddropdown:Refresh(getfiles())
+    elements.builddropdown:Refresh(getfiles())           -- no IO, uses cache
     WindUI:Notify({ Title = "Deleted.", Content = "Deleted " .. file, Duration = 3 })
   end
 })
@@ -261,7 +287,7 @@ instance_elements.show = tab:Toggle({
   Desc = "Shows fake blocks for preview (only you can see)",
   Icon = "bird",
   Type = "Checkbox",
-  Value = false, -- default value
+  Value = false,
   Callback = function(b)
     local ok, res = pcall(function()
       instance:show(b)
@@ -286,6 +312,7 @@ instance_elements.resizewait = tab:Slider({
     Helpers.log(ok, res)
   end
 })
+
 for _, v in pairs(instance_elements) do
-      v:Lock()
-    end
+  v:Lock()
+end
