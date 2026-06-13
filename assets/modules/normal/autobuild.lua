@@ -238,8 +238,8 @@ instance_elements.skip = tab:Button({
 })
 
 instance_elements.resizewait = tab:Slider({
-    Title = "Slider",
-    Desc = "Slider Description",
+    Title = "Resize wait",
+    Desc = "",
     Step = 1,
     Value = {
         Min = 20,
