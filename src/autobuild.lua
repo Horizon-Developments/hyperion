@@ -1,27 +1,3 @@
---[[
-    Auto-Build Library — refactored from TheChosenOne Extras
-    Core build/save mechanics only. No GUI, no whitelist, no unrelated features.
-
-    Changes from source (explicitly listed):
-      1. All GUI elements removed (lib.makeXxx, tabs, labels, toggles, dropdowns).
-      2. Whitelist/owner system removed (isBlocked, scrowners, enderhubpeople, player head labels).
-      3. Solara JSON polyfill removed — HttpService used directly throughout.
-      4. `dauras` (delete aura for Solara) removed per instruction.
-      5. Removed: toxify aura, delete aura, spam blocks/signs/side, chat spy, gear management,
-         QR/text/cube/D*** builders, boombox detection, block/surface selector overlays,
-         build preview display, ping label UI, old build migration, build name dedup counter.
-      6. Tool equipping (Backpack→Character reparent) fully abstracted into `fetch_tools`;
-         `fireEvent` handles both BindableFunction (origevent) and RemoteEvent automatically.
-      7. `createpartrepl` is now pure — returns the Part; caller assigns `oldprt` explicitly.
-      8. `colorbool` removed — paint is always applied (original defaulted colorbool=false,
-         which produced the same always-paint behaviour when loading saved builds).
-      9. `p.Anchored = anch or true` corrected to a proper ternary to avoid false→true coercion.
-     10. `instance:destroy()` added for resource cleanup.
-     11. `lib.save` accepts an array of Player *or* Model instances (replaces the three
-         separate Save/SaveServer/SavePlayer buttons from the original).
-     12. File name deduplication counter removed; callers own naming.
---]]
-
 local lib = {}
 
 -- ─── Localised globals ────────────────────────────────────────────────────────
