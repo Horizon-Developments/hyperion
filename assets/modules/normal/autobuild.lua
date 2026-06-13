@@ -118,7 +118,7 @@ local selected = nil
 tab:Dropdown({
   Title = "Select",
   Desc = "Select from builds in Hyperion/Builds",
-  Values = listfile(),
+  Values = listfiles(asse5s),
   Value = { "Category A" },
   Multi = true,
   AllowNone = true,
