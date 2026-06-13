@@ -29,9 +29,10 @@ tab:Divider()
 
 do
   local dropdown = tab:Dropdown({
-    Title = "",
+    Title = "Builds",
+    Desc = "Select players builds to save"
     Values = (function()
-        local t = {}
+      local t = {}
         for _, p in ipairs(Players:GetPlayers()) do
             table.insert(t, p.Name)
         end
