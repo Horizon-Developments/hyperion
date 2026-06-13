@@ -198,9 +198,6 @@ tab:Button({
   Locked   = false,
   Callback = function()
     local ok, res = pcall(function()
-      for _, v in pairs(instance_elements) do
-        v:Unlock()
-      end
       if not selected.file then
         WindUI:Notify({ Title = "Nothing selected", Content = "Select a build first", Duration = 3 })
         return
@@ -253,9 +250,6 @@ instance_elements.run = tab:Button({
       WindUI:Notify({ Title = "Failed", Content = "screenshot /console then send it in #errors (discord) for help", Duration = 4 })
     end
     Helpers.log(ok, res)
-    for _, v in pairs(instance_elements) do
-      v:Lock()
-    end
   end
 })
 
