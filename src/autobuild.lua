@@ -277,10 +277,10 @@ function lib.build(file_path, settings, fetch_tools)
 
     local resizewait = cfg.resizewait  -- kept separate; ping loop may update it
     
-    
-    local function tp_to_pos(pos)
+    task.spawn
+    local tp_to_pos = (function(pos)
       localplr.Character.HumanoidRootPart.CFrame = CFrame.new(pos)
-    end
+    end)()
     
     
     -- ── Highlight (block being painted) ──────────────────────────────────────
