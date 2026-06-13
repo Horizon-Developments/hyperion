@@ -258,14 +258,13 @@ function lib.build(file_path, settings, fetch_tools)
 
     -- ── Config (mutable via instance:settings()) ─────────────────────────────
     local cfg = {
-        tp         = settings.tp         ~= nil and settings.tp         or true,
         offset     = settings.offset     or Vector3.new(0, 0, 0),
         mult       = settings.mult       or DEFAULT_MULT,
         historymax = settings.historymax or DEFAULT_HMAX,
         resizewait = settings.resizewait or DEFAULT_RW,
         wbs        = settings.wbs        or false,
     }
-    local function tp_to_pos()
+    local function tp_to_pos(pos)
       localplr.Character.HumanoidRootPart.CFrame = CFrame.new(pos)
     end
 
