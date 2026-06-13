@@ -75,9 +75,6 @@ elements.saveinput = tab:Input({
   Placeholder = "Enter text...",
   Callback = function(input) 
     
-    
-    
-    
   end
 })
 
