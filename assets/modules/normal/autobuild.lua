@@ -166,3 +166,4 @@ tab:Button({
     WindUI:Notify({ Title = "Deleted.", Content = "Deleted " .. file, Duration = 3 })
   end
 })
+ 
