@@ -219,7 +219,6 @@ instance_elements.run = tab:Button({
 })
 instance_elements.run = tab:Button({
   Title    = "Skip block",
-  Desc     = "auto build",
   Locked   = false,
   Callback = function()
     local ok, res = pcall(function()
