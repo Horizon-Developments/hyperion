@@ -206,8 +206,7 @@ tab:Button({
         local result
         local t = 0
         repeat
-          result = localplr.Backpack:FindFirstChild(tool, true)
-              or localplr.Character:FindFirstChild(tool, true)
+          result = localplr.Backpack:FindFirstChild(tool, true) or localplr.Character:FindFirstChild(tool, true)
           if not result then
             t = t + 0.5
             if t >= 5 then
