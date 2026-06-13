@@ -408,9 +408,7 @@ function lib.build(file_path, settings, fetch_tools)
                         pcall(function()
                             novel = true
                             pos   = oo[3] or pos
-                            if cfg.tp then
-                                localplr.Character.HumanoidRootPart.CFrame = CFrame.new(pos)
-                            end
+                            tp_to_pos(pos)
                         end)
                         task_wait(.05)
                     until (built and childcube)
@@ -461,9 +459,7 @@ function lib.build(file_path, settings, fetch_tools)
                     fireEvent("Build", args)
                     pcall(function()
                         novel = true
-                        if cfg.tp then
-                            localplr.Character.HumanoidRootPart.CFrame = CFrame.new(pos + Vector3.new(0, 6, 0))
-                        end
+                        tp_to_pos(pos)
                     end)
                     task_wait(.1)
                 until (built and childcube) or stopped or skipblock or c > 200
@@ -497,9 +493,7 @@ function lib.build(file_path, settings, fetch_tools)
                         fireEvent("Paint", args)
                         pcall(function()
                             novel = true
-                            if cfg.tp then
-                                localplr.Character.HumanoidRootPart.CFrame = CFrame.new(paintPos + Vector3.new(0, 6, 0))
-                            end
+                            tp_to_pos(pos)
                         end)
                         task_wait(.2)
                     until not childcube or not childcube.Parent
