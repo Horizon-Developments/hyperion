@@ -7,7 +7,7 @@ if isfile("HYPBuild.lz4") then
   }, function(tool)
     return game.Players.LocalPlayer.Backpack:FindFirstChild(tool, true) or game.Players.LocalPlayer.Character:FindFirstChild(tool, true)
   end)
-  
+  builder:start()
   print("DONE")
 else
   print("SAVE BUILD")
