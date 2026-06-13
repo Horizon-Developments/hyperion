@@ -7,8 +7,8 @@ local assets = args.Assets
 local Helpers = args.Helpers
 
 tabs.autobuild = Window:Tab({
-  Title = "Autobuild",
-  Icon  = "blocks",
+    Title = "Autobuild",
+    Icon  = "blocks",
 })
 
 local lib      = loadstring(game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/src/autobuild.lua"))(...)
@@ -28,34 +28,34 @@ local activeBuilder = nil
 local showEnabled   = false
 
 local function fetch_tools(toolname)
-  local char = localplr.Character
-  if not char then return nil end
-  local tool
-  local elapsed = 10
-  
-  while not tool do
-    tool = char:FindFirstChild(toolname)
-    if not tool then
-      local bp = localplr.Backpack:FindFirstChild(toolname)
-      if bp then
-        bp.Parent = char
-        tool = bp
-      end
+    local char = localplr.Character
+    if not char then return nil end
+    local tool
+    local elapsed = 10
+
+    while not tool do
+        tool = char:FindFirstChild(toolname)
+        if not tool then
+            local bp = localplr.Backpack:FindFirstChild(toolname)
+            if bp then
+                bp.Parent = char
+                tool = bp
+            end
+        end
+        if not tool then
+            if elapsed >= 10 then
+                WindUI:Notify({
+                    Title    = "Error",
+                    Content  = "No " .. toolname .. " found! Waiting for " .. toolname,
+                    Duration = 3,
+                })
+                elapsed = 0
+            end
+            task.wait(0.5)
+            elapsed = elapsed + 0.5
+        end
     end
-    if not tool then
-      if elapsed >= 10 then
-        WindUI:Notify({
-          Title    = "Error",
-          Content  = "No " .. toolname .. " found! Waiting for " .. toolname,
-          Duration = 3,
-        })
-        elapsed = 0
-      end
-      task.wait(0.5)
-      elapsed = elapsed + 0.5
-    end
-  end
-  return tool:FindFirstChild("origevent") or tool:FindFirstChild("Event", true)
+    return tool:FindFirstChild("origevent") or tool:FindFirstChild("Event", true)
 end
 
 local function listBuilds()
@@ -70,24 +70,56 @@ local function listBuilds()
     return names
 end
 
+-- ── Save ─────────────────────────────────────────────────────────────────────
+-- forward-declare so the save button callback can reference it after Refresh
+local fileDropdown
+local saveFileName = ""
+
+tab:Input({
+    Title           = "Save File Name",
+    PlaceholderText = "Enter save name",
+    Callback        = function(text)
+        saveFileName = text
+    end,
+})
+
+tab:Button({
+    Title    = "💾  Save Build",
+    Callback = function()
+        if saveFileName == "" then
+            WindUI:Notify({
+                Title    = "Error",
+                Content  = "Enter a file name first!",
+                Duration = 3,
+            })
+            return
+        end
+        lib.save(saveFileName, { localplr })
+        WindUI:Notify({
+            Title    = "Saved",
+            Content  = 'Build saved as "' .. saveFileName .. '"',
+            Duration = 3,
+        })
+        fileDropdown:Refresh(listBuilds())
+    end,
+})
+
 -- ── Pre-start config ──────────────────────────────────────────────────────────
 local maxHistorySlider = tab:Slider({
-    Title     = "Max History",
-    Range     = {300, 10000},
-    Increment = 1,
-    Default   = 300,
-    Callback  = function(val)
+    Title    = "Max History",
+    Step     = 1,
+    Value    = { Min = 300, Max = 10000, Default = 300 },
+    Callback = function(val)
         cfg.historymax = val
     end,
 })
 
 -- Always live: works before and during a build
 tab:Slider({
-    Title     = "Resize Wait (s)",
-    Range     = {0.05, 2},
-    Increment = 0.05,
-    Default   = 0.4,
-    Callback  = function(val)
+    Title    = "Resize Wait (s)",
+    Step     = 0.05,
+    Value    = { Min = 0.05, Max = 2, Default = 0.4 },
+    Callback = function(val)
         cfg.resizewait = val
         if activeBuilder then activeBuilder:set_resize(val) end
     end,
@@ -95,16 +127,16 @@ tab:Slider({
 
 local wbsToggle = tab:Toggle({
     Title    = "Auto Resize Wait (Ping)",
-    Default  = false,
+    Value    = false,
     Callback = function(bool)
         cfg.wbs = bool
         if activeBuilder then activeBuilder:settings().wbs = bool end
     end,
 })
 
-local fileDropdown = tab:Dropdown({
+fileDropdown = tab:Dropdown({
     Title    = "Saved Build",
-    Options  = listBuilds(),
+    Values   = listBuilds(),
     Callback = function(val) selectedFile = val end,
 })
 
@@ -137,7 +169,7 @@ tab:Button({
 
 tab:Toggle({
     Title    = "Ghost Preview",
-    Default  = false,
+    Value    = false,
     Callback = function(bool)
         showEnabled = bool
         if activeBuilder then activeBuilder:show(bool) end
