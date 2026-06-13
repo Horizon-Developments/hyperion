@@ -117,8 +117,8 @@ tab:Divider()
 local selected = nil
 tab:Dropdown({
   Title = "Select",
-  Desc = "Select from builds in ",
-  Values = { "Category A", "Category B", "Category C" },
+  Desc = "Select from builds in Hyperion/Builds",
+  Values = listfile(),
   Value = { "Category A" },
   Multi = true,
   AllowNone = true,
