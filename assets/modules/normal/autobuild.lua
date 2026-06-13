@@ -190,6 +190,7 @@ tab:Button({
       end)
       WindUI:Notify({ Title = "Building...", Content = "Please wait until its finished", Duration = 3 })
     end)
-    if (ok)
+    instance = nil
+    print(ok,res)
   end
 })
