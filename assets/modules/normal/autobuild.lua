@@ -166,7 +166,7 @@ tab:Button({
         WindUI:Notify({ Title = "Nothing selected", Content = "Select a build first", Duration = 3 })
         return
       end
-      instance = lib.build(SAVE_DIR .. "/" .. file, cfg, function(tool)
+      instance = lib.build(file, cfg, function(tool)
         local result
         local t = 0
         repeat
