@@ -125,6 +125,15 @@ elements.builddropdown = tab:Dropdown({
 })
 
 tab:Button({
+  Title    = "Refresh",
+  Desc     = "Refreshes the selected dropdown",
+  Locked   = false,
+  Callback = function()
+    elements.builddropdown:Refresh(listfiles(SAVE_DIR))  -- was: selected.dropdown (crashed)
+  end
+})
+
+tab:Button({
   Title    = "Delete selected",
   Desc     = "Deletes file",
   Locked   = false,
@@ -141,12 +150,5 @@ tab:Button({
   end
 })
 
-tab:Button({
-  Title    = "Refresh",
-  Desc     = "Refreshes the selected dropdown",
-  Locked   = false,
-  Callback = function()
-    elements.builddropdown:Refresh(listfiles(SAVE_DIR))  -- was: selected.dropdown (crashed)
-  end
-})
+tab:Divider()
 
