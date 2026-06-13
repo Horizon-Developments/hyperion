@@ -152,7 +152,7 @@ tab:Button({
 })
 
 tab:Button({
-  Title    = "Run selected",
+  Title    = "Load selected",
   Desc     = "Deletes file",
   Locked   = false,
   Callback = function()
