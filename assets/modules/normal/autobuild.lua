@@ -15,7 +15,7 @@ local lib      = loadstring(game:HttpGet("https://raw.githubusercontent.com/Hori
 local players  = Helpers.services.players
 local localplr = players.LocalPlayer
 local tab      = tabs.autobuild
-local 
+local elements = {}
 local SAVE_DIR = assets("Builds")
 
 local cfg = {
@@ -28,8 +28,7 @@ local cfg = {
 tab:Divider()
 local selected = {}
 
-do
-  local dropdown = tab:Dropdown({
+elements.buildsdropdown = tab:Dropdown({
     Title = "Builds",
     Desc = "Select players builds to save"
     Values = {},
