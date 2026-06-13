@@ -23,11 +23,13 @@ tab:Paragraph({
   Desc = "Credits to areyoumental (areyoumental110 in Discord),\nwe used Extra Stuff's (from areyoumental) source code for this."
 })
 
-tab:Input({
-  Title = "Max history",
-  Placeholder = "300-30000",
-  Callback = function(v)
-    toggles.OnFriendsJoin = v
+tab:Slider({
+  Title = "Max History",
+  Min = 0,
+  Max = 100,
+  Default = 50,
+  Callback = function(value)
+      print(value)
   end
 })
 
