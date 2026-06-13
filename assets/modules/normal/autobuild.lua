@@ -237,7 +237,7 @@ instance_elements.skip = tab:Button({
   end
 })
 
-local Slider = tab:Slider({
+instance_elements. = tab:Slider({
     Title = "Slider",
     Desc = "Slider Description",
     
