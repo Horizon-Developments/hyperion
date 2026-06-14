@@ -760,7 +760,18 @@ function lib.build(file_path, settings, fetch_tools)
         cfg.resizewait = val
         return self
     end
-
+    
+    function instance:set_resize(val)
+        resizewait     = val
+        cfg.resizewait = val
+        return self
+    end
+    
+    function instance:offset(val)
+        cfg.offset = val
+        return self
+    end
+    
     return instance
 end
 

@@ -37,10 +37,7 @@ local cfg = {
 }
 
 -- ── file list cache ──────────────────────────────────────────────────────────
--- Populated lazily on first use; updated incrementally on save/delete.
--- Only re-scanned from disk when the user hits Refresh explicitly.
-
-local file_cache = nil  -- nil = dirty, table = valid
+local file_cache = nil
 
 local function stripname(fullpath)
   local name = fullpath:match("([^/\\]+)$") or fullpath
@@ -123,8 +120,8 @@ elements.savebtn = tab:Button({
         end
       end
 
-      lib.save(save.filename, instances)  -- one disk write
-      cache_add(save.filename)            -- update list in memory
+      lib.save(save.filename, instances)
+      cache_add(save.filename)
 
       WindUI:Notify({ Title = "Created successfully", Content = "Its at Hyperion/Builds", Duration = 3 })
     end))
@@ -156,11 +153,10 @@ tab:Divider()
 elements.builddropdown = tab:Dropdown({
   Title    = "Select",
   Desc     = "Select from builds in Hyperion/Builds",
-  Values   = getfiles(),  -- one listfiles() call at startup
+  Values   = getfiles(),
   Value    = getfiles()[1],
   Callback = function(option)
     selected.file = option
-    -- no Refresh here; cache is already current
   end
 })
 
@@ -169,8 +165,8 @@ tab:Button({
   Desc     = "Refreshes the selected dropdown",
   Locked   = false,
   Callback = function()
-    file_cache = nil                                      -- force re-scan
-    elements.builddropdown:Refresh(getfiles())           -- one listfiles()
+    file_cache = nil
+    elements.builddropdown:Refresh(getfiles())
   end
 })
 
@@ -184,10 +180,10 @@ tab:Button({
       return
     end
     local file = selected.file
-    pcall(delfile, SAVE_DIR .. "/" .. file .. ".json")  -- one disk delete
-    cache_remove(file)                                   -- update list in memory
+    pcall(delfile, SAVE_DIR .. "/" .. file .. ".json")
+    cache_remove(file)
     selected.file = nil
-    elements.builddropdown:Refresh(getfiles())           -- no IO, uses cache
+    elements.builddropdown:Refresh(getfiles())
     WindUI:Notify({ Title = "Deleted.", Content = "Deleted " .. file, Duration = 3 })
   end
 })
@@ -232,6 +228,25 @@ tab:Button({
 
 tab:Divider()
 
+-- ── instance element lock helper ─────────────────────────────────────────────
+-- Called with true when a build starts, false when it ends or is stopped.
+local function set_running(running)
+  if running then
+    instance_elements.run:Lock()
+    instance_elements.stop:Unlock()
+    instance_elements.skip:Unlock()
+    instance_elements.show:Unlock()
+    instance_elements.resizewait:Unlock()
+  else
+    instance_elements.run:Unlock()
+    instance_elements.stop:Lock()
+    instance_elements.skip:Lock()
+    instance_elements.show:Lock()
+    instance_elements.resizewait:Lock()
+  end
+end
+-- ─────────────────────────────────────────────────────────────────────────────
+
 instance_elements.run = tab:Button({
   Title    = "Run instance",
   Desc     = "auto build",
@@ -239,15 +254,18 @@ instance_elements.run = tab:Button({
   Callback = function()
     local ok, res = pcall(function()
       task.spawn(function()
+        set_running(true)
         if not instance:start() then
           WindUI:Notify({ Title = "Failed", Content = "screenshot /console then send it in #errors (discord) for help", Duration = 4 })
         else
           WindUI:Notify({ Title = "Successful", Content = "Build finished!", Duration = 3 })
         end
+        set_running(false)
       end)
       WindUI:Notify({ Title = "Building...", Content = "Please wait until its finished", Duration = 3 })
     end)
     if not ok then
+      set_running(false)
       WindUI:Notify({ Title = "Failed", Content = "screenshot /console then send it in #errors (discord) for help", Duration = 4 })
     end
     Helpers.log(ok, res)
@@ -256,18 +274,19 @@ instance_elements.run = tab:Button({
 
 instance_elements.stop = tab:Button({
   Title    = "Stop instance",
-  Locked   = false,
+  Locked   = true,
   Callback = function()
     local ok, res = pcall(function()
       instance:stop()
     end)
+    set_running(false)
     Helpers.log(ok, res)
   end
 })
 
 instance_elements.skip = tab:Button({
   Title    = "Skip block",
-  Locked   = false,
+  Locked   = true,
   Callback = function()
     local ok, res = pcall(function()
       instance:skip()
@@ -277,11 +296,11 @@ instance_elements.skip = tab:Button({
 })
 
 instance_elements.show = tab:Toggle({
-  Title = "Show preview",
-  Desc = "Shows fake blocks for preview (only you can see)",
-  Icon = "bird",
-  Type = "Checkbox",
-  Value = false,
+  Title  = "Show preview",
+  Desc   = "Shows fake blocks for preview (only you can see)",
+  Type   = "Checkbox",
+  Value  = false,
+  Locked = true,
   Callback = function(b)
     local ok, res = pcall(function()
       instance:show(b)
@@ -291,10 +310,11 @@ instance_elements.show = tab:Toggle({
 })
 
 instance_elements.resizewait = tab:Slider({
-  Title = "Resize wait",
-  Desc  = "how many s wait per resize (0 = ping based)",
-  Step  = 0.1,
-  Value = {
+  Title  = "Resize wait",
+  Desc   = "how many s wait per resize (0 = ping based)",
+  Step   = 0.1,
+  Locked = true,
+  Value  = {
     Min     = 0,
     Max     = 2,
     Default = 0.2,
