@@ -25,7 +25,8 @@ jobs:
           cat > .darklua.json << 'EOF'
           {
             "generator": {
-              "name": "dense"
+              "name": "dense",
+              "column_span": 100000
             },
             "bundle": {
               "require_mode": {
