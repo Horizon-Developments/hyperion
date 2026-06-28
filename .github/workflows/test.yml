@@ -33,7 +33,19 @@ jobs:
               }
             },
             "rules": [
-              "remove_comments"
+              "remove_comments",
+              "remove_types",
+              "remove_method_definition",
+              "remove_method_call",
+              "remove_spaces",
+              {
+                "rule": "rename_variables",
+                "globals": [
+                  "$default",
+                  "$roblox"
+                ],
+                "include_functions": true
+              }
             ]
           }
           EOF
@@ -44,8 +56,8 @@ jobs:
           local SHA3 = require("@self/Hashing/SHA3")
       
           return {
-              ChaCha20Poly1305 = AEAD,
-              SHA3_256 = SHA3.SHA3_256,
+              ["ChaCha20Poly1305"] = AEAD,
+              ["SHA3_256"] = SHA35.SHA3_256,
           }
           EOF
       - name: Bundle
