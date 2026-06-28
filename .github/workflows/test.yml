@@ -37,23 +37,21 @@ jobs:
             "generator": {
               "name": "dense"
             },
-            "rules": [
-              {
-                "rule": "bundle_require",
-                "require_mode": {
-                  "name": "roblox",
-                  "rojo_sourcemap": "sourcemap.json"
-                }
-              },
-              {
-                "rule": "remove_comments"
+            "bundle": {
+              "require_mode": {
+                "name": "roblox",
+                "rojo_sourcemap": "sourcemap.json"
               }
+            },
+            "rules": [
+              "remove_comments"
             ]
           }
           EOF
 
       - name: Bundle
-        run: darklua bundle --config .darklua.json src/init.luau bundle.luau
+        run: |
+          darklua process src/init.luau bundle.luau --config .darklua.json
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
