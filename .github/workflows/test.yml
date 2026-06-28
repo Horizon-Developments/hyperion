@@ -20,15 +20,6 @@ jobs:
           chmod +x darklua
           sudo mv darklua /usr/local/bin/darklua
 
-      - name: Install Rojo
-        run: |
-          curl -L https://github.com/rojo-rbx/rojo/releases/download/v7.4.4/rojo-7.4.4-linux-x86_64.zip -o rojo.zip
-          unzip -q rojo.zip
-          chmod +x rojo
-          sudo mv rojo /usr/local/bin/rojo
-
-      - name: Generate sourcemap
-        run: rojo sourcemap default.project.json -o sourcemap.json
       - name: Write darklua config
         run: |
           cat > .darklua.json << 'EOF'
@@ -46,9 +37,22 @@ jobs:
             ]
           }
           EOF
+
+      - name: Write entry point
+        run: |
+          cat > entry.luau << 'EOF'
+          local AEAD = require("@self/Encryption/AEAD")
+          local SHA3 = require("@self/Hashing/SHA3")
+
+          return {
+              ChaCha20Poly1305 = AEAD,
+              SHA3_256 = SHA3.SHA3_256,
+          }
+          EOF
+
       - name: Bundle
         run: |
-          darklua process src/init.luau bundle.luau --config .darklua.json
+          darklua process entry.luau bundle.luau --config .darklua.json
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
