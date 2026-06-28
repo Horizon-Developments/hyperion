@@ -37,7 +37,9 @@ jobs:
               "name": "dense"
             },
             "bundle": {
-              "require_mode": "path"
+              "require_mode": {
+                "name": "luau"
+              }
             },
             "rules": [
               "remove_comments"
