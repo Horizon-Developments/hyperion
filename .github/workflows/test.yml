@@ -37,23 +37,20 @@ jobs:
             ]
           }
           EOF
-
       - name: Write entry point
         run: |
-          cat > entry.luau << 'EOF'
+          cat > src/entry.luau << 'EOF'
           local AEAD = require("@self/Encryption/AEAD")
           local SHA3 = require("@self/Hashing/SHA3")
-
+      
           return {
               ChaCha20Poly1305 = AEAD,
               SHA3_256 = SHA3.SHA3_256,
           }
           EOF
-
       - name: Bundle
         run: |
-          darklua process entry.luau bundle.luau --config .darklua.json
-
+          darklua process src/entry.luau bundle.luau --config .darklua.json
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
