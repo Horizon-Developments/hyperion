@@ -3,10 +3,6 @@ name: Bundle Cryptography
 on:
   workflow_dispatch:
 
-env:
-  DARKLUA_VERSION: v0.18.0
-  ROJO_VERSION: v7.4.4
-
 jobs:
   bundle:
     runs-on: ubuntu-latest
@@ -17,24 +13,19 @@ jobs:
         with:
           repository: daily3014/rbx-cryptography
 
-      - name: Install tools
-        shell: bash
+      - name: Install darklua
         run: |
-          set -euo pipefail
-
-          mkdir -p "$HOME/.local/bin"
-
-          curl -Ls "https://github.com/seaofvoices/darklua/releases/download/${DARKLUA_VERSION}/darklua-linux-x86_64.zip" -o darklua.zip
+          curl -L https://github.com/seaofvoices/darklua/releases/download/v0.18.0/darklua-linux-x86_64.zip -o darklua.zip
           unzip -q darklua.zip
           chmod +x darklua
-          mv darklua "$HOME/.local/bin"
+          sudo mv darklua /usr/local/bin/darklua
 
-          curl -Ls "https://github.com/rojo-rbx/rojo/releases/download/${ROJO_VERSION}/rojo-linux-x86_64.zip" -o rojo.zip
+      - name: Install Rojo
+        run: |
+          curl -L https://github.com/rojo-rbx/rojo/releases/download/v7.4.4/rojo-7.4.4-linux-x86_64.zip -o rojo.zip
           unzip -q rojo.zip
           chmod +x rojo
-          mv rojo "$HOME/.local/bin"
-
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          sudo mv rojo /usr/local/bin/rojo
 
       - name: Generate sourcemap
         run: rojo sourcemap default.project.json -o sourcemap.json
@@ -69,4 +60,3 @@ jobs:
         with:
           name: cryptography-bundle
           path: bundle.luau
-          compression-level: 9
