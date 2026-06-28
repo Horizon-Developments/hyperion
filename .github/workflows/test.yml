@@ -29,7 +29,6 @@ jobs:
 
       - name: Generate sourcemap
         run: rojo sourcemap default.project.json -o sourcemap.json
-
       - name: Write darklua config
         run: |
           cat > .darklua.json << 'EOF'
@@ -39,7 +38,7 @@ jobs:
             },
             "bundle": {
               "require_mode": {
-                "name": "roblox",
+                "name": "path",
                 "rojo_sourcemap": "sourcemap.json"
               }
             },
@@ -47,8 +46,7 @@ jobs:
               "remove_comments"
             ]
           }
-          EOF
-
+          EOF 
       - name: Bundle
         run: |
           darklua process src/init.luau bundle.luau --config .darklua.json
