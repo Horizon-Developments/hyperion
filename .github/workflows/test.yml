@@ -37,16 +37,13 @@ jobs:
               "name": "dense"
             },
             "bundle": {
-              "require_mode": {
-                "name": "path",
-                "rojo_sourcemap": "sourcemap.json"
-              }
+              "require_mode": "path"
             },
             "rules": [
               "remove_comments"
             ]
           }
-          EOF 
+          EOF
       - name: Bundle
         run: |
           darklua process src/init.luau bundle.luau --config .darklua.json
