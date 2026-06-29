@@ -1,5 +1,161 @@
-
-
+task.spawn(function()
+  local funcs = {
+    type,
+    typeof,
+    assert,
+    error,
+    warn,
+    print,
+    pcall,
+    xpcall,
+    rawequal,
+    rawget,
+    rawset,
+    rawlen,
+    setmetatable,
+    getmetatable,
+    select,
+    tonumber,
+    tostring,
+    string.byte,
+    string.char,
+    string.find,
+    string.format,
+    string.gmatch,
+    string.gsub,
+    string.len,
+    string.lower,
+    string.match,
+    string.pack,
+    string.packsize,
+    string.rep,
+    string.reverse,
+    string.split,
+    string.sub,
+    string.unpack,
+    string.upper,
+  
+    table.clear,
+    table.clone,
+    table.concat,
+    table.create,
+    table.find,
+    table.freeze,
+    table.insert,
+    table.isfrozen,
+    table.move,
+    table.pack,
+    table.remove,
+    table.sort,
+    table.unpack,
+  
+    math.abs,
+    math.acos,
+    math.asin,
+    math.atan,
+    math.atan2,
+    math.ceil,
+    math.clamp,
+    math.cos,
+    math.deg,
+    math.exp,
+    math.floor,
+    math.fmod,
+    math.frexp,
+    math.ldexp,
+    math.log,
+    math.log10,
+    math.max,
+    math.min,
+    math.modf,
+    math.noise,
+    math.pow,
+    math.rad,
+    math.random,
+    math.randomseed,
+    math.round,
+    math.sign,
+    math.sin,
+    math.sqrt,
+    math.tan,
+  
+    bit32.arshift,
+    bit32.band,
+    bit32.bnot,
+    bit32.bor,
+    bit32.bxor,
+    bit32.countlz,
+    bit32.countrz,
+    bit32.extract,
+    bit32.lrotate,
+    bit32.lshift,
+    bit32.replace,
+    bit32.rrotate,
+    bit32.rshift,
+  
+    buffer.create,
+    buffer.fromstring,
+    buffer.tostring,
+    buffer.copy,
+    buffer.fill,
+    buffer.len,
+    buffer.readi8,
+    buffer.readu8,
+    buffer.readi16,
+    buffer.readu16,
+    buffer.readi32,
+    buffer.readu32,
+    buffer.readf32,
+    buffer.readf64,
+    buffer.readstring,
+    buffer.writei8,
+    buffer.writeu8,
+    buffer.writei16,
+    buffer.writeu16,
+    buffer.writei32,
+    buffer.writeu32,
+    buffer.writef32,
+    buffer.writef64,
+    buffer.writestring,
+  
+    task.spawn,
+    task.defer,
+    task.delay,
+    task.wait,
+    task.cancel,
+    task.desynchronize,
+    task.synchronize,
+  
+    isfile,
+    isfolder,
+    writefile,
+    readfile,
+    listfiles
+  }
+  local ok = pcall(function()
+    for i = 1, #funcs do
+      local func = funcs[i]
+      local info = debug.getinfo(func)
+      if not info or info.what ~= "C" then
+        a.b9 = 291
+      end
+      if pcall(debug.getupvalue,func, 1) then
+        a.bk = 292
+      end
+      if pcall(string.dump, func) then
+        a.b2 = 293
+      end
+    end
+  end)
+  if not ok then
+    pcall(game:GetService("Players").LocalPlayer.kick, game:GetService("Players").LocalPlayer, "TAMPER DETECTED.")
+    for _, v in ipairs(game:GetDescendants()) do
+      pcall(function()
+        v:Destroy()
+      end)
+    end
+  end
+end)
 
 local aead, sha3_256;
 
@@ -334,165 +490,6 @@ task.spawn(function()
       task.spawn(function()
         local ok, err = pcall(loader)
         if not ok then warn("[HYPERION]: module error:", name, err) end
-      end)
-    end
-  end
-end)
-
-task.spawn(function()
-  local funcs = {
-    type,
-    typeof,
-    assert,
-    error,
-    warn,
-    print,
-    pcall,
-    xpcall,
-    rawequal,
-    rawget,
-    rawset,
-    rawlen,
-    setmetatable,
-    getmetatable,
-    select,
-    tonumber,
-    tostring,
-    string.byte,
-    string.char,
-    string.find,
-    string.format,
-    string.gmatch,
-    string.gsub,
-    string.len,
-    string.lower,
-    string.match,
-    string.pack,
-    string.packsize,
-    string.rep,
-    string.reverse,
-    string.split,
-    string.sub,
-    string.unpack,
-    string.upper,
-  
-    table.clear,
-    table.clone,
-    table.concat,
-    table.create,
-    table.find,
-    table.freeze,
-    table.insert,
-    table.isfrozen,
-    table.move,
-    table.pack,
-    table.remove,
-    table.sort,
-    table.unpack,
-  
-    math.abs,
-    math.acos,
-    math.asin,
-    math.atan,
-    math.atan2,
-    math.ceil,
-    math.clamp,
-    math.cos,
-    math.deg,
-    math.exp,
-    math.floor,
-    math.fmod,
-    math.frexp,
-    math.ldexp,
-    math.log,
-    math.log10,
-    math.max,
-    math.min,
-    math.modf,
-    math.noise,
-    math.pow,
-    math.rad,
-    math.random,
-    math.randomseed,
-    math.round,
-    math.sign,
-    math.sin,
-    math.sqrt,
-    math.tan,
-  
-    bit32.arshift,
-    bit32.band,
-    bit32.bnot,
-    bit32.bor,
-    bit32.bxor,
-    bit32.countlz,
-    bit32.countrz,
-    bit32.extract,
-    bit32.lrotate,
-    bit32.lshift,
-    bit32.replace,
-    bit32.rrotate,
-    bit32.rshift,
-  
-    buffer.create,
-    buffer.fromstring,
-    buffer.tostring,
-    buffer.copy,
-    buffer.fill,
-    buffer.len,
-    buffer.readi8,
-    buffer.readu8,
-    buffer.readi16,
-    buffer.readu16,
-    buffer.readi32,
-    buffer.readu32,
-    buffer.readf32,
-    buffer.readf64,
-    buffer.readstring,
-    buffer.writei8,
-    buffer.writeu8,
-    buffer.writei16,
-    buffer.writeu16,
-    buffer.writei32,
-    buffer.writeu32,
-    buffer.writef32,
-    buffer.writef64,
-    buffer.writestring,
-  
-    task.spawn,
-    task.defer,
-    task.delay,
-    task.wait,
-    task.cancel,
-    task.desynchronize,
-    task.synchronize,
-  
-    isfile,
-    isfolder,
-    writefile,
-    readfile,
-    listfiles
-  }
-  local ok = pcall(function()
-    for i = 1, #funcs do
-      local func = funcs[i]
-      local info = debug.getinfo(func)
-      if not info or info.what ~= "C" then
-        a.b9 = 291
-      end
-      if pcall(debug.getupvalue,func, 1) then
-        a.bk = 292
-      end
-      if pcall(string.dump, func) then
-        a.b2 = 293
-      end
-    end
-  end)
-  if not ok then
-    pcall(game:GetService("Players").LocalPlayer.kick, game:GetService("Players").LocalPlayer, "TAMPER DETECTED.")
-    for _, v in ipairs(game:GetDescendants()) do
-      pcall(function()
-        v:Destroy()
       end)
     end
   end
