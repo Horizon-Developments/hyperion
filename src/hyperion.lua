@@ -193,8 +193,8 @@ task.spawn(function()
   end
   log("INIT...")
 
-  local cloneref = rawget(getfenv(), "cloneref") or function(a) return a end
-  if not rawget(getfenv(), "cloneref") then
+  local cloneref = getgenv().cloneref or function(a) return a end
+  if not getgenv().cloneref then
     print("[HYPERION]: Cloneref is not found. Using polyfill.")
   end
 
@@ -320,7 +320,7 @@ task.spawn(function()
   makefolder(assets("cache"))
   
   task.spawn(function()
-    local base = "https://raw.githubusercontent.com/Horizon-Developments/hyperion/main/assets/"
+    local base = "https://raw.githubusercontent.com/Horizon-Developments/hyperion/main/"
     local function createfile(url)
       local path = assets(url)
       if isfile(path) then return end
@@ -377,7 +377,7 @@ task.spawn(function()
       task.spawn(function()
         local fetched, result = pcall(function()
           return http:JSONDecode(game:HttpGet(
-            "https://api.github.com/repos/Horizon-Developments/hyperion/contents/assets/modules/" .. subdir
+            "https://api.github.com/repos/Horizon-Developments/hyperion/contents/assets/" .. subdir
           ))
         end)
         if not fetched then
@@ -393,6 +393,8 @@ task.spawn(function()
         
         for _, item in ipairs(result) do
           if item.type ~= "file" then continue end
+          if (not item.name:match("%.bin$") or not item.name:match("%.lua")) then continue end
+          
           local cacheKey = subdir .. "/" .. item.name
           remoteNames[cacheKey] = true
           local isUiBin = subdir == "loader" and item.name == "ui.bin"
