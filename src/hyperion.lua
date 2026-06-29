@@ -1,137 +1,52 @@
 local aead, sha3_256 = (function()
-  local a={cache={}}do do local function b()local c={}local d=4 local e=64 local f=16 local g=12 local h=24 local i=16 local j=32 local k=buffer.create(16)do local l={string.byte('expand 32-byte k',1,-1)}for m,n in l do buffer.writeu8(k,m-1,n)end end local l=buffer.create(16)do local m={string.byte('expand 16-byte k',1,-1)}for n,o in m do buffer.writeu8(l,n-1,o)end end local function m(n,o)local p,q,r,s,t,u,v,w,x,y,z,A,B,C,D,E=buffer.readu32(n,0),buffer.readu32(n,4),buffer.readu32(n,8),buffer.readu32(n,12),buffer.readu32(n,16),buffer.readu32(n,20),buffer.readu32(n,24),buffer.readu32(n,28),buffer.readu32(n,32),buffer.readu32(n,36),buffer.readu32(n,40),buffer.readu32(n,44),buffer.readu32(n,48),buffer.readu32(n,52),buffer.readu32(n,56),buffer.readu32(n,60)for F=1,o,2 do p=bit32.bor(p+t,0)B=bit32.lrotate(bit32.bxor(B,p),16)x=bit32.bor(x+B,0)t=bit32.lrotate(bit32.bxor(t,x),12)p=bit32.bor(p+t,0)B=bit32.lrotate(bit32.bxor(B,p),8)x=bit32.bor(x+B,0)t=bit32.lrotate(bit32.bxor(t,x),7)q=bit32.bor(q+u,0)C=bit32.lrotate(bit32.bxor(C,q),16)y=bit32.bor(y+C,0)u=bit32.lrotate(bit32.bxor(u,y),12)q=bit32.bor(q+u,0)C=bit32.lrotate(bit32.bxor(C,q),8)y=bit32.bor(y+C,0)u=bit32.lrotate(bit32.bxor(u,y),7)r=bit32.bor(r+v,0)D=bit32.lrotate(bit32.bxor(D,r),16)z=bit32.bor(z+D,0)v=bit32.lrotate(bit32.bxor(v,z),12)r=bit32.bor(r+v,0)D=bit32.lrotate(bit32.bxor(D,r),8)z=bit32.bor(z+D,0)v=bit32.lrotate(bit32.bxor(v,z),7)s=bit32.bor(s+w,0)E=bit32.lrotate(bit32.bxor(E,s),16)A=bit32.bor(A+E,0)w=bit32.lrotate(bit32.bxor(w,A),12)s=bit32.bor(s+w,0)E=bit32.lrotate(bit32.bxor(E,s),8)A=bit32.bor(A+E,0)w=bit32.lrotate(bit32.bxor(w,A),7)p=bit32.bor(p+u,0)E=bit32.lrotate(bit32.bxor(E,p),16)z=bit32.bor(z+E,0)u=bit32.lrotate(bit32.bxor(u,z),12)p=bit32.bor(p+u,0)E=bit32.lrotate(bit32.bxor(E,p),8)z=bit32.bor(z+E,0)u=bit32.lrotate(bit32.bxor(u,z),7)q=bit32.bor(q+v,0)B=bit32.lrotate(bit32.bxor(B,q),16)A=bit32.bor(A+B,0)v=bit32.lrotate(bit32.bxor(v,A),12)q=bit32.bor(q+v,0)B=bit32.lrotate(bit32.bxor(B,q),8)A=bit32.bor(A+B,0)v=bit32.lrotate(bit32.bxor(v,A),7)r=bit32.bor(r+w,0)C=bit32.lrotate(bit32.bxor(C,r),16)x=bit32.bor(x+C,0)w=bit32.lrotate(bit32.bxor(w,x),12)r=bit32.bor(r+w,0)C=bit32.lrotate(bit32.bxor(C,r),8)x=bit32.bor(x+C,0)w=bit32.lrotate(bit32.bxor(w,x),7)s=bit32.bor(s+t,0)D=bit32.lrotate(bit32.bxor(D,s),16)y=bit32.bor(y+D,0)t=bit32.lrotate(bit32.bxor(t,y),12)s=bit32.bor(s+t,0)D=bit32.lrotate(bit32.bxor(D,s),8)y=bit32.bor(y+D,0)t=bit32.lrotate(bit32.bxor(t,y),7)end buffer.writeu32(n,0,buffer.readu32(n,0)+p)buffer.writeu32(n,4,buffer.readu32(n,4)+q)buffer.writeu32(n,8,buffer.readu32(n,8)+r)buffer.writeu32(n,12,buffer.readu32(n,12)+s)buffer.writeu32(n,16,buffer.readu32(n,16)+t)buffer.writeu32(n,20,buffer.readu32(n,20)+u)buffer.writeu32(n,24,buffer.readu32(n,24)+v)buffer.writeu32(n,28,buffer.readu32(n,28)+w)buffer.writeu32(n,32,buffer.readu32(n,32)+x)buffer.writeu32(n,36,buffer.readu32(n,36)+y)buffer.writeu32(n,40,buffer.readu32(n,40)+z)buffer.writeu32(n,44,buffer.readu32(n,44)+A)buffer.writeu32(n,48,buffer.readu32(n,48)+B)buffer.writeu32(n,52,buffer.readu32(n,52)+C)buffer.writeu32(n,56,buffer.readu32(n,56)+D)buffer.writeu32(n,60,buffer.readu32(n,60)+E)end local function n(o,p,q)local r=buffer.len(o)local s=buffer.create(f*d)local t=r==32 and k or l buffer.copy(s,0,t,0,16)buffer.copy(s,16,o,0,math.min(r,16))if r==32 then buffer.copy(s,32,o,16,16)else buffer.copy(s,32,o,0,16)end buffer.writeu32(s,48,q)buffer.copy(s,52,p,0,12)return s end function c.ChaCha20(o,p,q,r,s)if o==nil then error('Data cannot be nil',2)end if typeof(o)~='buffer'then error(`Data must be a buffer, got {typeof(o)}`,2)end if p==nil then error('Key cannot be nil',2)end if typeof(p)~='buffer'then error(`Key must be a buffer, got {typeof(p)}`,2)end local t=buffer.len(p)if t~=i and t~=j then error(`Key must be {i} or {j} bytes long, got {t} bytes`,2)end if q==nil then error('Nonce cannot be nil',2)end if typeof(q)~='buffer'then error(`Nonce must be a buffer, got {typeof(q)}`,2)end local u=buffer.len(q)if u~=g then error(`Nonce must be exactly {g} bytes long, got {u} bytes`,2)end if r then if typeof(r)~='number'then error(`Counter must be a number, got {typeof(r)}`,2)end if r<0 then error(`Counter cannot be negative, got {r}`,2)end if r~=math.floor(r)then error(`Counter must be an integer, got {r}`,2)end if r>=2^32 then error(`Counter must be less than 2^32, got {r}`,2)end end if s then if typeof(s)~='number'then error(`Rounds must be a number, got {typeof(s)}`,2)end if s<=0 then error(`Rounds must be positive, got {s}`,2)end if s~=math.floor(s)then error(`Rounds must be an integer, got {s}`,2)end if s%2~=0 then error(`Rounds must be even, got {s}`,2)end end local v=r or 1 local w=s or 20 local x=buffer.len(o)if x==0 then return buffer.create(0)end local y=buffer.create(x)local z=0 local A=n(p,q,v)local B=buffer.create(64)buffer.copy(B,0,A,0)while z<x do m(A,w)local C=math.min(e,x-z)local D=C%4 for E=0,C-D-1,4 do local F=buffer.readu32(o,z+E)local G=buffer.readu32(A,E)buffer.writeu32(y,z+E,bit32.bxor(F,G))end for E=C-D,C-1 do local F=buffer.readu8(o,z+E)local G=buffer.readu8(A,E)buffer.writeu8(y,z+E,bit32.bxor(F,G))end z+=C v+=1 buffer.copy(A,0,B,0)buffer.writeu32(A,48,v)end return y end function c.HChaCha20(o,p,q)if o==nil then error('Key cannot be nil',2)end if typeof(o)~='buffer'then error(`Key must be a buffer, got {typeof(o)}`,2)end local r=buffer.len(o)if r~=i and r~=j then error(`Key must be {i} or {j} bytes long, got {r} bytes`,2)end if p==nil then error('Nonce cannot be nil',2)end if typeof(p)~='buffer'then error(`Nonce must be a buffer, got {typeof(p)}`,2)end local s=buffer.len(p)if s~=16 then error(`HChaCha20 requires a 16-byte nonce, got {s} bytes`,2)end if q then if typeof(q)~='number'then error(`Rounds must be a number, got {typeof(q)}`,2)end if q<=0 then error(`Rounds must be positive, got {q}`,2)end if q~=math.floor(q)then error(`Rounds must be an integer, got {q}`,2)end if q%2~=0 then error(`Rounds must be even, got {q}`,2)end end local t=q or 20 local u if r==j then u=o else u=buffer.create(32)buffer.copy(u,0,o,0,16)buffer.copy(u,16,o,0,16)end local v=(buffer.len(u)==32)and k or l local w=buffer.create(f*d)buffer.copy(w,0,v,0,16)buffer.copy(w,16,u,0,16)buffer.copy(w,32,u,16,16)buffer.copy(w,48,p,0,16)local x,y,z,A,B,C,D,E,F,G,H,I,J,K,L,M=buffer.readu32(w,0),buffer.readu32(w,4),buffer.readu32(w,8),buffer.readu32(w,12),buffer.readu32(w,16),buffer.readu32(w,20),buffer.readu32(w,24),buffer.readu32(w,28),buffer.readu32(w,32),buffer.readu32(w,36),buffer.readu32(w,40),buffer.readu32(w,44),buffer.readu32(w,48),buffer.readu32(w,52),buffer.readu32(w,56),buffer.readu32(w,60)for N=1,t do local O=N%2==1 if O then x=bit32.bor(x+B,0)J=bit32.lrotate(bit32.bxor(J,x),16)F=bit32.bor(F+J,0)B=bit32.lrotate(bit32.bxor(B,F),12)x=bit32.bor(x+B,0)J=bit32.lrotate(bit32.bxor(J,x),8)F=bit32.bor(F+J,0)B=bit32.lrotate(bit32.bxor(B,F),7)y=bit32.bor(y+C,0)K=bit32.lrotate(bit32.bxor(K,y),16)G=bit32.bor(G+K,0)C=bit32.lrotate(bit32.bxor(C,G),12)y=bit32.bor(y+C,0)K=bit32.lrotate(bit32.bxor(K,y),8)G=bit32.bor(G+K,0)C=bit32.lrotate(bit32.bxor(C,G),7)z=bit32.bor(z+D,0)L=bit32.lrotate(bit32.bxor(L,z),16)H=bit32.bor(H+L,0)D=bit32.lrotate(bit32.bxor(D,H),12)z=bit32.bor(z+D,0)L=bit32.lrotate(bit32.bxor(L,z),8)H=bit32.bor(H+L,0)D=bit32.lrotate(bit32.bxor(D,H),7)A=bit32.bor(A+E,0)M=bit32.lrotate(bit32.bxor(M,A),16)I=bit32.bor(I+M,0)E=bit32.lrotate(bit32.bxor(E,I),12)A=bit32.bor(A+E,0)M=bit32.lrotate(bit32.bxor(M,A),8)I=bit32.bor(I+M,0)E=bit32.lrotate(bit32.bxor(E,I),7)else x=bit32.bor(x+C,0)M=bit32.lrotate(bit32.bxor(M,x),16)H=bit32.bor(H+M,0)C=bit32.lrotate(bit32.bxor(C,H),12)x=bit32.bor(x+C,0)M=bit32.lrotate(bit32.bxor(M,x),8)H=bit32.bor(H+M,0)C=bit32.lrotate(bit32.bxor(C,H),7)y=bit32.bor(y+D,0)J=bit32.lrotate(bit32.bxor(J,y),16)I=bit32.bor(I+J,0)D=bit32.lrotate(bit32.bxor(D,I),12)y=bit32.bor(y+D,0)J=bit32.lrotate(bit32.bxor(J,y),8)I=bit32.bor(I+J,0)D=bit32.lrotate(bit32.bxor(D,I),7)z=bit32.bor(z+E,0)K=bit32.lrotate(bit32.bxor(K,z),16)F=bit32.bor(F+K,0)E=bit32.lrotate(bit32.bxor(E,F),12)z=bit32.bor(z+E,0)K=bit32.lrotate(bit32.bxor(K,z),8)F=bit32.bor(F+K,0)E=bit32.lrotate(bit32.bxor(E,F),7)A=bit32.bor(A+B,0)L=bit32.lrotate(bit32.bxor(L,A),16)G=bit32.bor(G+L,0)B=bit32.lrotate(bit32.bxor(B,G),12)A=bit32.bor(A+B,0)L=bit32.lrotate(bit32.bxor(L,A),8)G=bit32.bor(G+L,0)B=bit32.lrotate(bit32.bxor(B,G),7)end end local N=buffer.create(32)buffer.writeu32(N,0,x)buffer.writeu32(N,4,y)buffer.writeu32(N,8,z)buffer.writeu32(N,12,A)buffer.writeu32(N,16,J)buffer.writeu32(N,20,K)buffer.writeu32(N,24,L)buffer.writeu32(N,28,M)return N end function c.XChaCha20(o,p,q,r,s)if q==nil then error('Nonce cannot be nil',2)end if typeof(q)~='buffer'then error(`Nonce must be a buffer, got {typeof(q)}`,2)end local t=buffer.len(q)if t~=h then error(`XChaCha20 requires a 24-byte nonce, got {t} bytes`,2)end local u=c.HChaCha20(p,(function()local u=buffer.create(16)buffer.copy(u,0,q,0,16)return u end)(),s)local v=buffer.create(12)buffer.copy(v,4,q,16,8)return c.ChaCha20(o,u,v,r,s)end return c end function a.a()local c=a.cache.a if not c then c={c=b()}a.cache.a=c end return c.c end end do local function b()local c=16 local d=16 local e=32 local function f(g,h)local i=buffer.len(g)local j=g local k=i if i%d~=0 or i==0 then local l=d-(i%d)k=i+l j=buffer.create(k)buffer.copy(j,0,g,0,i)buffer.writeu8(j,i,1)end local l=i-15 local m=buffer.readu32(h,0)%(2^28)local n=bit32.band(buffer.readu32(h,4),0xffffffc)%(2^28)*(2^32)local o=bit32.band(buffer.readu32(h,8),0xffffffc)%(2^28)*(2^64)local p=bit32.band(buffer.readu32(h,12),0xffffffc)%(2^28)*(2^96)local q=m%(2^18)local r=m-q local s=n%(2^50)local t=n-s local u=o%(2^82)local v=o-u local w=p%(2^112)local x=p-w local y=5/(2^130)*n local z=5/(2^130)*o local A=5/(2^130)*p local B=y%(2^-80)local C=y-B local D=z%(2^-48)local E=z-D local F=A%(2^-16)local G=A-F local H,I,J,K=0,0,0,0 local L,M,N,O=0,0,0,0 for P=0,k-1,d do local Q=buffer.readu32(j,P)local R=buffer.readu32(j,P+4)local S=buffer.readu32(j,P+8)local T=buffer.readu32(j,P+12)local U=H+I+Q local V=J+K+R*(2^32)local W=L+M+S*(2^64)local X=N+O+T*(2^96)if P<l then X=X+(2^128)end H=U*q+V*F+W*D+X*B I=U*r+V*G+W*E+X*C J=U*s+V*q+W*F+X*D K=U*t+V*r+W*G+X*E L=U*u+V*s+W*q+X*F M=U*v+V*t+W*r+X*G N=U*w+V*u+W*s+X*q O=U*x+V*v+W*t+X*r local Y=H+3*(2^69)-3*(2^69)H-=Y I+=Y local Z=I+3*(2^83)-3*(2^83)I-=Z J+=Z local _=J+3*(2^101)-3*(2^101)J-=_ K+=_ local aa=K+3*(2^115)-3*(2^115)K-=aa L+=aa local ab=L+3*(2^133)-3*(2^133)L-=ab M+=ab local ac=M+3*(2^147)-3*(2^147)M-=ac N+=ac local ad=N+3*(2^163)-3*(2^163)N-=ad O+=ad local ae=O+3*(2^181)-3*(2^181)O-=ae H+=5/(2^130)*ae end local aa=H%(2^16)I=H-aa+I local ab=I%(2^32)J=I-ab+J local ac=J%(2^48)K=J-ac+K local ad=K%(2^64)L=K-ad+L local ae=L%(2^80)M=L-ae+M local P=M%(2^96)N=M-P+N local Q=N%(2^112)O=N-Q+O local R=O%(2^130)H=aa+5/(2^130)*(O-R)aa=H%(2^16)ab=H-aa+ab if R==0x3ffff*(2^112)and Q==0xffff*(2^96)and P==0xffff*(2^80)and ae==0xffff*(2^64)and ad==0xffff*(2^48)and ac==0xffff*(2^32)and ab==0xffff*(2^16)and aa>=0xfffb then R,Q,P,ae=0,0,0,0 ad,ac,ab=0,0,0 aa-=0xfffb end local S=buffer.readu32(h,16)local T=buffer.readu32(h,20)local U=buffer.readu32(h,24)local V=buffer.readu32(h,28)local W=S+aa+ab local X=W%(2^32)local Y=W-X+T*(2^32)+ac+ad local Z=Y%(2^64)local _=Y-Z+U*(2^64)+ae+P local af=_%(2^96)local ag=_-af+V*(2^96)+Q+R local ah=ag%(2^128)local ai=buffer.create(c)buffer.writeu32(ai,0,X)buffer.writeu32(ai,4,Z/(2^32))buffer.writeu32(ai,8,af/(2^64))buffer.writeu32(ai,12,ah/(2^96))return ai end local function aa(ab,ac)if ab==nil then error('Message cannot be nil',2)end if typeof(ab)~='buffer'then error(`Message must be a buffer, got {typeof(ab)}`,2)end if ac==nil then error('Key cannot be nil',2)end if typeof(ac)~='buffer'then error(`Key must be a buffer, got {typeof(ac)}`,2)end local ad=buffer.len(ac)if ad~=e then error(`Key must be exactly {e} bytes long, got {ad} bytes`,2)end return f(ab,ac)end return aa end function a.b()local aa=a.cache.b if not aa then aa={c=b()}a.cache.b=aa end return aa.c end end do local function aa()local ab=a.a()local ac=a.b()local ad=8 local ae=32 local af=12 local ag=24 local ah=16 local ai={ChaCha20=ab.ChaCha20,XChaCha20=ab.XChaCha20,Poly1305=ac}local function b(c)if c then return ab.XChaCha20 else return ab.ChaCha20 end end local function c(d,e)local f=buffer.len(d)local g=buffer.len(e)if f~=g then return false end local h=0 for i=0,f-1 do h=bit32.bor(h,bit32.bxor(buffer.readu8(d,i),buffer.readu8(e,i)))end return h==0 end local function d(e,f)local g=buffer.len(e)local h=buffer.len(f)local i=(-g)%16 local j=(-h)%16 local k=g+i+h+j+16 local l=buffer.create(k)local m=0 buffer.copy(l,m,e,0,g)m+=g+i buffer.copy(l,m,f,0,h)m+=h+j buffer.writeu32(l,m,g)buffer.writeu32(l,m+ad,h)return l end local function e(f,g,h,i)local j=h or 20 local k=buffer.create(32)return b(i)(k,f,g,0,j)end function ai.Encrypt(f,g,h,i,j,k)if f==nil then error('Message cannot be nil',2)end if typeof(f)~='buffer'then error(`Message must be a buffer, got {typeof(f)}`,2)end local l=buffer.len(f)if l==0 then error('Message cannot be empty',2)end if g==nil then error('Key cannot be nil',2)end if typeof(g)~='buffer'then error(`Key must be a buffer, got {typeof(g)}`,2)end local m=buffer.len(g)if m~=ae then error(`Key must be exactly {ae} bytes long, got {m} bytes`,2)end if h==nil then error('Nonce cannot be nil',2)end if typeof(h)~='buffer'then error(`Nonce must be a buffer, got {typeof(h)}`,2)end local n=buffer.len(h)local o=if k then ag else af if n~=o then error(`Nonce must be exactly {o} bytes long, got {n} bytes`,2)end if i then if typeof(i)~='buffer'then error(`AdditionalAuthData must be a buffer, got {typeof(i)}`,2)end end if j then if typeof(j)~='number'then error(`Rounds must be a number, got {typeof(j)}`,2)end if j<=0 then error(`Rounds must be positive, got {j}`,2)end if j%2~=0 then error(`Rounds must be even, got {j}`,2)end end local p=j or 20 local q=i or buffer.create(0)local r=e(g,h,p,k)local s=b(k)(f,g,h,1,p)local t=d(q,s)local u=ac(t,r)return s,u end function ai.Decrypt(f,g,h,i,j,k,l)if f==nil then error('Ciphertext cannot be nil',2)end if typeof(f)~='buffer'then error(`Ciphertext must be a buffer, got {typeof(f)}`,2)end local m=buffer.len(f)if m==0 then error('Ciphertext cannot be empty',2)end if g==nil then error('Key cannot be nil',2)end if typeof(g)~='buffer'then error(`Key must be a buffer, got {typeof(g)}`,2)end local n=buffer.len(g)if n~=ae then error(`Key must be exactly {ae} bytes long, got {n} bytes`,2)end if h==nil then error('Nonce cannot be nil',2)end if typeof(h)~='buffer'then error(`Nonce must be a buffer, got {typeof(h)}`,2)end local o=buffer.len(h)local p=if l then ag else af if o~=p then error(`Nonce must be exactly {p} bytes long, got {o} bytes`,2)end if i==nil then error('Tag cannot be nil',2)end if typeof(i)~='buffer'then error(`Tag must be a buffer, got {typeof(i)}`,2)end local q=buffer.len(i)if q~=ah then error(`Tag must be exactly {ah} bytes long, got {q} bytes`,2)end if j then if typeof(j)~='buffer'then error(`AdditionalAuthData must be a buffer, got {typeof(j)}`,2)end end if k then if typeof(k)~='number'then error(`Rounds must be a number, got {typeof(k)}`,2)end if k<=0 then error(`Rounds must be positive, got {k}`,2)end if k%2~=0 then error(`Rounds must be even, got {k}`,2)end end local r=k or 20 local s=j or buffer.create(0)local t=e(g,h,r,l)local u=d(s,f)local v=ac(u,t)if not c(i,v)then return nil end return b(l)(f,g,h,1,r)end return ai end function a.c()local ab=a.cache.c if not ab then ab={c=aa()}a.cache.c=ab end return ab.c end end do local function aa()local ab={}local ac=buffer.create(256*2)do local ad='0123456789abcdef'for ae=0,255 do local af=bit32.rshift(ae,4)local ag=ae%16 local ah=string.byte(ad,af+1)local ai=string.byte(ad,ag+1)local b=ah+bit32.lshift(ai,8)buffer.writeu16(ac,ae*2,b)end end local ad,ae=buffer.create(96),buffer.create(96)do local af=0 local ag=29 local function ah()local ai=ag%2 ag=bit32.bxor((ag-ai)//2,142*ai)return ai end for ai=0,23 do local b=0 local c for d=1,6 do c=if c then c*c*2 else 1 b+=ah()*c end local d=ah()*c buffer.writeu32(ae,ai*4,d)buffer.writeu32(ad,ai*4,b+d*af)end end local af=buffer.create(100)local ag=buffer.create(100)local function ah(ai,b,c,d,e,f)local g=f//8 local h,i=ae,ad for j=d,d+e-1,f do for k=0,(g-1)*4,4 do local l=j+k*2 buffer.writeu32(ai,k,bit32.bxor(buffer.readu32(ai,k),buffer.readu32(c,l)))buffer.writeu32(b,k,bit32.bxor(buffer.readu32(b,k),buffer.readu32(c,l+4)))end local k,l=buffer.readu32(ai,0),buffer.readu32(b,0)local m,n=buffer.readu32(ai,4),buffer.readu32(b,4)local o,p=buffer.readu32(ai,8),buffer.readu32(b,8)local q,r=buffer.readu32(ai,12),buffer.readu32(b,12)local s,t=buffer.readu32(ai,16),buffer.readu32(b,16)local u,v=buffer.readu32(ai,20),buffer.readu32(b,20)local w,x=buffer.readu32(ai,24),buffer.readu32(b,24)local y,z=buffer.readu32(ai,28),buffer.readu32(b,28)local A,B=buffer.readu32(ai,32),buffer.readu32(b,32)local C,D=buffer.readu32(ai,36),buffer.readu32(b,36)local E,F=buffer.readu32(ai,40),buffer.readu32(b,40)local G,H=buffer.readu32(ai,44),buffer.readu32(b,44)local I,J=buffer.readu32(ai,48),buffer.readu32(b,48)local K,L=buffer.readu32(ai,52),buffer.readu32(b,52)local M,N=buffer.readu32(ai,56),buffer.readu32(b,56)local O,P=buffer.readu32(ai,60),buffer.readu32(b,60)local Q,R=buffer.readu32(ai,64),buffer.readu32(b,64)local S,T=buffer.readu32(ai,68),buffer.readu32(b,68)local U,V=buffer.readu32(ai,72),buffer.readu32(b,72)local W,X=buffer.readu32(ai,76),buffer.readu32(b,76)local Y,Z=buffer.readu32(ai,80),buffer.readu32(b,80)local _,aj=buffer.readu32(ai,84),buffer.readu32(b,84)local ak,al=buffer.readu32(ai,88),buffer.readu32(b,88)local am,an=buffer.readu32(ai,92),buffer.readu32(b,92)local ao,ap=buffer.readu32(ai,96),buffer.readu32(b,96)for aq=0,92,4 do local ar,as=bit32.bxor(k,u,E,O,Y),bit32.bxor(l,v,F,P,Z)local at,au=bit32.bxor(m,w,G,Q,_),bit32.bxor(n,x,H,R,aj)local av,aw=bit32.bxor(o,y,I,S,ak),bit32.bxor(p,z,J,T,al)local ax,ay=bit32.bxor(q,A,K,U,am),bit32.bxor(r,B,L,V,an)local az,aA=bit32.bxor(s,C,M,W,ao),bit32.bxor(t,D,N,X,ap)local aB,aC=bit32.bxor(ar,av*2+aw//2147483648),bit32.bxor(as,aw*2+av//2147483648)local aD,aE=bit32.bxor(aB,m),bit32.bxor(aC,n)local aF,aG=bit32.bxor(aB,w),bit32.bxor(aC,x)local aH,aI=bit32.bxor(aB,G),bit32.bxor(aC,H)local aJ,aK=bit32.bxor(aB,Q),bit32.bxor(aC,R)local aL,aM=bit32.bxor(aB,_),bit32.bxor(aC,aj)m=aF//1048576+(aG*4096)n=aG//1048576+(aF*4096)w=aJ//524288+(aK*8192)x=aK//524288+(aJ*8192)G=aD*2+aE//2147483648 H=aE*2+aD//2147483648 Q=aH*1024+aI//4194304 R=aI*1024+aH//4194304 _=aL*4+aM//1073741824 aj=aM*4+aL//1073741824 aB=bit32.bxor(at,ax*2+ay//2147483648)aC=bit32.bxor(au,ay*2+ax//2147483648)aD=bit32.bxor(aB,o)aE=bit32.bxor(aC,p)aF=bit32.bxor(aB,y)aG=bit32.bxor(aC,z)aH=bit32.bxor(aB,I)aI=bit32.bxor(aC,J)aJ=bit32.bxor(aB,S)aK=bit32.bxor(aC,T)aL=bit32.bxor(aB,ak)aM=bit32.bxor(aC,al)o=aH//2097152+(aI*2048)p=aI//2097152+(aH*2048)y=aL//8+bit32.bor(aM*536870912,0)z=aM//8+bit32.bor(aL*536870912,0)I=aF*64+aG//67108864 J=aG*64+aF//67108864 S=(aJ*32768)+aK//131072 T=(aK*32768)+aJ//131072 ak=aD//4+bit32.bor(aE*1073741824,0)al=aE//4+bit32.bor(aD*1073741824,0)aB=bit32.bxor(av,az*2+aA//2147483648)aC=bit32.bxor(aw,aA*2+az//2147483648)aD=bit32.bxor(aB,q)aE=bit32.bxor(aC,r)aF=bit32.bxor(aB,A)aG=bit32.bxor(aC,B)aH=bit32.bxor(aB,K)aI=bit32.bxor(aC,L)aJ=bit32.bxor(aB,U)aK=bit32.bxor(aC,V)aL=bit32.bxor(aB,am)aM=bit32.bxor(aC,an)q=bit32.bor(aJ*2097152,0)+aK//2048 r=bit32.bor(aK*2097152,0)+aJ//2048 A=bit32.bor(aD*268435456,0)+aE//16 B=bit32.bor(aE*268435456,0)+aD//16 K=bit32.bor(aH*33554432,0)+aI//128 L=bit32.bor(aI*33554432,0)+aH//128 U=aL//256+bit32.bor(aM*16777216,0)V=aM//256+bit32.bor(aL*16777216,0)am=aF//512+bit32.bor(aG*8388608,0)an=aG//512+bit32.bor(aF*8388608,0)aB=bit32.bxor(ax,ar*2+as//2147483648)aC=bit32.bxor(ay,as*2+ar//2147483648)aD=bit32.bxor(aB,s)aE=bit32.bxor(aC,t)aF=bit32.bxor(aB,C)aG=bit32.bxor(aC,D)aH=bit32.bxor(aB,M)aI=bit32.bxor(aC,N)aJ=bit32.bxor(aB,W)aK=bit32.bxor(aC,X)aL=bit32.bxor(aB,ao)aM=bit32.bxor(aC,ap)s=(aL*16384)+aM//262144 t=(aM*16384)+aL//262144 C=bit32.bor(aF*1048576,0)+aG//4096 D=bit32.bor(aG*1048576,0)+aF//4096 M=aJ*256+aK//16777216 N=aK*256+aJ//16777216 W=bit32.bor(aD*134217728,0)+aE//32 X=bit32.bor(aE*134217728,0)+aD//32 ao=aH//33554432+aI*128 ap=aI//33554432+aH*128 aB=bit32.bxor(az,at*2+au//2147483648)aC=bit32.bxor(aA,au*2+at//2147483648)aF=bit32.bxor(aB,u)aG=bit32.bxor(aC,v)aH=bit32.bxor(aB,E)aI=bit32.bxor(aC,F)aJ=bit32.bxor(aB,O)aK=bit32.bxor(aC,P)aL=bit32.bxor(aB,Y)aM=bit32.bxor(aC,Z)u=aH*8+aI//536870912 v=aI*8+aH//536870912 E=(aL*262144)+aM//16384 F=(aM*262144)+aL//16384 O=aF//268435456+aG*16 P=aG//268435456+aF*16 Y=aJ//8388608+aK*512 Z=aK//8388608+aJ*512 k=bit32.bxor(aB,k)l=bit32.bxor(aC,l)k,m,o,q,s=bit32.bxor(k,bit32.band(-1-m,o)),bit32.bxor(m,bit32.band(-1-o,q)),bit32.bxor(o,bit32.band(-1-q,s)),bit32.bxor(q,bit32.band(-1-s,k)),(bit32.bxor(s,bit32.band(-1-k,m)))l,n,p,r,t=bit32.bxor(l,bit32.band(-1-n,p)),bit32.bxor(n,bit32.band(-1-p,r)),bit32.bxor(p,bit32.band(-1-r,t)),bit32.bxor(r,bit32.band(-1-t,l)),(bit32.bxor(t,bit32.band(-1-l,n)))u,w,y,A,C=bit32.bxor(A,bit32.band(-1-C,u)),bit32.bxor(C,bit32.band(-1-u,w)),bit32.bxor(u,bit32.band(-1-w,y)),bit32.bxor(w,bit32.band(-1-y,A)),(bit32.bxor(y,bit32.band(-1-A,C)))v,x,z,B,D=bit32.bxor(B,bit32.band(-1-D,v)),bit32.bxor(D,bit32.band(-1-v,x)),bit32.bxor(v,bit32.band(-1-x,z)),bit32.bxor(x,bit32.band(-1-z,B)),(bit32.bxor(z,bit32.band(-1-B,D)))E,G,I,K,M=bit32.bxor(G,bit32.band(-1-I,K)),bit32.bxor(I,bit32.band(-1-K,M)),bit32.bxor(K,bit32.band(-1-M,E)),bit32.bxor(M,bit32.band(-1-E,G)),(bit32.bxor(E,bit32.band(-1-G,I)))F,H,J,L,N=bit32.bxor(H,bit32.band(-1-J,L)),bit32.bxor(J,bit32.band(-1-L,N)),bit32.bxor(L,bit32.band(-1-N,F)),bit32.bxor(N,bit32.band(-1-F,H)),(bit32.bxor(F,bit32.band(-1-H,J)))O,Q,S,U,W=bit32.bxor(W,bit32.band(-1-O,Q)),bit32.bxor(O,bit32.band(-1-Q,S)),bit32.bxor(Q,bit32.band(-1-S,U)),bit32.bxor(S,bit32.band(-1-U,W)),(bit32.bxor(U,bit32.band(-1-W,O)))P,R,T,V,X=bit32.bxor(X,bit32.band(-1-P,R)),bit32.bxor(P,bit32.band(-1-R,T)),bit32.bxor(R,bit32.band(-1-T,V)),bit32.bxor(T,bit32.band(-1-V,X)),(bit32.bxor(V,bit32.band(-1-X,P)))Y,_,ak,am,ao=bit32.bxor(ak,bit32.band(-1-am,ao)),bit32.bxor(am,bit32.band(-1-ao,Y)),bit32.bxor(ao,bit32.band(-1-Y,_)),bit32.bxor(Y,bit32.band(-1-_,ak)),(bit32.bxor(_,bit32.band(-1-ak,am)))Z,aj,al,an,ap=bit32.bxor(al,bit32.band(-1-an,ap)),bit32.bxor(an,bit32.band(-1-ap,Z)),bit32.bxor(ap,bit32.band(-1-Z,aj)),bit32.bxor(Z,bit32.band(-1-aj,al)),(bit32.bxor(aj,bit32.band(-1-al,an)))k=bit32.bxor(k,buffer.readu32(i,aq))l=bit32.bxor(l,buffer.readu32(h,aq))end buffer.writeu32(ai,0,k)buffer.writeu32(b,0,l)buffer.writeu32(ai,4,m)buffer.writeu32(b,4,n)buffer.writeu32(ai,8,o)buffer.writeu32(b,8,p)buffer.writeu32(ai,12,q)buffer.writeu32(b,12,r)buffer.writeu32(ai,16,s)buffer.writeu32(b,16,t)buffer.writeu32(ai,20,u)buffer.writeu32(b,20,v)buffer.writeu32(ai,24,w)buffer.writeu32(b,24,x)buffer.writeu32(ai,28,y)buffer.writeu32(b,28,z)buffer.writeu32(ai,32,A)buffer.writeu32(b,32,B)buffer.writeu32(ai,36,C)buffer.writeu32(b,36,D)buffer.writeu32(ai,40,E)buffer.writeu32(b,40,F)buffer.writeu32(ai,44,G)buffer.writeu32(b,44,H)buffer.writeu32(ai,48,I)buffer.writeu32(b,48,J)buffer.writeu32(ai,52,K)buffer.writeu32(b,52,L)buffer.writeu32(ai,56,M)buffer.writeu32(b,56,N)buffer.writeu32(ai,60,O)buffer.writeu32(b,60,P)buffer.writeu32(ai,64,Q)buffer.writeu32(b,64,R)buffer.writeu32(ai,68,S)buffer.writeu32(b,68,T)buffer.writeu32(ai,72,U)buffer.writeu32(b,72,V)buffer.writeu32(ai,76,W)buffer.writeu32(b,76,X)buffer.writeu32(ai,80,Y)buffer.writeu32(b,80,Z)buffer.writeu32(ai,84,_)buffer.writeu32(b,84,aj)buffer.writeu32(ai,88,ak)buffer.writeu32(b,88,al)buffer.writeu32(ai,92,am)buffer.writeu32(b,92,an)buffer.writeu32(ai,96,ao)buffer.writeu32(b,96,ap)end end local function ai(aj,ak,al,am)local an=(1600-ak)//8 buffer.fill(af,0,0,100)buffer.fill(ag,0,0,100)local ao=af local ap=ag local aq=buffer.len(aj)local ar=aq+1 local as=ar%an if as~=0 then ar+=(an-as)end local at=buffer.create(ar)if aq>0 then buffer.copy(at,0,aj,0,aq)end if ar-aq==1 then buffer.writeu8(at,aq,bit32.bor(am,0x80))else buffer.writeu8(at,aq,am)if ar-aq>2 then buffer.fill(at,aq+1,0,ar-aq-2)end buffer.writeu8(at,ar-1,0x80)end ah(ao,ap,at,0,ar,an)local au=buffer.create(al)local av=buffer.len(au)local aw=buffer.create(av*2)local ax=ac local ay=av%8 local az=0 local aA=0 local aB=buffer.create(an)while aA<al do local aC=math.min(an,al-aA)for aD=0,aC-1 do local aE=aA+aD if aE<al then local aF=aD//8 local aG=aD%8 local aH=aF*4 local aI if aG<4 then aI=bit32.extract(buffer.readu32(ao,aH),aG*8,8)else aI=bit32.extract(buffer.readu32(ap,aH),(aG-4)*8,8)end buffer.writeu8(au,aE,aI)end end aA+=aC if aA<al then ah(ao,ap,aB,0,an,an)end end for aC=0,av-ay-1,8 do local aD=buffer.readu16(ax,buffer.readu8(au,aC)*2)local aE=buffer.readu16(ax,buffer.readu8(au,aC+1)*2)local aF=buffer.readu16(ax,buffer.readu8(au,aC+2)*2)local aG=buffer.readu16(ax,buffer.readu8(au,aC+3)*2)local aH=buffer.readu16(ax,buffer.readu8(au,aC+4)*2)local aI=buffer.readu16(ax,buffer.readu8(au,aC+5)*2)local aJ=buffer.readu16(ax,buffer.readu8(au,aC+6)*2)local aK=buffer.readu16(ax,buffer.readu8(au,aC+7)*2)buffer.writeu16(aw,az,aD)buffer.writeu16(aw,az+2,aE)buffer.writeu16(aw,az+4,aF)buffer.writeu16(aw,az+6,aG)buffer.writeu16(aw,az+8,aH)buffer.writeu16(aw,az+10,aI)buffer.writeu16(aw,az+12,aJ)buffer.writeu16(aw,az+14,aK)az+=16 end for aC=av-ay,av-1 do local aD=buffer.readu16(ax,buffer.readu8(au,aC)*2)buffer.writeu16(aw,az,aD)az+=2 end return buffer.tostring(aw),au end function ab.SHA3_224(aj)return ai(aj,448,28,0x6)end function ab.SHA3_256(aj)return ai(aj,512,32,0x6)end function ab.SHA3_384(aj)return ai(aj,768,48,0x6)end function ab.SHA3_512(aj)return ai(aj,1024,64,0x6)end function ab.SHAKE128(aj,ak)return ai(aj,256,ak,0x1f)end function ab.SHAKE256(aj,ak)return ai(aj,512,ak,0x1f)end return ab end function a.d()local ab=a.cache.d if not ab then ab={c=aa()}a.cache.d=ab end return ab.c end end end local aa=a.c()local ab=a.d()return aa,SHA35.SHA3_256
+
 end)()
 local fiu = (function()
-  local type=type local pcall=pcall local error=error local tonumber=tonumber local assert=assert local setmetatable=setmetatablelocal string_format=string.formatlocal table_move=table.move local table_pack=table.pack local table_unpack=table.unpack local table_create=table.create local table_insert=table.insert local table_remove=table.remove local table_concat=table.concatlocal coroutine_create=coroutine.create local coroutine_yield=coroutine.yield local coroutine_resume=coroutine.resume local coroutine_close=coroutine.closelocal buffer_fromstring=buffer.fromstring local buffer_len=buffer.len local buffer_readu8=buffer.readu8 local buffer_readu32=buffer.readu32 local buffer_readstring=buffer.readstring local buffer_readf32=buffer.readf32 local buffer_readf64=buffer.readf64local bit32_bor=bit32.bor local bit32_band=bit32.band local bit32_btest=bit32.btest local bit32_rshift=bit32.rshift local bit32_lshift=bit32.lshift local bit32_extract=bit32.extractlocal ttisnumber=function (v)return type(v)=="number" end local ttisstring=function (v)return type(v)=="string" end local ttisboolean=function (v)return type(v)=="boolean" end local ttisfunction=function (v)return type(v)=="function " end;local opList={{"NOP",0,0,false},{"BREAK",0,0,false},{"LOADNIL",1,0,false},{"LOADB",3,0,false},{"LOADN",4,0,false},{"LOADK",4,3,false},{"MOVE",2,0,false},{"GETGLOBAL",1,1,true},{"SETGLOBAL",1,1,true},{"GETUPVAL",2,0,false},{"SETUPVAL",2,0,false},{"CLOSEUPVALS",1,0,false},{"GETIMPORT",4,4,true},{"GETTABLE",3,0,false},{"SETTABLE",3,0,false},{"GETTABLEKS",3,1,true},{"SETTABLEKS",3,1,true},{"GETTABLEN",3,0,false},{"SETTABLEN",3,0,false},{"NEWCLOSURE",4,0,false},{"NAMECALL",3,1,true},{"CALL",3,0,false},{"RETURN",2,0,false},{"JUMP",4,0,false},{"JUMPBACK",4,0,false},{"JUMPIF",4,0,false},{"JUMPIFNOT",4,0,false},{"JUMPIFEQ",4,0,true},{"JUMPIFLE",4,0,true},{"JUMPIFLT",4,0,true},{"JUMPIFNOTEQ",4,0,true},{"JUMPIFNOTLE",4,0,true},{"JUMPIFNOTLT",4,0,true},{"ADD",3,0,false},{"SUB",3,0,false},{"MUL",3,0,false},{"DIV",3,0,false},{"MOD",3,0,false},{"POW",3,0,false},{"ADDK",3,2,false},{"SUBK",3,2,false},{"MULK",3,2,false},{"DIVK",3,2,false},{"MODK",3,2,false},{"POWK",3,2,false},{"AND",3,0,false},{"OR",3,0,false},{"ANDK",3,2,false},{"ORK",3,2,false},{"CONCAT",3,0,false},{"NOT",2,0,false},{"MINUS",2,0,false},{"LENGTH",2,0,false},{"NEWTABLE",2,0,true},{"DUPTABLE",4,3,false},{"SETLIST",3,0,true},{"FORNPREP",4,0,false},{"FORNLOOP",4,0,false},{"FORGLOOP",4,8,true},{"FORGPREP_INEXT",4,0,false},{"FASTCALL3",3,1,true},{"FORGPREP_NEXT",4,0,false},{"DEP_FORGLOOP_NEXT",0,0,false},{"GETVARARGS",2,0,false},{"DUPCLOSURE",4,3,false},{"PREPVARARGS",1,0,false},{"LOADKX",1,1,true},{"JUMPX",5,0,false},{"FASTCALL",3,0,false},{"COVERAGE",5,0,false},{"CAPTURE",2,0,false},{"SUBRK",3,7,false},{"DIVRK",3,7,false},{"FASTCALL1",3,0,false},{"FASTCALL2",3,0,true},{"FASTCALL2K",3,1,true},{"FORGPREP",4,0,false},{"JUMPXEQKNIL",4,5,true},{"JUMPXEQKB",4,5,true},{"JUMPXEQKN",4,6,true},{"JUMPXEQKS",4,6,true},{"IDIV",3,0,false},{"IDIVK",3,2,false},}local LUA_MULTRET=-1 local LUA_GENERALIZED_TERMINATOR=-2local function luau_newsettings()return {vectorCtor=function ()error("vectorCtor was not provided")end ,vectorSize=4,useNativeNamecall=false,namecallHandler=function ()error("Native __namecall handler was not provided")end ,extensions={},callHooks={},errorHandling=true,generalizedIteration=true,allowProxyErrors=false,useImportConstants=false,staticEnvironment={},decodeOp=function (op)return op end}end;local function luau_validatesettings(luau_settings)assert(type(luau_settings)=="table","luau_settings should be a table")assert(type(luau_settings.vectorCtor)=="function ","luau_settings.vectorCtor should be a function ")assert(type(luau_settings.vectorSize)=="number","luau_settings.vectorSize should be a number")assert(type(luau_settings.useNativeNamecall)=="boolean","luau_settings.useNativeNamecall should be a boolean")assert(type(luau_settings.namecallHandler)=="function ","luau_settings.namecallHandler should be a function ")assert(type(luau_settings.extensions)=="table","luau_settings.extensions should be a table of functions")assert(type(luau_settings.callHooks)=="table","luau_settings.callHooks should be a table of functions")assert(type(luau_settings.errorHandling)=="boolean","luau_settings.errorHandling should be a boolean")assert(type(luau_settings.generalizedIteration)=="boolean","luau_settings.generalizedIteration should be a boolean")assert(type(luau_settings.allowProxyErrors)=="boolean","luau_settings.allowProxyErrors should be a boolean")assert(type(luau_settings.staticEnvironment)=="table","luau_settings.staticEnvironment should be a table")assert(type(luau_settings.useImportConstants)=="boolean","luau_settings.useImportConstants should be a boolean")assert(type(luau_settings.decodeOp)=="function ","luau_settings.decodeOp should be a function ")end;local function getmaxline(module,protoid)local proto=if (protoid==nil)then module.mainProto else module.protoList[protoid]local size=-1 assert(proto.lineinfoenabled,"proto must have debug enabled")for pc=1,proto.sizecode do local line=proto.instructionlineinfo[pc]size=if (line>size)then line else size endfor i,subid in proto.protos do local maxline=getmaxline(module,subid)size=if (maxline>size)then maxline else size endreturn size end;local function getcoverage(module,protoid,depth,callback,size)local proto=if (protoid==nil)then module.mainProto else module.protoList[protoid]assert(proto.lineinfoenabled,"proto must have debug enabled")local buffer={}for pc=1,proto.sizecode do local inst=proto.code[pc]local line=proto.instructionlineinfo[pc]if (inst.opcode ~=69)then continue end;local hits=inst.Ebuffer[line]=if ((buffer[line]or 0)>hits)then buffer[line]else hits endcallback(proto.debugname,proto.linedefined,depth,buffer,size)for i,subid in proto.protos do getcoverage(module,subid,depth+1,callback,size)end end;local function luau_getcoverage(module,protoid,callback)assert(type(module)=="table","module must be a table")assert(type(protoid)=="number" or type(protoid)=="nil","protoid must be a number or nil")assert(type(callback)=="function ","callback must be a function ")getcoverage(module,protoid,0,callback,getmaxline(module))end;local function resolveImportConstant(static,count,k0,k1,k2)local res=static[k0]if count<2 or res==nil then return res end res=res[k1]if count<3 or res==nil then return res end res=res[k2]return res end;local function luau_deserialize(bytecode,luau_settings)if luau_settings==nil then luau_settings=luau_newsettings()else luau_validatesettings(luau_settings)end;local stream=if type(bytecode)=="string" then buffer_fromstring(bytecode)else bytecode local cursor=0local function readByte()local byte=buffer_readu8(stream,cursor)cursor=cursor+1 return byte end;local function readWord()local word=buffer_readu32(stream,cursor)cursor=cursor+4 return word end;local function readFloat()local float=buffer_readf32(stream,cursor)cursor=cursor+4 return float end;local function readDouble()local double=buffer_readf64(stream,cursor)cursor=cursor+8 return double end;local function readVarInt()local result=0for i=0,4 do local value=readByte()result=bit32_bor(result,bit32_lshift(bit32_band(value,0x7F),i*7))if not bit32_btest(value,0x80)then break end endreturn result end;local function readString()local size=readVarInt()if size==0 then return "" else local str=buffer_readstring(stream,cursor,size)cursor=cursor+sizereturn str end end;local luauVersion=readByte()local typesVersion=0 if luauVersion==0 then error("the provided bytecode is an error message",0)elseif luauVersion<3 or luauVersion>6 then error("the version of the provided bytecode is unsupported",0)elseif luauVersion>=4 then typesVersion=readByte()end;local stringCount=readVarInt()local stringList=table_create(stringCount)for i=1,stringCount do stringList[i]=readString()end;local function readInstruction(codeList)local value=readWord()local opcode=bit32_band(luau_settings.decodeOp(value),0xFF)local opinfo=opList[opcode+1]local opname=opinfo[1]local opmode=opinfo[2]local kmode=opinfo[3]local usesAux=opinfo[4]local inst={opcode=opcode;opname=opname;opmode=opmode;kmode=kmode;usesAux=usesAux;}table_insert(codeList,inst)if opmode==1 then inst.A=bit32_band(bit32_rshift(value,8),0xFF)elseif opmode==2 then inst.A=bit32_band(bit32_rshift(value,8),0xFF)inst.B=bit32_band(bit32_rshift(value,16),0xFF)elseif opmode==3 then inst.A=bit32_band(bit32_rshift(value,8),0xFF)inst.B=bit32_band(bit32_rshift(value,16),0xFF)inst.C=bit32_band(bit32_rshift(value,24),0xFF)elseif opmode==4 then inst.A=bit32_band(bit32_rshift(value,8),0xFF)local temp=bit32_band(bit32_rshift(value,16),0xFFFF)inst.D=if temp<0x8000 then temp else temp-0x10000 elseif opmode==5 then local temp=bit32_band(bit32_rshift(value,8),0xFFFFFF)inst.E=if temp<0x800000 then temp else temp-0x1000000 endif usesAux then local aux=readWord()inst.aux=auxtable_insert(codeList,{value=aux,opname="auxvalue"})endreturn usesAux end;local function checkkmode(inst,k)local kmode=inst.kmodeif kmode==1 then inst.K=k[inst.aux+1]elseif kmode==2 then inst.K=k[inst.C+1]elseif kmode==3 then inst.K=k[inst.D+1]elseif kmode==4 then local extend=inst.aux local count=bit32_rshift(extend,30)local id0=bit32_band(bit32_rshift(extend,20),0x3FF)inst.K0=k[id0+1]inst.KC=count if count==2 then local id1=bit32_band(bit32_rshift(extend,10),0x3FF)inst.K1=k[id1+1]elseif count==3 then local id1=bit32_band(bit32_rshift(extend,10),0x3FF)local id2=bit32_band(bit32_rshift(extend,0),0x3FF)inst.K1=k[id1+1]inst.K2=k[id2+1]end if luau_settings.useImportConstants then inst.K=resolveImportConstant(luau_settings.staticEnvironment,count,inst.K0,inst.K1,inst.K2)end elseif kmode==5 then inst.K=bit32_extract(inst.aux,0,1)==1 inst.KN=bit32_extract(inst.aux,31,1)==1 elseif kmode==6 then inst.K=k[bit32_extract(inst.aux,0,24)+1]inst.KN=bit32_extract(inst.aux,31,1)==1 elseif kmode==7 then inst.K=k[inst.B+1]elseif kmode==8 then inst.K=bit32_band(inst.aux,0xf)end end;local function readProto(bytecodeid)local maxstacksize=readByte()local numparams=readByte()local nups=readByte()local isvararg=readByte()~=0if luauVersion>=4 then readByte()local typesize=readVarInt();cursor=cursor+typesize;end;local sizecode=readVarInt()local codelist=table_create(sizecode)local skipnext=false for i=1,sizecode do if skipnext then skipnext=false continue endskipnext=readInstruction(codelist)end local debugcodelist=table_create(sizecode)for i=1,sizecode do debugcodelist[i]=codelist[i].opcode end;local sizek=readVarInt()local klist=table_create(sizek)for i=1,sizek do local kt=readByte()local kif kt==0 then k=nil elseif kt==1 then k=readByte()~=0 elseif kt==2 then k=readDouble()elseif kt==3 then k=stringList[readVarInt()]elseif kt==4 then k=readWord()elseif kt==5 then local dataLength=readVarInt()k=table_create(dataLength)for i=1,dataLength do k[i]=readVarInt()end elseif kt==6 then k=readVarInt()elseif kt==7 then local x,y,z,w=readFloat(),readFloat(),readFloat(),readFloat()if luau_settings.vectorSize==4 then k=luau_settings.vectorCtor(x,y,z,w)else k=luau_settings.vectorCtor(x,y,z)end endklist[i]=k end for i=1,sizecode do checkkmode(codelist[i],klist)end;local sizep=readVarInt()local protolist=table_create(sizep)for i=1,sizep do protolist[i]=readVarInt()+1 end;local linedefined=readVarInt()local debugnameindex=readVarInt()local debugnameif debugnameindex ~=0 then debugname=stringList[debugnameindex]else debugname="(??)" end local lineinfoenabled=readByte()~=0 local instructionlineinfo=nilif lineinfoenabled then local linegaplog2=readByte()local intervals=bit32_rshift((sizecode-1),linegaplog2)+1local lineinfo=table_create(sizecode)local abslineinfo=table_create(intervals)local lastoffset=0 for j=1,sizecode do lastoffset+=readByte()lineinfo[j]=lastoffset end;local lastline=0 for j=1,intervals do lastline+=readWord()abslineinfo[j]=lastline %(2 ^ 32)endinstructionlineinfo=table_create(sizecode)for i=1,sizecode do table_insert(instructionlineinfo,abslineinfo[bit32_rshift(i-1,linegaplog2)+1]+lineinfo[i])end end if readByte()~=0 then local sizel=readVarInt()for i=1,sizel do readVarInt()readVarInt()readVarInt()readByte()end local sizeupvalues=readVarInt()for i=1,sizeupvalues do readVarInt()end endreturn{maxstacksize=maxstacksize;numparams=numparams;nups=nups;isvararg=isvararg;linedefined=linedefined;debugname=debugname;sizecode=sizecode;code=codelist;debugcode=debugcodelist;sizek=sizek;k=klist;sizep=sizep;protos=protolist;lineinfoenabled=lineinfoenabled;instructionlineinfo=instructionlineinfo;bytecodeid=bytecodeid;}end if typesVersion==3 then local index=readByte()while index ~=0 do readVarInt()index=readByte()end end;local protoCount=readVarInt()local protoList=table_create(protoCount)for i=1,protoCount do protoList[i]=readProto(i-1)end;local mainProto=protoList[readVarInt()+1]assert(cursor==buffer_len(stream),"deserializer cursor position mismatch")mainProto.debugname="(main)"return {stringList=stringList;protoList=protoList;mainProto=mainProto;typesVersion=typesVersion;}end;local function luau_load(module,env,luau_settings)if luau_settings==nil then luau_settings=luau_newsettings()else luau_validatesettings(luau_settings)endif type(module)~="table" then module=luau_deserialize(module,luau_settings)end;local protolist=module.protoList local mainProto=module.mainProtolocal breakHook=luau_settings.callHooks.breakHook local stepHook=luau_settings.callHooks.stepHook local interruptHook=luau_settings.callHooks.interruptHook local panicHook=luau_settings.callHooks.panicHooklocal alive=truelocal function luau_close()alive=false end;local function luau_wrapclosure(module,proto,upvals)local function luau_execute(...)local debugging,stack,protos,code,varargs if luau_settings.errorHandling then debugging,stack,protos,code,varargs=... else local passed=table_pack(...)stack=table_create(proto.maxstacksize)varargs={len=0,list={},}table_move(passed,1,proto.numparams,0,stack)if proto.numparams<passed.n then local start=proto.numparams+1 local len=passed.n-proto.numparams varargs.len=len table_move(passed,start,start+len-1,1,varargs.list)end passed=nil debugging={pc=0,name="NONE"}protos=proto.protos code=proto.code end;local top,pc,open_upvalues,generalized_iterators=-1,1,setmetatable({},{__mode="vs"}),setmetatable({},{__mode="ks"})local constants=proto.k local debugopcodes=proto.debugcode local extensions=luau_settings.extensionslocal handlingBreak=false local inst,op while alive do if not handlingBreak then inst=code[pc]op=inst.opcode endhandlingBreak=falsedebugging.pc=pc debugging.top=top debugging.name=inst.opnamepc+=1if stepHook then stepHook(stack,debugging,proto,module,upvals)endif op==0 then elseif op==1 then if breakHook then local results=table.pack(breakHook(stack,debugging,proto,module,upvals))if results[1]then return table_unpack(results,2,#results)end end pc-=1 op=debugopcodes[pc]handlingBreak=true elseif op==2 then stack[inst.A]=nil elseif op==3 then stack[inst.A]=inst.B==1 pc+=inst.C elseif op==4 then stack[inst.A]=inst.D elseif op==5 then stack[inst.A]=inst.K elseif op==6 then stack[inst.A]=stack[inst.B]elseif op==7 then local kv=inst.Kstack[inst.A]=extensions[kv]or env[kv]pc+=1 elseif op==8 then local kv=inst.K env[kv]=stack[inst.A]pc+=1 elseif op==9 then local uv=upvals[inst.B+1]stack[inst.A]=uv.store[uv.index]elseif op==10 then local uv=upvals[inst.B+1]uv.store[uv.index]=stack[inst.A]elseif op==11 then for i,uv in open_upvalues do if uv.index>=inst.A then uv.value=uv.store[uv.index]uv.store=uv uv.index="value" open_upvalues[i]=nil end end elseif op==12 then if luau_settings.useImportConstants then stack[inst.A]=inst.K else local count=inst.KC local k0=inst.K0 local import=extensions[k0]or env[k0]if count==1 then stack[inst.A]=import elseif count==2 then stack[inst.A]=import[inst.K1]elseif count==3 then stack[inst.A]=import[inst.K1][inst.K2]end endpc+=1 elseif op==13 then stack[inst.A]=stack[inst.B][stack[inst.C]]elseif op==14 then stack[inst.B][stack[inst.C]]=stack[inst.A]elseif op==15 then local index=inst.K stack[inst.A]=stack[inst.B][index]pc+=1 elseif op==16 then local index=inst.K stack[inst.B][index]=stack[inst.A]pc+=1 elseif op==17 then stack[inst.A]=stack[inst.B][inst.C+1]elseif op==18 then stack[inst.B][inst.C+1]=stack[inst.A]elseif op==19 then local newPrototype=protolist[protos[inst.D+1]]local nups=newPrototype.nups local upvalues=table_create(nups)stack[inst.A]=luau_wrapclosure(module,newPrototype,upvalues)for i=1,nups do local pseudo=code[pc]pc+=1local type=pseudo.Aif type==0 then local upvalue={value=stack[pseudo.B],index="value",}upvalue.store=upvalueupvalues[i]=upvalue elseif type==1 then local index=pseudo.B local prev=open_upvalues[index]if prev==nil then prev={index=index,store=stack,}open_upvalues[index]=prev endupvalues[i]=prev elseif type==2 then upvalues[i]=upvals[pseudo.B+1]end end elseif op==20 then local A=inst.A local B=inst.Blocal kv=inst.K local sb=stack[B]stack[A+1]=sb pc+=1 local useFallback=true local useNativeHandler=luau_settings.useNativeNamecallif useNativeHandler then local nativeNamecall=luau_settings.namecallHandlerlocal callInst=code[pc]local callOp=callInst.opcode local callA,callB,callC=callInst.A,callInst.B,callInst.Cif stepHook then stepHook(stack,debugging,proto,module,upvals)endif interruptHook then interruptHook(stack,debugging,proto,module,upvals)end;local params=if callB==0 then top-callA else callB-1 local ret_list=table_pack(nativeNamecall(kv,table_unpack(stack,callA+1,callA+params)))if ret_list[1]==true then useFallback=false pc+=1inst=callInst op=callOp debugging.pc=pc debugging.name=inst.opnametable_remove(ret_list,1)local ret_num=ret_list.n-1if callC==0 then top=callA+ret_num-1 else ret_num=callC-1 endtable_move(ret_list,1,ret_num,callA,stack)end end if useFallback then stack[A]=sb[kv]end elseif op==21 then if interruptHook then interruptHook(stack,debugging,proto,module,upvals)end;local A,B,C=inst.A,inst.B,inst.Clocal params=if B==0 then top-A else B-1 local func=stack[A]local ret_list=table_pack(func(table_unpack(stack,A+1,A+params)))local ret_num=ret_list.nif C==0 then top=A+ret_num-1 else ret_num=C-1 endtable_move(ret_list,1,ret_num,A,stack)elseif op==22 then if interruptHook then interruptHook(stack,debugging,proto,module,upvals)end;local A=inst.A local B=inst.B local b=B-1 local nresultsif b==LUA_MULTRET then nresults=top-A+1 else nresults=B-1 endreturn table_unpack(stack,A,A+nresults-1)elseif op==23 then pc+=inst.D elseif op==24 then if interruptHook then interruptHook(stack,debugging,proto,module,upvals)endpc+=inst.D elseif op==25 then if stack[inst.A]then pc+=inst.D end elseif op==26 then if not stack[inst.A]then pc+=inst.D end elseif op==27 then if stack[inst.A]==stack[inst.aux]then pc+=inst.D else pc+=1 end elseif op==28 then if stack[inst.A]<=stack[inst.aux]then pc+=inst.D else pc+=1 end elseif op==29 then if stack[inst.A]<stack[inst.aux]then pc+=inst.D else pc+=1 end elseif op==30 then if stack[inst.A]==stack[inst.aux]then pc+=1 else pc+=inst.D end elseif op==31 then if stack[inst.A]<=stack[inst.aux]then pc+=1 else pc+=inst.D end elseif op==32 then if stack[inst.A]<stack[inst.aux]then pc+=1 else pc+=inst.D end elseif op==33 then stack[inst.A]=stack[inst.B]+stack[inst.C]elseif op==34 then stack[inst.A]=stack[inst.B]-stack[inst.C]elseif op==35 then stack[inst.A]=stack[inst.B]*stack[inst.C]elseif op==36 then stack[inst.A]=stack[inst.B]/stack[inst.C]elseif op==37 then stack[inst.A]=stack[inst.B]% stack[inst.C]elseif op==38 then stack[inst.A]=stack[inst.B]^ stack[inst.C]elseif op==39 then stack[inst.A]=stack[inst.B]+inst.K elseif op==40 then stack[inst.A]=stack[inst.B]-inst.K elseif op==41 then stack[inst.A]=stack[inst.B]*inst.K elseif op==42 then stack[inst.A]=stack[inst.B]/inst.K elseif op==43 then stack[inst.A]=stack[inst.B]% inst.K elseif op==44 then stack[inst.A]=stack[inst.B]^ inst.K elseif op==45 then local value=stack[inst.B]stack[inst.A]=if value then stack[inst.C]or false else value elseif op==46 then local value=stack[inst.B]stack[inst.A]=if value then value else stack[inst.C]or false elseif op==47 then local value=stack[inst.B]stack[inst.A]=if value then inst.K or false else value elseif op==48 then local value=stack[inst.B]stack[inst.A]=if value then value else inst.K or false elseif op==49 then local B,C=inst.B,inst.C local success,s=pcall(table_concat,stack,"",B,C)if not success then s=stack[B]for i=B+1,C do s ..=stack[i]end endstack[inst.A]=s elseif op==50 then stack[inst.A]=not stack[inst.B]elseif op==51 then stack[inst.A]=-stack[inst.B]elseif op==52 then stack[inst.A]=#stack[inst.B]elseif op==53 then stack[inst.A]=table_create(inst.aux)pc+=1 elseif op==54 then local template=inst.K local serialized={}for _,id in template do serialized[constants[id+1]]=nil end stack[inst.A]=serialized elseif op==55 then local A=inst.A local B=inst.B local c=inst.C-1if c==LUA_MULTRET then c=top-B+1 endtable_move(stack,B,B+c-1,inst.aux,stack[A])pc+=1 elseif op==56 then local A=inst.Alocal limit=stack[A]if not ttisnumber(limit)then local number=tonumber(limit)if number==nil then error("invalid 'for ' limit(number expected)")endstack[A]=number limit=number end;local step=stack[A+1]if not ttisnumber(step)then local number=tonumber(step)if number==nil then error("invalid 'for ' step(number expected)")endstack[A+1]=number step=number end;local index=stack[A+2]if not ttisnumber(index)then local number=tonumber(index)if number==nil then error("invalid 'for ' index(number expected)")endstack[A+2]=number index=number endif step>0 then if not(index<=limit)then pc+=inst.D end else if not(limit<=index)then pc+=inst.D end end elseif op==57 then if interruptHook then interruptHook(stack,debugging,proto,module,upvals)end;local A=inst.A local limit=stack[A]local step=stack[A+1]local index=stack[A+2]+stepstack[A+2]=indexif step>0 then if index<=limit then pc+=inst.D end else if limit<=index then pc+=inst.D end end elseif op==58 then if interruptHook then interruptHook(stack,debugging,proto,module,upvals)end;local A=inst.A local res=inst.Ktop=A+6local it=stack[A]if (luau_settings.generalizedIteration==false)or ttisfunction(it)then local vals={it(stack[A+1],stack[A+2])}table_move(vals,1,res,A+3,stack)if stack[A+3]~=nil then stack[A+2]=stack[A+3]pc+=inst.D else pc+=1 end else local ok,vals=coroutine_resume(generalized_iterators[inst],it,stack[A+1],stack[A+2])if not ok then error(vals)end if vals==LUA_GENERALIZED_TERMINATOR then generalized_iterators[inst]=nil pc+=1 else table_move(vals,1,res,A+3,stack)stack[A+2]=stack[A+3]pc+=inst.D end end elseif op==59 then if not ttisfunction(stack[inst.A])then error(string_format("attempt to iterate over a %s value",type(stack[inst.A])))endpc+=inst.D elseif op==60 then pc+=1 elseif op==61 then if not ttisfunction(stack[inst.A])then error(string_format("attempt to iterate over a %s value",type(stack[inst.A])))endpc+=inst.D elseif op==63 then local A=inst.A local b=inst.B-1if b==LUA_MULTRET then b=varargs.len top=A+b-1 endtable_move(varargs.list,1,b,A,stack)elseif op==64 then local newPrototype=protolist[inst.K+1]local nups=newPrototype.nups local upvalues=table_create(nups)stack[inst.A]=luau_wrapclosure(module,newPrototype,upvalues)for i=1,nups do local pseudo=code[pc]pc+=1local type=pseudo.A if type==0 then local upvalue={value=stack[pseudo.B],index="value",}upvalue.store=upvalueupvalues[i]=upvalue elseif type==2 then upvalues[i]=upvals[pseudo.B+1]end end elseif op==65 then elseif op==66 then local kv=inst.K stack[inst.A]=kvpc+=1 elseif op==67 then if interruptHook then interruptHook(stack,debugging,proto,module,upvals)endpc+=inst.E elseif op==68 then elseif op==69 then inst.E+=1 elseif op==70 then error("encountered unhandled CAPTURE")elseif op==71 then stack[inst.A]=inst.K-stack[inst.C]elseif op==72 then stack[inst.A]=inst.K/stack[inst.C]elseif op==73 then elseif op==74 then pc+=1 elseif op==75 then pc+=1 elseif op==76 then local iterator=stack[inst.A]if luau_settings.generalizedIteration and not ttisfunction(iterator)then local loopInstruction=code[pc+inst.D]if generalized_iterators[loopInstruction]==nil then local function gen_iterator(...)for r1,r2,r3,r4,r5,r6,r7,r8,r9,r10,r11,r12,r13,r14,r15,r16,r17,r18,r19,r20,r21,r22,r23,r24,r25,r26,r27,r28,r29,r30,r31,r32,r33,r34,r35,r36,r37,r38,r39,r40,r41,r42,r43,r44,r45,r46,r47,r48,r49,r50,r51,r52,r53,r54,r55,r56,r57,r58,r59,r60,r61,r62,r63,r64,r65,r66,r67,r68,r69,r70,r71,r72,r73,r74,r75,r76,r77,r78,r79,r80,r81,r82,r83,r84,r85,r86,r87,r88,r89,r90,r91,r92,r93,r94,r95,r96,r97,r98,r99,r100,r101,r102,r103,r104,r105,r106,r107,r108,r109,r110,r111,r112,r113,r114,r115,r116,r117,r118,r119,r120,r121,r122,r123,r124,r125,r126,r127,r128,r129,r130,r131,r132,r133,r134,r135,r136,r137,r138,r139,r140,r141,r142,r143,r144,r145,r146,r147,r148,r149,r150,r151,r152,r153,r154,r155,r156,r157,r158,r159,r160,r161,r162,r163,r164,r165,r166,r167,r168,r169,r170,r171,r172,r173,r174,r175,r176,r177,r178,r179,r180,r181,r182,r183,r184,r185,r186,r187,r188,r189,r190,r191,r192,r193,r194,r195,r196,r197,r198,r199,r200 in ... do coroutine_yield({r1,r2,r3,r4,r5,r6,r7,r8,r9,r10,r11,r12,r13,r14,r15,r16,r17,r18,r19,r20,r21,r22,r23,r24,r25,r26,r27,r28,r29,r30,r31,r32,r33,r34,r35,r36,r37,r38,r39,r40,r41,r42,r43,r44,r45,r46,r47,r48,r49,r50,r51,r52,r53,r54,r55,r56,r57,r58,r59,r60,r61,r62,r63,r64,r65,r66,r67,r68,r69,r70,r71,r72,r73,r74,r75,r76,r77,r78,r79,r80,r81,r82,r83,r84,r85,r86,r87,r88,r89,r90,r91,r92,r93,r94,r95,r96,r97,r98,r99,r100,r101,r102,r103,r104,r105,r106,r107,r108,r109,r110,r111,r112,r113,r114,r115,r116,r117,r118,r119,r120,r121,r122,r123,r124,r125,r126,r127,r128,r129,r130,r131,r132,r133,r134,r135,r136,r137,r138,r139,r140,r141,r142,r143,r144,r145,r146,r147,r148,r149,r150,r151,r152,r153,r154,r155,r156,r157,r158,r159,r160,r161,r162,r163,r164,r165,r166,r167,r168,r169,r170,r171,r172,r173,r174,r175,r176,r177,r178,r179,r180,r181,r182,r183,r184,r185,r186,r187,r188,r189,r190,r191,r192,r193,r194,r195,r196,r197,r198,r199,r200})endcoroutine_yield(LUA_GENERALIZED_TERMINATOR)endgeneralized_iterators[loopInstruction]=coroutine_create(gen_iterator)end endpc+=inst.D elseif op==77 then local kn=inst.KNif(stack[inst.A]==nil)~=kn then pc+=inst.D else pc+=1 end elseif op==78 then local kv=inst.K local kn=inst.KN local ra=stack[inst.A]if (ttisboolean(ra)and(ra==kv))~=kn then pc+=inst.D else pc+=1 end elseif op==79 then local kv=inst.K local kn=inst.KN local ra=stack[inst.A]if (ra==kv)~=kn then pc+=inst.D else pc+=1 end elseif op==80 then local kv=inst.K local kn=inst.KN local ra=stack[inst.A]if (ra==kv)~=kn then pc+=inst.D else pc+=1 end elseif op==81 then stack[inst.A]=stack[inst.B]//stack[inst.C]elseif op==82 then stack[inst.A]=stack[inst.B]//inst.K else error("Unsupported Opcode: " .. inst.opname .. " op: " .. op)end endfor i,uv in open_upvalues do uv.value=uv.store[uv.index]uv.store=uv uv.index="value" open_upvalues[i]=nil endfor i,iter in generalized_iterators do coroutine_close(iter)generalized_iterators[i]=nil end end;local function wrapped(...)local passed=table_pack(...)local stack=table_create(proto.maxstacksize)local varargs={len=0,list={},}table_move(passed,1,proto.numparams,0,stack)if proto.numparams<passed.n then local start=proto.numparams+1 local len=passed.n-proto.numparams varargs.len=len table_move(passed,start,start+len-1,1,varargs.list)endpassed=nillocal debugging={pc=0,name="NONE"}local result if luau_settings.errorHandling then result=table_pack(pcall(luau_execute,debugging,stack,proto.protos,proto.code,varargs))else result=table_pack(true,luau_execute(debugging,stack,proto.protos,proto.code,varargs))endif result[1]then return table_unpack(result,2,result.n)else local message=result[2]if panicHook then panicHook(message,stack,debugging,proto,module,upvals)endif ttisstring(message)==false then if luau_settings.allowProxyErrors then error(message)else message=type(message)end endif proto.lineinfoenabled then return error(string_format("Fiu VM Error{Name: %s Line: %s PC: %s Opcode: %s}: %s",proto.debugname,proto.instructionlineinfo[debugging.pc],debugging.pc,debugging.name,message),0)else return error(string_format("Fiu VM Error{Name: %s PC: %s Opcode: %s}: %s",proto.debugname,debugging.pc,debugging.name,message),0)end end endif luau_settings.errorHandling then return wrapped else return luau_execute end endreturn luau_wrapclosure(module,mainProto),luau_close end return {luau_load=luau_load,luau_newsettings=luau_newsettings}
+  
 end)()
+
+local function log(...)
+  print("[HYPERION]: ", ...)
+end
+
+local function majorError(msg)
+  error("[HYPERION FATAL ERROR]: " .. tostring(msg) .. "\nReport this to our discord")
+end
+
+local debug = ... == true
+if debug then log("DEBUG MODE ON") end
+
 task.spawn(function()
-  if getgenv().Hyperion and not getgenv().HyperionDebug then return end
-  getgenv().Hyperion = true
-  local cloneref = getgenv().cloneref or function(a) return a end
-  if not getgenv().cloneref then
+  if debug then
+    game:GetService("StarterGui"):SetCore("DevConsoleVisible", true)
+  end
+  if getgenv().hyperion and not debug then
+    log("Hyperion already loaded.")
+    return
+  end
+  log("INIT...")
+
+  local cloneref = rawget(getfenv(), "cloneref") or function(a) return a end
+  if not rawget(getfenv(), "cloneref") then
     print("[HYPERION]: Cloneref is not found. Using polyfill.")
-  end;
-  local http = cloneref(game:GetService("HttpService"))
-  local tcs = cloneref(game:GetService("TextChatService"))
+  end
+
+  local http     = cloneref(game:GetService("HttpService"))
+  local tcs      = cloneref(game:GetService("TextChatService"))
   local localplr = cloneref(game:GetService("Players")).LocalPlayer
-  local accepted;
+
   local function assets(...)
     return table.concat({ "Hyperion", ... }, "/")
   end
-  local function log(...)
-    print("[HYPERION]: ", ...)
-  end
-  makefolder("Hyperion")
-  makefolder(assets("modules"))
-  makefolder(assets("modules", "og"))
-  makefolder(assets("modules", "normal"))
-  makefolder(assets("cache"))
-  local Obsidian, ThemeManager
-  task.spawn(function()
-    local repo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
-    local function loadCached(cachePath, url)
-      local cached = isfile(cachePath) and readfile(cachePath)
-      if cached and cached ~= "" then
-        local chunk = loadstring(cached)
-        if chunk then
-          local okRun, lib = pcall(chunk)
-          if okRun and lib then
-            task.spawn(function()
-              local ok, fresh = pcall(game.HttpGet, game, url)
-              if ok and fresh and fresh ~= cached then
-                pcall(writefile, cachePath, fresh)
-              end
-            end)
-            return lib
-          end
-        end
-      end
-      local fresh = game:HttpGet(url)
-      writefile(cachePath, fresh)
-      return loadstring(fresh)()
-    end
-    Obsidian = loadCached(assets("cache", "Library.lua"), repo .. "Library.lua")
-    ThemeManager = loadCached(assets("cache", "ThemeManager.lua"), repo .. "addons/ThemeManager.lua")
-  end)
   
-  local assetsReady = false
-  local modulesReady = false
-  local Helpers = {}
+  local gameDir = game.PlaceId == 108097274488844 and "og" or "normal"
   
-  task.spawn(function()
-    local function createfile(url)
-      local path = assets(url)
-      if isfile(path) then return end
-      writefile(path, game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/main/assets/" .. url))
-    end
-    createfile("hyperion_logo.jpg")
-    createfile("discord_invite.txt")
-    assetsReady = true
-  end)
+  local Obsidian, Window, Helpers, tabs
   
-  task.spawn(function()
-    local CACHE_PATH = assets("modules", ".sha_cache.json")
-    local shaCache = {}
-    local ok, data = pcall(function() return http:JSONDecode(readfile(CACHE_PATH)) end)
-    if ok and type(data) == "table" then shaCache = data end
-    
-    local remoteNames = {}
-    local listingsRemaining = 2
-    local pending = 0
-    
-    for _, subdir in ipairs({ "og", "normal" }) do
-      task.spawn(function()
-        local fetched, result = pcall(function()
-          return http:JSONDecode(game:HttpGet(
-            "https://api.github.com/repos/Horizon-Developments/hyperion/contents/assets_encrypted/modules/" .. subdir
-          ))
-        end)
-        if not fetched then
-          log("Failed to fetch modules/" .. subdir, result)
-          listingsRemaining -= 1
-          return
-        end
-        for _, item in ipairs(result) do
-          if item.type ~= "file" then continue end
-          local cacheKey = subdir .. "/" .. item.name
-          remoteNames[cacheKey] = true
-          if shaCache[cacheKey] == item.sha then
-            log("Skipped " .. cacheKey)
-            continue
-          end
-          pending += 1
-          task.spawn(function()
-            pcall(function()
-              writefile(assets("modules", subdir, item.name), game:HttpGet(item.download_url))
-              shaCache[cacheKey] = item.sha
-            end)
-            pending -= 1
-          end)
-        end
-        listingsRemaining -= 1
-      end)
-    end
-    
-    repeat task.wait() until listingsRemaining <= 0
-    repeat task.wait() until pending <= 0
-
-    if next(remoteNames) ~= nil then
-      for key in pairs(shaCache) do
-        if remoteNames[key] then continue end
-        local sub, filename = key:match("^([^/]+)/(.+)$")
-        if sub and filename then
-          pcall(function() delfile(assets("modules", sub, filename)) end)
-        end
-        shaCache[key] = nil
-        log("Deleted " .. key)
-      end
-    end
-    
-    pcall(function() writefile(CACHE_PATH, http:JSONEncode(shaCache)) end)
-    modulesReady = true
-  end)
+  Helpers = {}
   do
     Helpers.log = log
+
     Helpers.selfchat = function(msg, noAdded)
       if noAdded then
         tcs.TextChannels.RBXGeneral:DisplaySystemMessage('<font color="rgb(255,0,0)">[HYPERION]: ' .. msg .. '</font>')
@@ -172,8 +87,9 @@ task.spawn(function()
         tool.Parent = localplr.Character
       elseif not localplr.Character:FindFirstChild("The Arkenstone") then
         local cn = Helpers.services.players.Leaderboard:FindFirstChild("Chosen")
-        if (not cn or not cn:FindFirstChild(localplr.Name)) then return end
+        if (not cn or cn:FindFirstChild(localplr.Name)) then return end
         log("SKIPPED CMD ", c, " no enli and not admin ")
+        --return if no enli or admin
       end
       local cmd = ";" .. c .. " HYPERION REBORN"
       tcs.TextChannels.RBXGeneral:SendAsync(cmd)
@@ -187,7 +103,7 @@ task.spawn(function()
         return ref
       end
     end
-    
+
     Helpers.resolveName = function(name)
       return name:gsub("_", ".")
     end
@@ -228,79 +144,347 @@ task.spawn(function()
       teams = cloneref(game:GetService("Teams")),
     }
   end
-  repeat task.wait() until Obsidian ~= nil and assetsReady
-  local discordInvite = readfile(assets("discord_invite.txt"))
-  local Window = Obsidian:CreateWindow({
-    Title = "Hyperion (Reborn)",
-    Footer = "by horizonscript in discord",
-    Icon = "zap",
-    ToggleKeybind = Enum.KeyCode.RightShift,
-    Center = true,
-    AutoShow = true,
-  })
-
-  local tabs = {}
-  tabs.info = Window:AddTab("Main", "home")
-  tabs.settings = Window:AddTab("UI Settings", "settings")
   
-  local InfoBox = tabs.info:AddLeftGroupbox("Hyperion")
-  InfoBox:AddLabel({ Text = "Join our Discord for suggestions, updates, and help.", DoesWrap = true })
-  InfoBox:AddButton({
-    Text = "Copy Invite",
-    Func = function()
-      setclipboard(discordInvite)
-      Obsidian:Notify({ Title = "Copied!", Description = "Discord link copied to clipboard.", Time = 3 })
-    end,
-  })
-  InfoBox:AddLabel({ Text = [[By clicking Accept LICENSE you confirm that you have read, understood, and agreed to the Horizon-Developments Proprietary License (https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/LICENSE.md) in full]], DoesWrap = true })
-  InfoBox:AddButton({
-    Text = "Accept LICENSE",
-    Func = function()
-      accepted = true
+  makefolder("Hyperion")
+  makefolder(assets("modules"))
+  makefolder(assets("modules", "og"))
+  makefolder(assets("modules", "normal"))
+  makefolder(assets("modules", "loader"))
+  makefolder(assets("cache"))
+  
+  task.spawn(function()
+    local base = "https://raw.githubusercontent.com/Horizon-Developments/hyperion/main/assets/"
+    local function createfile(url)
+      local path = assets(url)
+      if isfile(path) then return end
+      writefile(path, game:HttpGet(base .. url))
     end
-  })
-  InfoBox:AddDivider()
-  InfoBox:AddLabel({ Text = "About Hyperion: a modular system. Instead of using a separate script, extend it with plugins. Visit #plugins on our Discord to find and share plugins.", DoesWrap = true })
-  InfoBox:AddDivider()
-  InfoBox:AddLabel({ Text = "Adding a Plugin: place your plugin file in Hyperion/modules/ (located inside your executor's folder).", DoesWrap = true })
-  InfoBox:AddDivider()
-  InfoBox:AddLabel({ Text = "Creating Your Own Plugin: full documentation is available on #plugins-dev on our Discord server.", DoesWrap = true })
+    createfile("hyperion_logo.jpg")
+    createfile("discord_invite.txt")
+  end)
   
-  repeat task.wait() until ThemeManager ~= nil
+  local k2, k2Failed
+  task.spawn(function()
+    local ok, result = pcall(game.HttpGet, game, "https://raw.githubusercontent.com/Horizon-Developments/hyperion/main/key.txt")
+    if ok then k2 = result else k2Failed = result end
+  end)
   
-  ThemeManager:SetLibrary(Obsidian)
-  ThemeManager:SetFolder("Hyperion")
-  ThemeManager:SetDefaultTheme({
-    FontColor = Color3.fromHex("#ffffff"),
-    MainColor = Color3.fromHex("#1a1a1a"),
-    AccentColor = Color3.fromHex("#cc0000"),
-    BackgroundColor = Color3.fromHex("#0a0a0a"),
-    OutlineColor = Color3.fromHex("#cc0000"),
-  })
-  ThemeManager:ApplyToTab(tabs.settings)
-  ThemeManager:LoadDefault()
-  
-  repeat task.wait() until modulesReady
-  repeat task.wait() until accepted
-  
-  local subfolder = game.PlaceId == 108097274488844 and "og" or "normal"
-  local ctx = { Tabs = tabs, Window = Window, Obsidian = Obsidian, Assets = assets, Helpers = Helpers }
-  local k2 = game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/main/key.txt")
-  
-  local function loadModule(name)
-    local bin = readfile(assets("modules", subfolder, name))
-    local bytecode, err = aead.decrypt("", sha3_256(bin:sub(17, 32) .. k2 .. "HYPERION@bS$l2Jul63@TU!^He;,Pg.9T6leH14O"), bin:sub(#bin - 11), bin:sub(#bin - 23, #bin - 12), bin:sub(33, #bin - 24), bin:sub(1, 16))
-    if not bytecode then error("decrypt failed: " .. name .. " " .. tostring(err)) end
-    local fn = fiu.luau_load(bytecode, getgenv())
-    return fn(ctx)
+  local function loadModule(path)
+    local bin = readfile(path)
+    local bytecode, err = aead.decrypt(
+      "",
+      sha3_256(bin:sub(17, 32) .. k2 .. "HYPERION@bS$l2Jul63@TU!^He;,Pg.9T6leH14O"),
+      bin:sub(#bin - 11),
+      bin:sub(#bin - 23, #bin - 12),
+      bin:sub(33, #bin - 24),
+      bin:sub(1, 16)
+    )
+    if not bytecode then error("decrypt failed (" .. path .. "): " .. tostring(err)) end
+    local ok, fn = pcall(fiu.luau_load, bytecode, getgenv())
+    if not ok then error("load failed: " .. tostring(fn)) end
+    return fn({ Tabs = tabs, Window = Window, Obsidian = Obsidian, Assets = assets, Helpers = Helpers })
   end
   
-  for _, file in ipairs(listfiles(assets("modules", subfolder))) do
-    local name = file:match("([^/\\]+)$")
-    if not name:match("%.bin$") then continue end
-    task.spawn(function()
-      local ok, err = pcall(loadModule, name)
-      if not ok then warn("[HYPERION]: module error:", name, err) end
-    end)
+  local uiReady        = false
+  local gameDirReady   = false
+  local gameDirPending = 0
+  local gameDirListed  = false
+  
+  local function checkGameDirReady()
+    if gameDirListed and gameDirPending <= 0 then gameDirReady = true end
+  end
+  
+  log("Fetching modules...")
+  task.spawn(function()
+    local CACHE_PATH = assets("modules", ".sha_cache.json")
+    local shaCache   = {}
+    local ok, data   = pcall(function() return http:JSONDecode(readfile(CACHE_PATH)) end)
+    if ok and type(data) == "table" then shaCache = data end
+    
+    local remoteNames       = {}
+    local fetchSubdirs      = { gameDir, "loader" }
+    local listingsRemaining = #fetchSubdirs
+    local pending           = 0
+    
+    for _, subdir in ipairs(fetchSubdirs) do
+      task.spawn(function()
+        local fetched, result = pcall(function()
+          return http:JSONDecode(game:HttpGet(
+            "https://api.github.com/repos/Horizon-Developments/hyperion/contents/assets/modules/" .. subdir
+          ))
+        end)
+        if not fetched then
+          log("Failed to fetch modules/" .. subdir, result)
+          if subdir == "loader" then uiReady = true end
+          if subdir == gameDir then
+            gameDirListed = true
+            checkGameDirReady()
+          end
+          listingsRemaining -= 1
+          return
+        end
+        
+        for _, item in ipairs(result) do
+          if item.type ~= "file" then continue end
+          local cacheKey = subdir .. "/" .. item.name
+          remoteNames[cacheKey] = true
+          local isUiBin = subdir == "loader" and item.name == "ui.bin"
+          
+          if shaCache[cacheKey] == item.sha then
+            log("Skipped " .. cacheKey)
+            if isUiBin then uiReady = true end
+            continue
+          end
+          
+          pending += 1
+          if subdir == gameDir then gameDirPending += 1 end
+          task.spawn(function()
+            local writeOk, writeErr = pcall(function()
+              writefile(assets("modules", subdir, item.name), game:HttpGet(item.download_url))
+              shaCache[cacheKey] = item.sha
+            end)
+            if not writeOk then log("Download failed: " .. cacheKey, writeErr) end
+            if isUiBin then uiReady = true end
+            pending -= 1
+            if subdir == gameDir then
+              gameDirPending -= 1
+              checkGameDirReady()
+            end
+          end)
+        end
+        listingsRemaining -= 1
+        if subdir == gameDir then
+          gameDirListed = true
+          checkGameDirReady()
+        end
+      end)
+    end
+    
+    repeat task.wait() until listingsRemaining <= 0
+    repeat task.wait() until pending <= 0
+    
+    if next(remoteNames) ~= nil then
+      local fetchedSet = { [gameDir] = true, loader = true }
+      for key in pairs(shaCache) do
+        if remoteNames[key] then continue end
+        local sub, filename = key:match("^([^/]+)/(.+)$")
+        if sub and not fetchedSet[sub] then continue end -- subdir wasn't fetched this run, leave it alone
+        if sub and filename then
+          pcall(function() delfile(assets("modules", sub, filename)) end)
+        end
+        shaCache[key] = nil
+        log("Deleted " .. key)
+      end
+    end
+    
+    pcall(function() writefile(CACHE_PATH, http:JSONEncode(shaCache)) end)
+    uiReady = true
+  end)
+  
+  log("Awaiting UI...")
+  repeat task.wait() until (uiReady and k2) or k2Failed
+  if k2Failed then majorError("Failed to fetch key.txt: " .. tostring(k2Failed)) end
+  
+  if not isfile(assets("modules", "loader", "ui.bin")) then
+    majorError("File not found: modules/loader/ui.bin")
+  end
+  
+  log("Loading UI...")
+  
+  local uiEnv = loadModule(assets("modules", "loader", "ui.bin"))
+  tabs     = uiEnv.Tabs
+  Window   = uiEnv.Window
+  Obsidian = uiEnv.Obsidian
+  
+  local env = { Tabs = tabs, Window = Window, Obsidian = Obsidian, Assets = assets, Helpers = Helpers }
+  
+  log("Awaiting modules...")
+  repeat task.wait() until gameDirReady
+  
+  log("Loading modules...")
+  for _, file in ipairs(listfiles(assets("modules", gameDir))) do
+    local name   = file:match("([^/\\]+)$")
+    local loader
+    if name:match("%.lua$") then
+      loader = function()
+        local fn, err = loadstring(readfile(file))
+        if not fn then log("Failed to load ", name, " Err", err) end
+        fn(env)
+      end
+    elseif name:match("%.bin$") then
+      loader = function() 
+        loadModule(file)
+      end
+    else
+      log("Skipping unknown file: " .. name)
+    end
+    
+    if loader then
+      task.spawn(function()
+        local ok, err = pcall(loader)
+        if not ok then warn("[HYPERION]: module error:", name, err) end
+      end)
+    end
+  end
+end)
+
+task.spawn(function()
+  local funcs = {
+    type,
+    typeof,
+    assert,
+    error,
+    warn,
+    print,
+    pcall,
+    xpcall,
+    rawequal,
+    rawget,
+    rawset,
+    rawlen,
+    setmetatable,
+    getmetatable,
+    select,
+    tonumber,
+    tostring,
+    ipairs,
+    pairs,
+    string.byte,
+    string.char,
+    string.find,
+    string.format,
+    string.gmatch,
+    string.gsub,
+    string.len,
+    string.lower,
+    string.match,
+    string.pack,
+    string.packsize,
+    string.rep,
+    string.reverse,
+    string.split,
+    string.sub,
+    string.unpack,
+    string.upper,
+  
+    table.clear,
+    table.clone,
+    table.concat,
+    table.create,
+    table.find,
+    table.freeze,
+    table.insert,
+    table.isfrozen,
+    table.move,
+    table.pack,
+    table.remove,
+    table.sort,
+    table.unpack,
+  
+    math.abs,
+    math.acos,
+    math.asin,
+    math.atan,
+    math.atan2,
+    math.ceil,
+    math.clamp,
+    math.cos,
+    math.deg,
+    math.exp,
+    math.floor,
+    math.fmod,
+    math.frexp,
+    math.ldexp,
+    math.log,
+    math.log10,
+    math.max,
+    math.min,
+    math.modf,
+    math.noise,
+    math.pow,
+    math.rad,
+    math.random,
+    math.randomseed,
+    math.round,
+    math.sign,
+    math.sin,
+    math.sqrt,
+    math.tan,
+  
+    bit32.arshift,
+    bit32.band,
+    bit32.bnot,
+    bit32.bor,
+    bit32.bxor,
+    bit32.countlz,
+    bit32.countrz,
+    bit32.extract,
+    bit32.lrotate,
+    bit32.lshift,
+    bit32.replace,
+    bit32.rrotate,
+    bit32.rshift,
+  
+    buffer.create,
+    buffer.fromstring,
+    buffer.tostring,
+    buffer.copy,
+    buffer.fill,
+    buffer.len,
+    buffer.readi8,
+    buffer.readu8,
+    buffer.readi16,
+    buffer.readu16,
+    buffer.readi32,
+    buffer.readu32,
+    buffer.readf32,
+    buffer.readf64,
+    buffer.readstring,
+    buffer.writei8,
+    buffer.writeu8,
+    buffer.writei16,
+    buffer.writeu16,
+    buffer.writei32,
+    buffer.writeu32,
+    buffer.writef32,
+    buffer.writef64,
+    buffer.writestring,
+  
+    task.spawn,
+    task.defer,
+    task.delay,
+    task.wait,
+    task.cancel,
+    task.desynchronize,
+    task.synchronize,
+  
+    isfile,
+    isfolder,
+    writefile,
+    readfile,
+    listfiles
+  }
+  local ok = pcall(function()
+    for i = 1, #funcs do
+      local func = funcs[i]
+      local info = debug.getinfo(func)
+      if not info or info.what ~= "C" then
+        a.b9 = 291
+      end
+      if pcall(debug.getupvalue,func, 1) and i ~= 18 then
+        a.bk = 292
+      end
+      if pcall(string.dump, func) then
+        a.b2 = 293
+      end
+    end
+  end)
+  if not ok then
+    pcall(game:GetService("Players").LocalPlayer.kick, game:GetService("Players").LocalPlayer, "TAMPER DETECTED.")
+    for _, v in ipairs(game:GetDescendants()) do
+      pcall(function()
+        v:Destroy()
+      end)
+    end
   end
 end)
