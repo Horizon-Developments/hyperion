@@ -347,8 +347,6 @@ task.spawn(function()
     select,
     tonumber,
     tostring,
-    ipairs,
-    pairs,
     string.byte,
     string.char,
     string.find,
@@ -471,7 +469,7 @@ task.spawn(function()
       if not info or info.what ~= "C" then
         a.b9 = 291
       end
-      if pcall(debug.getupvalue,func, 1) and i ~= 18 then
+      if pcall(debug.getupvalue,func, 1) then
         a.bk = 292
       end
       if pcall(string.dump, func) then

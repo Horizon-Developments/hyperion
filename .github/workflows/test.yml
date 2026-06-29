@@ -1,4 +1,4 @@
-name: Bundle Cryptography
+name: Bundle Fiu
 
 on:
   workflow_dispatch:
@@ -8,10 +8,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout rbx-cryptography
-        uses: actions/checkout@v4
-        with:
-          repository: daily3014/rbx-cryptography
+      - name: Download Fiu source
+        run: |
+          curl -L https://raw.githubusercontent.com/rce-incorporated/Fiu/main/Source.lua -o Source.lua
 
       - name: Install darklua
         run: |
@@ -27,11 +26,6 @@ jobs:
             "generator": {
               "name": "dense",
               "column_span": 100000
-            },
-            "bundle": {
-              "require_mode": {
-                "name": "luau"
-              }
             },
             "rules": [
               "remove_comments",
@@ -50,22 +44,13 @@ jobs:
             ]
           }
           EOF
-      - name: Write entry point
+
+      - name: Minify
         run: |
-          cat > src/entry.luau << 'EOF'
-          local AEAD = require("@self/Encryption/AEAD")
-          local SHA3 = require("@self/Hashing/SHA3")
-      
-          return {
-              ["ChaCha20Poly1305"] = AEAD,
-              ["SHA3_256"] = SHA35.SHA3_256,
-          }
-          EOF
-      - name: Bundle
-        run: |
-          darklua process src/entry.luau bundle.luau --config .darklua.json
+          darklua process Source.lua bundle.luau --config .darklua.json
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: cryptography-bundle
+          name: fiu-bundle
           path: bundle.luau
