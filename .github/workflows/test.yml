@@ -1,58 +1,58 @@
 name: Bundle Cryptography
 
 on:
-workflow_dispatch:
+  workflow_dispatch:
 
 jobs:
-bundle:
-runs-on: ubuntu-latest
-steps:
-- name: Clone rbx-cryptography
-run: git clone --depth 1 https://github.com/daily3014/rbx-cryptography.git vendor
+  bundle:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone rbx-cryptography
+        run: git clone --depth 1 https://github.com/daily3014/rbx-cryptography.git vendor
 
-- name: Install darklua  
-    run: |  
-      curl -L -o darklua.zip https://github.com/seaofvoices/darklua/releases/latest/download/darklua-linux-x86_64.zip  
-      unzip -o darklua.zip -d darklua-bin  
-      sudo mv darklua-bin/darklua /usr/local/bin/darklua  
-      darklua --version  
+      - name: Install darklua
+        run: |
+          curl -L -o darklua.zip https://github.com/seaofvoices/darklua/releases/latest/download/darklua-linux-x86_64.zip
+          unzip -o darklua.zip -d darklua-bin
+          sudo mv darklua-bin/darklua /usr/local/bin/darklua
+          darklua --version
 
-  - name: Generate darklua config  
-    run: |  
-      cat > darklua.json <<'EOF'  
-      {  
-        "bundle": {  
-          "require_mode": "path"  
-        }  
-      }  
-      EOF  
+      - name: Generate darklua config
+        run: |
+          cat > darklua.json <<'EOF'
+          {
+            "bundle": {
+              "require_mode": "path"
+            }
+          }
+          EOF
 
-  - name: Generate entry point  
-    run: |  
-      mkdir -p build  
-      AEAD_REL=$(realpath --relative-to=build vendor/src/Encryption/AEAD/init.luau)  
-      SHA3_REL=$(realpath --relative-to=build vendor/src/Hashing/SHA3.luau)  
-      BASE64_REL=$(realpath --relative-to=build vendor/src/Utilities/Base64.luau)  
-      cat > build/entry.luau <<EOF  
-      local AEAD = require("$AEAD_REL")  
-      local SHA3 = require("$SHA3_REL")  
-      local Base64 = require("$BASE64_REL")  
+      - name: Generate entry point
+        run: |
+          mkdir -p build
+          AEAD_REL=$(realpath --relative-to=build vendor/src/Encryption/AEAD/init.luau)
+          SHA3_REL=$(realpath --relative-to=build vendor/src/Hashing/SHA3.luau)
+          BASE64_REL=$(realpath --relative-to=build vendor/src/Utilities/Base64.luau)
+          cat > build/entry.luau <<EOF
+          local AEAD = require("$AEAD_REL")
+          local SHA3 = require("$SHA3_REL")
+          local Base64 = require("$BASE64_REL")
 
-      return {  
-      	["ChaCha20_Poly1305"] = AEAD,  
-      	["sha3_256"] = SHA3.SHA3_256,  
-      	["base64"] = Base64,  
-      }  
-      EOF  
-      cat build/entry.luau  
+          return {
+          	["ChaCha20_Poly1305"] = AEAD,
+          	["sha3_256"] = SHA3.SHA3_256,
+          	["base64"] = Base64,
+          }
+          EOF
+          cat build/entry.luau
 
-  - name: Bundle  
-    run: |  
-      mkdir -p dist  
-      darklua process build/entry.luau dist/Hyperion.luau --config darklua.json  
+      - name: Bundle
+        run: |
+          mkdir -p dist
+          darklua process build/entry.luau dist/Hyperion.luau --config darklua.json
 
-  - name: Upload artifact  
-    uses: actions/upload-artifact@v4  
-    with:  
-      name: bundled-crypto  
-      path: dist/Hyperion.luau
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundled-crypto
+          path: dist/Hyperion.luau
