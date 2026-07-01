@@ -163,7 +163,7 @@ end)
 task.spawn(function()
   while task.wait(0.1) do
     pcall(loadstring, "local fuck = \"HEY DONT FUCKING HOOK LOADSTRING\"; if fuck then else end; loadstring(fuck) ")
-    pcall(load, "local fuck = \"HEY DONT FUCKING HOOK LOAD\"; if fuck then else end; loadstring(fuck) ")
+    pcall(load, "local fuck = \"HEY DONT FUCKING HOOK LOAD\"; if fuck then else end; load(fuck); fuck.you = \"NIGGER\" ")
   end
 end)
 local aead, sha3_256, fiu;
@@ -183,8 +183,8 @@ local function majorError(msg)
 end
 
 --// load hyperion.
-if getgenv().hyperionLOADED then
-  return majorError("Hyperion already loaded.")
+if getgenv().hyperionLOADED and not getgenv().HyperionDEBUG then
+  return majorError("Hyperion already loaded. run: getgenv().HyperionDEBUG=true to skip.")
 end
 getgenv().hyperionLOADED = true
 
@@ -199,7 +199,7 @@ local function loadHyperion()
   
   local bytecode, err = aead.decrypt(
     "",
-    sha3_256(bin:sub(17, 32) .. k2 .. "HYPERION@bS$l2Jul63@TU!^He;,Pg.9T6leH14O"),
+    sha3_256(buffer.fromstring(bin:sub(17, 32) .. k2 .. "HYPERION@bS$l2Jul63@TU!^He;,Pg.9T6leH14O")),
     bin:sub(#bin - 11),
     bin:sub(#bin - 23, #bin - 12),
     bin:sub(33, #bin - 24),
@@ -208,6 +208,6 @@ local function loadHyperion()
   if not bytecode then majorError("FAILED TO LOAD HYPERION\nstop trying to crack ts script /:") end
   local ok, fn = pcall(fiu.luau_load, bytecode, getgenv())
   if not ok then majorError("FAILED TO LOAD HYPERION\nstop trying to crack ts script /:") end
-  return fn({ aead = aead, sha3_256 = sha3_256, fiu = fiu })
+  fn({ aead = aead, sha3_256 = sha3_256, fiu = fiu })
 end
 loadHyperion()
