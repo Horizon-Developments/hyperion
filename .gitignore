@@ -1,6 +1,7 @@
 .assets/modules/normal/crasher.lua
 .assets/
 obfuscation/
+setup
 src/oldhyperion.lua
 src/oldishhyperion.lua
 src/hyperion.lua
