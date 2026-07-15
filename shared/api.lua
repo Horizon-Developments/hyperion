@@ -111,6 +111,9 @@ function Bots:CreateInstance()
   local botApi = {}
   botApi.Authenticated = false
   botApi.ws = WebSocket.connect(urls.owner_url)
+  if not botApi.ws then
+    return false, "WebSocket connection failed"
+  end
   botApi.client_url = urls.client_url
   botApi.owner_url = urls.owner_url
   botApi.ws.OnMessage:Connect(function(message)
@@ -129,7 +132,7 @@ function Bots:CreateInstance()
   function botApi:GetClientScript()
     return ('loadstring(game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/shared/bot.lua"))("%s", "%s")'):format(self.client_url, passwords.client)
   end
-  return botApi
+  return true, botApi
 end
 
 local workerUrl = url
