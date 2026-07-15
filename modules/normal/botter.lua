@@ -5,7 +5,7 @@ local Obsidian = args.Obsidian
 local Helpers = args.Helpers
 local Assets = args.Assets
 
-local Hyperion = loadstring(game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/shared/api.lua"))
+local api = loadstring(game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/shared/api.lua"))()
 
 local botInstance = nil
 
@@ -41,7 +41,7 @@ Makes all bots join your current server.
   rbox:AddButton({
     Text = "Generate Bot URL",
     Func = function()
-      local ok, result = Hyperion.Bots:CreateInstance()
+      local ok, result = api.Bots:CreateInstance()
       if not ok then
         return Obsidian:Notify({
           Title = "Error",
@@ -61,7 +61,7 @@ Makes all bots join your current server.
   })
 
   task.spawn(function()
-    local ok, result = Hyperion.Bots:CreateInstance()
+    local ok, result = api.Bots:CreateInstance()
     if not ok then
       return Obsidian:Notify({
         Title = "Botting",
