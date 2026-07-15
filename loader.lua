@@ -184,8 +184,8 @@ local mainok, mainres = pcall(task.spawn, function()
   tabs.settings = Window:AddTab("Settings", "settings")
   print("[STEP 11]: tabs created")
 
-  local InfoBoxLeft = tabs.info:AddLeftGroupbox()
-  local InfoBoxRight = tabs.info:AddRightGroupbox()
+  local InfoBoxLeft = tabs.info:AddLeftGroupbox("")
+  local InfoBoxRight = tabs.info:AddRightGroupbox("")
   InfoBoxLeft:AddLabel({ Text = "Join our Discord for suggestions, updates, and help.", DoesWrap = true })
   InfoBoxRight:AddButton({
     Text = "Copy Invite",
