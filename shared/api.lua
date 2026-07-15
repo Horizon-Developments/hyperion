@@ -32,7 +32,7 @@ local bot = "https://hyperion-bot-server.onrender.com"
 
 if not isfile("Hyperion/c.pswd") then
   local function randomPass()
-    return (http:GenerateGUID(false) .. http:GenerateGUID(false)):gsub("-", "")
+    return http:GenerateGUID(false):gsub("-", "")
   end
   
   writefile("Hyperion/c.pswd", http:JSONEncode({
