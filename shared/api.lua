@@ -79,7 +79,7 @@ end
 
 function Bots:CreateInstance()
   local passwords = http:JSONDecode(readfile("Hyperion/c.pswd"))
-  local user = "H@" .. lp.UserId
+  local user = "H_" .. lp.UserId
   request({
     Url = bot .. "/accounts/signup",
     Method = "POST",
