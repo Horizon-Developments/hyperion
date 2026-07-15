@@ -5,7 +5,7 @@ local Obsidian = args.Obsidian
 local Helpers = args.Helpers
 local Assets = args.Assets
 
-local Hyperion = loadstring(game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/shared/api.lua"))("Bots")
+local Hyperion = loadstring(game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/shared/api.lua"))
 
 local botInstance = nil
 

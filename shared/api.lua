@@ -8,9 +8,9 @@
   https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/LICENSE.md
 ]]
 
-local _type = ...
+
 if getgenv().hyperion_api then
-  return getgenv().hyperion_api[_type]
+  return getgenv().hyperion_api
 end
 
 local api = {}
@@ -382,4 +382,4 @@ api.fakeAPI = fakeAPI
 
 
 getgenv().hyperion_api = api
-return api[_type]
+return api

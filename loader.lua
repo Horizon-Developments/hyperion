@@ -344,6 +344,6 @@ if mainok then
   print("[HYPERION]: loaded")
 else
   print("[HYPERION]: crashed: " .. tostring(mainres))
-  Api("Telemetry"):CrashReportSend("Loader crashed: " .. tostring(mainres))
+  Api().Telemetry:CrashReportSend("Loader crashed: " .. tostring(mainres))
   error("[HYPERION]: Failed to load. Error: " .. tostring(mainres))
 end
