@@ -86,8 +86,7 @@ end
 function Bots:CreateInstance()
   local passwords = http:JSONDecode(readfile("Hyperion/c.pswd"))
   local key = passwords.constant
-
-  -- Register the session with the relay
+  
   local res = request({
     Url = url .. "/start",
     Method = "POST",
