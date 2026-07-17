@@ -6,14 +6,14 @@ local Helpers  = args.Helpers
 local Assets   = args.Assets
 
 local botInstance
-local fn, api = loadstring(game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/shared/api.lua"))
+local fn, err = loadstring(game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/shared/api.lua"))
 
 
 if not fn then
-  return warn(api)
+  return warn(err)
 end
 
-api = api()
+fn = fn()
 
 
 Tabs.botting = Window:AddTab("Botting", "bot")
