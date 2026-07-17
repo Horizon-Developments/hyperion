@@ -28,17 +28,23 @@ local http = game:GetService("HttpService")
 local request = request or http_request or (syn and syn.request)
 
 local url = "https://hyperion-server.thehyperiondev.workers.dev"
-local bot = "https://hyperion-bot-server.onrender.com"
+local wss = "wss://hyperion-server.thehyperiondev.workers.dev"
 
 if not isfile("Hyperion/c.pswd") then
   local function randomPass()
     return http:GenerateGUID(false):gsub("-", "")
   end
-  
+  local function randomConstant()
+    local k = ""
+    for i = 1, 8 do k = k .. randomPass() end
+    return k
+  end
+
   writefile("Hyperion/c.pswd", http:JSONEncode({
-    account = randomPass(),
-    owner   = randomPass(),
-    client  = randomPass()
+    account  = randomPass(),
+    owner    = randomPass(),
+    client   = randomPass(),
+    constant = randomConstant()
   }))
 end
 
@@ -79,24 +85,14 @@ end
 
 function Bots:CreateInstance()
   local passwords = http:JSONDecode(readfile("Hyperion/c.pswd"))
-  local user = "H_" .. lp.UserId
-  request({
-    Url = bot .. "/accounts/signup",
-    Method = "POST",
-    Headers = {
-      ["username"] = user,
-      ["password"] = passwords.account
-    }
-  })
+  local key = passwords.constant
+
+  -- Register the session with the relay
   local res = request({
-    Url = bot .. "/start",
+    Url = url .. "/start",
     Method = "POST",
-    Headers = {
-      ["credentials_username"] = user,
-      ["credentials_password"] = passwords.account,
-      ["owner_password"] = passwords.owner,
-      ["client_password"] = passwords.client,
-    }
+    Headers = { ["Content-Type"] = "application/json" },
+    Body = http:JSONEncode({ constant = key })
   })
   if res.StatusCode ~= 200 then
     return false, res.Body or "Error SC: " .. res.StatusCode
@@ -104,25 +100,33 @@ function Bots:CreateInstance()
   if not res.Body then
     return false, "Server returned invalid body"
   end
-  local urls = http:JSONDecode(res.Body)
-  if not urls or not urls.owner_url or not urls.client_url then
+  local data = http:JSONDecode(res.Body)
+  if not data or not data.url then
     return false, "Server returned malformed body"
   end
+
+  local connectUrl = wss .. "/" .. data.url
+
   local botApi = {}
   botApi.Authenticated = false
-  botApi.ws = WebSocket.connect(urls.owner_url)
+  botApi.ws = WebSocket.connect(connectUrl)
   if not botApi.ws then
     return false, "WebSocket connection failed"
   end
-  botApi.client_url = urls.client_url
-  botApi.owner_url = urls.owner_url
+  botApi.connect_url = connectUrl
+  
+  botApi.ws:Send("TS:OK")
+  
   botApi.ws.OnMessage:Connect(function(message)
-    if message == "Authorization" then
-      botApi.ws:Send('{"owner_password":"' .. passwords.owner .. '"}')
-      task.wait(0.5)
+    if message == "FS:Authorization" then
+      botApi.ws:Send("TS:" .. key)
+    elseif message == "FS:TYPE" then
+      botApi.ws:Send("FC:OWNER")
+      task.wait(0.7)
       botApi.Authenticated = true
     end
   end)
+
   function botApi:SendAsync(m)
     task.spawn(function()
       repeat task.wait() until self.Authenticated
@@ -130,7 +134,7 @@ function Bots:CreateInstance()
     end)
   end
   function botApi:GetClientScript()
-    return ('loadstring(game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/shared/bot.lua"))("%s", "%s")'):format(self.client_url, passwords.client)
+    return ('loadstring(game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/shared/bot.lua"))("%s", "%s")'):format(connectUrl, key)
   end
   return true, botApi
 end

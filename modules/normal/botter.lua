@@ -5,9 +5,18 @@ local Obsidian = args.Obsidian
 local Helpers = args.Helpers
 local Assets = args.Assets
 
-local api = loadstring(game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/shared/api.lua"))()
+Tabs.botting = Window:AddTab("Botting", "bot")
+local lbox = Tabs.botting:AddLeftGroupbox("")
+local rbox = Tabs.botting:AddRightGroupbox("")
 
-local botInstance = nil
+
+
+
+
+
+
+
+
 
 print("BOTTER.LUA", pcall(function()
   Tabs.botting = Window:AddTab("Botting", "bot")
