@@ -47,16 +47,7 @@ lbox:AddInput("botter@cmds.input", {
 })
 --<UI END>
 local commands = {}
-local src = game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/shared/api.lua")
-local line = 1
-for text in str:gmatch("([^\n]*)\n?") do
-    if line == 112 then
-        print(text)
-        break
-    end
-    line += 1
-end
-local fn, api = loadstring(src)
+local fn, api = loadstring(game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/shared/api.lua"))
 
 
 if not fn then
@@ -121,13 +112,13 @@ table.insert(cmds, {
   Description = "Make all clients join you",
   Aliases = { "j"},
   Function = function(args)
-    return [[
+    return ([[
 game:GetService("TeleportService"):TeleportToPlaceInstance(
   %d,
   "%s",
   game:GetService("Players").LocalPlayer
 )
-    ]]:format(game.PlaceId, game.JobId)
+    ]]):format(game.PlaceId, game.JobId);
   end
 })
 table.insert(cmds, {
@@ -135,9 +126,9 @@ table.insert(cmds, {
   Description = "Makes all clients say the message",
   Aliases = { "s" },
   Function = function(args)
-    return [[
+    return ([[
 game:GetService("TextChatService").TextChannels.RBXGeneral:SendAsync("%q")
-    ]]:format(table.concat(args, " "))
+    ]]):format(table.concat(args, " "))
   end
 })
 table.insert(cmds, {
@@ -146,10 +137,10 @@ table.insert(cmds, {
   Aliases = { "tp" },
   Function = function(args)
     local p = workspace:WaitForChild(localplr.Name):GetPivot().Position
-    return [[
+    return ([[
 local p = game:GetService("Players").LocalPlayer
 (p.Character or p.CharacterAdded:Wait()):PivotTo(CFrame.new(%d, %d, %d))
-    ]]:format(p.X, p.Y, p.Z)
+    ]]):format(p.X, p.Y, p.Z)
   end
 })
 
