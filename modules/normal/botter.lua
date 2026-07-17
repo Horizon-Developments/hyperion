@@ -47,7 +47,18 @@ lbox:AddInput("botter@cmds.input", {
 })
 --<UI END>
 local commands = {}
-local fn, api = loadstring(game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/shared/api.lua"))
+local src = game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/shared/api.lua")
+local line = 1
+for text in str:gmatch("([^\n]*)\n?") do
+    if line == 112 then
+        print(text)
+        break
+    end
+    line += 1
+end
+local fn, api = loadstring(src)
+
+
 if not fn then
   return warn(api)
 end
