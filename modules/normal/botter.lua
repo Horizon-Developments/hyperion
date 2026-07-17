@@ -13,6 +13,9 @@ if not fn then
   return warn(api)
 end
 
+api = api()
+
+
 Tabs.botting = Window:AddTab("Botting", "bot")
 local lbox = Tabs.botting:AddLeftGroupbox("")
 local rbox = Tabs.botting:AddRightGroupbox("")
