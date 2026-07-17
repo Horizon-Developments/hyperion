@@ -6,6 +6,12 @@ local Helpers  = args.Helpers
 local Assets   = args.Assets
 
 local botInstance
+local fn, api = loadstring(game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/shared/api.lua"))
+
+
+if not fn then
+  return warn(api)
+end
 
 Tabs.botting = Window:AddTab("Botting", "bot")
 local lbox = Tabs.botting:AddLeftGroupbox("")
@@ -72,12 +78,6 @@ lbox:AddInput("botter@cmds.input", {
 })
 --<UI END>
 local commands = {}
-local fn, api = loadstring(game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/shared/api.lua"))
-
-
-if not fn then
-  return warn(api)
-end
 
 local path = Assets("BotModules")
 makefolder(path)
