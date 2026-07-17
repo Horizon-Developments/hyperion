@@ -34,6 +34,31 @@ rbox:AddDivider()
 
 rbox:AddButton("botter@cmds.btn", {
   Text = "Generate Bot URL",
+  Func = function()
+    if botInstance then
+    setclipboard(botInstance:GetClientScript())
+    return Obsidian:Notify({
+      Title       = "Copied",
+      Description = "Script copied to clipboard.",
+      Time        = 3,
+    })
+  end
+  local ok, result = api.Bots:CreateInstance()
+  if not ok then
+    return Obsidian:Notify({
+      Title       = "Error",
+      Description = tostring(result),
+      Time        = 3,
+    })
+  end
+  botInstance = result
+  setclipboard(botInstance:GetClientScript())
+  Obsidian:Notify({
+    Title       = "Success",
+    Description = "Script copied to clipboard. Put it in your bots Autoexecute.",
+    Time        = 4,
+  })
+ end
 })
 lbox:AddLabel("botter@cmds.label", {
   Text = "",
@@ -237,29 +262,3 @@ Helpers.on("ChatListener", function(msg)
 end)
 
 Obsidian.Options["botter@cmds.input"]:OnChanged(handleCmd)
-
-Obsidian.Options["botter@cmds.btn"]:OnClick(function()
-  if botInstance then
-    setclipboard(botInstance:GetClientScript())
-    return Obsidian:Notify({
-      Title       = "Copied",
-      Description = "Script copied to clipboard.",
-      Time        = 3,
-    })
-  end
-  local ok, result = api.Bots:CreateInstance()
-  if not ok then
-    return Obsidian:Notify({
-      Title       = "Error",
-      Description = tostring(result),
-      Time        = 3,
-    })
-  end
-  botInstance = result
-  setclipboard(botInstance:GetClientScript())
-  Obsidian:Notify({
-    Title       = "Success",
-    Description = "Script copied to clipboard. Put it in your bots Autoexecute.",
-    Time        = 4,
-  })
-end)
