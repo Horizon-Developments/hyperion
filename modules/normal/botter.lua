@@ -181,7 +181,7 @@ do
       print(dat)
     end
   end
-  Obsidian.Options["botter@cmds.label"]:SetText(cmdLabelText)
+  Obsidian.Labels["botter@cmds.label"]:SetText(cmdLabelText)
 end
 
 local function handleCmd(msg)
