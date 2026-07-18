@@ -8,8 +8,8 @@ local assets   = args.Assets
 local Helpers  = args.Helpers
 
 local fakeAPI, testAPI, API = (function(a)
-  return a.fakeAPI, a.testAPI, a.API
-end)(loadstring(game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/src/api.lua"))())
+  return a.fakeAPI, a.testAPI, a.fileAPI
+end)(loadstring(game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/shared/api.lua"))())
 
 local user = {
   password = nil,

@@ -330,6 +330,7 @@ local file     = { desc = "", name = "" }
 local cloud    = { sort = "new", keyword = "", result = nil, result_map = {} }
 local cloud_el = {}
 local _busy    = {}
+repeat task.wait(0.1) until getgenv().hyperion_client 
 local client = getgenv().hyperion_client 
 
 local function fmterr(err)

@@ -6,15 +6,7 @@ local Helpers  = args.Helpers
 local Assets   = args.Assets
 
 local botInstance
-local fn, err = loadstring(game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/shared/api.lua"))
-
-
-if not fn then
-  return warn(err)
-end
-
-local api = fn()
-
+local api = loadstring(game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/shared/api.lua"))()
 
 Tabs.botting = Window:AddTab("Botting", "bot")
 local lbox = Tabs.botting:AddLeftGroupbox("")
@@ -29,7 +21,7 @@ Setup:
 2. Copy the generated script into your bots Autoexecute or run.
 Thats it, easy and simple
 
-Commands can be sent via chat using the "hx." prefix.
+Commands can be sent via chat using the "hx." prefix or in the UI
 
 Example:
 hx.join
@@ -158,13 +150,13 @@ game:GetService("TextChatService").TextChannels.RBXGeneral:SendAsync("%q")
 })
 table.insert(cmds, {
   Name = "tpAll",
-  Description = "",
+  Description = "Teleports all your bots to your Position",
   Aliases = { "tp" },
   Function = function(args)
     local p = workspace:WaitForChild(localplr.Name):GetPivot().Position
     return ([[
 local p = game:GetService("Players").LocalPlayer
-(p.Character or p.CharacterAdded:Wait()):PivotTo(CFrame.new(%d, %d, %d))
+(p.Character or p.CharacterAdded:Wait()):PivotTo(CFrame.new(%g, %g, %g))
     ]]):format(p.X, p.Y, p.Z)
   end
 })
@@ -176,6 +168,16 @@ table.insert(commands, system); end
 
 do
   local cmdLabelText = "Commands\nif a command has an argument which contains cmd? it is optional\n"
+  for _, plugin in ipairs(commands) do
+    local info = ("%s\n (%s)\n\n"):format(plugin.Name, plugin.Description)
+    for _, cmdDat in ipairs(plugin.Commands) do
+      local aliases = (cmdDat.Aliases and #cmdDat.Aliases > 0)
+        and "(" .. table.concat(cmdDat.Aliases, ",") .. ")"
+        or ""
+      info ..= ("  %s %s\n  %s\n\n"):format(cmdDat.Name, aliases, cmdDat.Description)
+    end
+    cmdLabelText ..= info .. "\n"
+  end
   for _, modulepath in listfiles(path) do
     local ok, dat = pcall(function()
       local module = loadstring(readfile(modulepath))()
@@ -265,3 +267,4 @@ Helpers.on("ChatListener", function(msg)
 end)
 
 Obsidian.Options["botter@cmds.input"]:OnChanged(handleCmd)
+

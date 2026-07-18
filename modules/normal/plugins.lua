@@ -17,6 +17,7 @@ local Helpers  = args.Helpers
 
 tabs.plugins = Window:AddTab("Plugins", "blocks")
 local box = tabs.plugins:AddLeftGroupbox("Plugins")
+repeat task.wait(0.1) until getgenv().hyperion_client 
 local client = getgenv().hyperion_client
 local search = nil
 local dropdown = nil
