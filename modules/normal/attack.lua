@@ -157,7 +157,7 @@ local paint_aura = bhelper(function(c, d, e)
     return ids[math.random(#ids)]
   end
   
-  while c.con do
+  while c.con and task.wait(0.1) do
     local parts = {}
     for _, child in ipairs(workspace.Bricks:GetChildren()) do
       if child:IsA("BasePart") and child.Name == "Brick" then
@@ -207,7 +207,6 @@ local paint_aura = bhelper(function(c, d, e)
         task.wait(0.05)
       end
     end
-    task.wait(0.1)
   end
   for _, obj in ipairs(workspace.Bricks:GetDescendants()) do
     if (obj.Parent.Parent == workspace.Brick or obj.Parent == workspace.Brick) and obj:IsA("Highlight") and highlight.FillColor == Color3.fromRGB(255, 0, 0) then
