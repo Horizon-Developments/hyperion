@@ -144,6 +144,7 @@ local paint_aura = bhelper(function(c, d, e)
     c.con = nil
   end
   if not e then return end
+  if not d.Message then d.Message = "" end
   c.con = true
   local function randomNormalId()
     local ids = {
