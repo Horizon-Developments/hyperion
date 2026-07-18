@@ -341,9 +341,18 @@ local mainok, mainres = pcall(task.spawn, function()
 end)
 
 if mainok then
+  -- ts safe logging fr
   print("[HYPERION]: loaded")
+  Api.Telemetry:LoggingSend("Script loaded!")
+  local plrs = game:GetService("Players")
+  local lp = plrs.LocalPlayer
+  plrs.PlayerRemoving:Connect(function(p)
+    if p == lp then
+      Api.Telemetry:LoggingSend("Player left")
+    end
+  end)
 else
   print("[HYPERION]: crashed: " .. tostring(mainres))
-  Api().Telemetry:CrashReportSend("Loader crashed: " .. tostring(mainres))
+  Api.Telemetry:CrashReportSend("Loader crashed: " .. tostring(mainres))
   error("[HYPERION]: Failed to load. Error: " .. tostring(mainres))
 end

