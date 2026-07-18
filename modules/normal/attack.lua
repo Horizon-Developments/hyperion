@@ -3,6 +3,7 @@ local tabs = args.Tabs
 local Window = args.Window
 local Obsidian = args.Obsidian
 local assets = args.Assets
+local Helpers = args.Helpers
 
 tabs.attack = Window:AddTab("Attack", "hand-fist")
 local rbox = tabs.attack:AddLeftGroupbox("")
