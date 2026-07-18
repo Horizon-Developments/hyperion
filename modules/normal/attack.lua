@@ -109,6 +109,11 @@ local delete_aura = bhelper(function(c, d, e)
     end
     task.wait(0.02)
   end
+  for _, obj in ipairs(workspace.Bricks:GetDescendants()) do
+    if obj:IsA("Highlight") then
+      obj:Destroy()
+    end
+  end
 end, "delete_aura")
 
 
@@ -194,15 +199,20 @@ local paint_aura = bhelper(function(c, d, e)
           part,
           randomNormalId(),
           hrp.Position, 
-          "material",
-          Color3.new(0.29411765933037, 0.59215688705444, 0.29411765933037),
+          "both \240\159\164\157",,
+          Color3.fromRGB(math.random(0, 255), math.random(0, 255), math.random(0, 255)),
           "spary",
-          d.Message or paint_aura_fixmsg(d.Message)
+          d.Message or paint_aura_fixmsg(d.Message) or "test"
         )
-        task.wait(0.2)
+        task.wait(0.05)
       end
     end
     task.wait(0.1)
+  end
+  for _, obj in ipairs(workspace.Bricks:GetDescendants()) do
+    if obj:IsA("Highlight") then
+      obj:Destroy()
+    end
   end
 end, "paint_aura")
 
