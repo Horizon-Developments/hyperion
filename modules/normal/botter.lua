@@ -13,7 +13,7 @@ if not fn then
   return warn(err)
 end
 
-fn = fn()
+local api = fn()
 
 
 Tabs.botting = Window:AddTab("Botting", "bot")
