@@ -218,3 +218,4 @@ rbox:AddInput("paint_aura_msg", {
   Placeholder = "Raided by hyperion reborn",
   Callback    = function(v) SharedData["paint_aura"].Message = v end
 })
+
