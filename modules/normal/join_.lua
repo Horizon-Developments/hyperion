@@ -91,7 +91,8 @@ local dropdown = box:AddDropdown("join.dropdown", {
   Values     = {
     "og",
     "xl",
-    "vc"
+    "vc",
+    "none"
   },
   Default    = (function()
     if isfile(path) then
@@ -104,7 +105,7 @@ local dropdown = box:AddDropdown("join.dropdown", {
   Text       = "",
   Searchable = false,
   Callback   = function(val)
-    if val ~= nil then
+    if val ~= "none" then
       writefile(path, val)
     else
       pcall(delfile,path)

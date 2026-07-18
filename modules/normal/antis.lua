@@ -19,7 +19,7 @@ local function registerWhile(tog, fun, id)
     task.spawn(function()
       while registered[id] do
         pcall(fun)
-        task.wait(0.1)
+        task.wait(0.05)
       end
     end)
     return
@@ -149,18 +149,44 @@ lbox:AddToggle("antiMyopic", {
 })
 
 rbox:AddToggle("antiInvis", {
-  Text = "Anti invis jail",
+  Text = "Anti invis",
   Default = false,
   Callback = function(v)
     registerWhile(v, function()
-      local char = localplr:WaitForChild("Character")
+      local char = localplr.Character or localplr.CharacterAdded:Wait()
       if char:WaitForChild("Head").Transparency == 1 then
         local hum = char:FindFirstChildOfClass("Humanoid")
-        if hum then hum.Health = 0 end
+        if hum then
+          hum.Health = 0
+        end
       end
-    end, "invisjail")
+    end, "invis")
   end
 })
+
+lbox:AddToggle("KeepTools", {
+  Text = "KeepTools (warning, it drops items when you die, people can use grabtools)",
+  Default = false,
+  Callback = function(v)
+    registerWhile(v, function()
+      local char = (localplr.Character or localplr.CharacterAdded:Wait())
+      local hum = char:WaitForChild("Humanoid")
+      if hum:GetState() == Enum.HumanoidStateType.Dead then
+        for _, tool in ipairs(char:GetChildren()) do
+          if tool:IsA("Tool") then
+            tool.Parent = workspace
+          end
+        end
+      end
+      for _, tool in ipairs(localplr.Backpack:GetChildren()) do
+        if tool:IsA("Tool") then
+          tool.Parent = workspace
+        end
+      end
+    end, "KeepTools")
+  end
+})
+
 
 rbox:AddDivider()
 lbox:AddDivider()
