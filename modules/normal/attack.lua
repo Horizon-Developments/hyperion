@@ -202,7 +202,7 @@ local paint_aura = bhelper(function(c, d, e)
           "both \240\159\164\157",
           Color3.fromRGB(math.random(0, 255), math.random(0, 255), math.random(0, 255)),
           "spray",
-          "test" or d.Message or paint_aura_fixmsg(d.Message)
+          paint_aura_fixmsg(d.Message)
         )
         task.wait(0.05)
       end
