@@ -7,7 +7,7 @@ local Helpers = args.Helpers
 
 tabs.attack = Window:AddTab("Attack", "hand-fist")
 local rbox = tabs.attack:AddLeftGroupbox("")
-local lbox = tabs.attack:AddLeftGroupbox("")
+local lbox = tabs.attack:AddRightGroupbox("")
 local plrs = Helpers.services.players
 local localplr = plrs.LocalPlayer
 
@@ -134,7 +134,7 @@ local function paint_aura_fixmsg(msg)
 end
 
 local paint_aura = bhelper(function(c, d, e)
-  d.deleted = 0
+  d.sprayed = 0
   if c.con then
     c.con = nil
   end
@@ -183,13 +183,14 @@ local paint_aura = bhelper(function(c, d, e)
       end
     end)
 
-    local tool = fetchtools("Delete", c, "con")
+    local tool = fetchtools("Paint", c, "con")
     if not tool then break end
     local hrp = localplr.Character and localplr.Character.HumanoidRootPart
     if not hrp then task.wait() continue end
     for _, part in ipairs(parts) do
       if part and part.Parent then
         task.spawn(function()
+          d.sprayed += 1
           tool:FireServer(part, randomNormalId(), hrp.Position, "both \xF0\x9F\xA4\x9D", Color3.fromRGB(255, 255, 255), "spary", paint_aura_fixmsg(d.Message))
         end)
       end
