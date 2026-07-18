@@ -114,9 +114,8 @@ function Bots:CreateInstance()
   end
   botApi.connect_url = connectUrl
   
-  botApi.ws:Send("TS:OK")
-  
   botApi.ws.OnMessage:Connect(function(message)
+    print("[BOT]: From server: ", message)
     if message == "FS:Authorization" then
       botApi.ws:Send("TS:" .. key)
     elseif message == "FS:TYPE" then
@@ -125,11 +124,16 @@ function Bots:CreateInstance()
       botApi.Authenticated = true
     end
   end)
-
+  
+  task.wait(0.5) -- stupid roblox race conditions
+  
+  botApi.ws:Send("TS:OK")
+  
   function botApi:SendAsync(m)
     task.spawn(function()
-      repeat task.wait() until self.Authenticated
+      repeat task.wait(0.1); print("[BOT]: Awaiting auth"); until self.Authenticated
       self.ws:Send(m)
+      print("[BOT]: Sent to clients: ", m)
     end)
   end
   function botApi:GetClientScript()

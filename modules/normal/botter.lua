@@ -69,10 +69,6 @@ rbox:AddButton("botter@cmds.btn", {
   })
  end
 })
-lbox:AddLabel("botter@cmds.label", {
-  Text = "",
-  DoesWrap = true,
-})
 lbox:AddInput("botter@cmds.input", {
   ClearTextOnFocus = false,
   Finished = true,
@@ -81,7 +77,8 @@ lbox:AddInput("botter@cmds.input", {
 })
 --<UI END>
 local commands = {}
-
+local plrs = Helpers.services.players
+local localplr = plrs.LocalPlayer
 local path = Assets("BotModules")
 makefolder(path)
 
@@ -90,7 +87,7 @@ local function findPlayer(query)
   query = query:lower():gsub("%.", "_")
   local queryLen = #query
   local matches = {}
-  for _, player in ipairs(game:GetService("Players"):GetPlayers()) do
+  for _, player in ipairs(plrs:GetPlayers()) do
     if query:sub(1, 1) == "@" then
       if player.Name:lower():sub(1, queryLen - 1) == query:sub(2) then
         table.insert(matches, player)
@@ -178,7 +175,7 @@ table.insert(commands, system); end
 
 
 do
-  local cmdLabelText = "if a command has an argument which contains cmd? it is optional\n"
+  local cmdLabelText = "Commands\nif a command has an argument which contains cmd? it is optional\n"
   for _, modulepath in listfiles(path) do
     local ok, dat = pcall(function()
       local module = loadstring(readfile(modulepath))()
@@ -209,7 +206,10 @@ do
       print(dat)
     end
   end
-  Obsidian.Labels["botter@cmds.label"]:SetText(cmdLabelText)
+  lbox:AddLabel("botter@cmds.label", {
+    Text = cmdLabelText,
+    DoesWrap = true,
+  })
 end
 
 local function handleCmd(msg)
@@ -259,7 +259,7 @@ local function handleCmd(msg)
 end
 
 Helpers.on("ChatListener", function(msg)
-  if not msg.TextSource or msg.TextSource.UserId ~= game:GetService("Players").LocalPlayer.UserId then return end
+  if not msg.TextSource or msg.TextSource.UserId ~= localplr.UserId then return end
   if msg.Text:sub(1, 3) ~= "hx." then return end
   handleCmd(msg.Text:gsub("^hx%.",""))
 end)
