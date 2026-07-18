@@ -197,9 +197,9 @@ local paint_aura = bhelper(function(c, d, e)
           "material",
           Color3.new(0.29411765933037, 0.59215688705444, 0.29411765933037),
           "spary",
-          paint_aura_fixmsg(d.Message)
+          d.Message or paint_aura_fixmsg(d.Message)
         )
-        task.wait(0.12)
+        task.wait(0.2)
       end
     end
     task.wait(0.1)
