@@ -13,7 +13,7 @@ local saveFile = Assets(".saved_clipboard")
 local path = Assets(".join_toggle")
 
 -- Single combined tab
-Tabs.main = Window:AddTab("Clipboard", "clipboard")
+Tabs.main = Window:AddTab("Misc", "shapes")
 
 local joinBox  = Tabs.main:AddLeftGroupbox("Auto Join")
 local clipBox  = Tabs.main:AddRightGroupbox("Saved Clipboard")

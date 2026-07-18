@@ -173,17 +173,24 @@ lbox:AddToggle("KeepTools", {
       local char = localplr.Character
       if not char then return end
       local hum = char:FindFirstChildOfClass("Humanoid")
-      if hum and hum.Health <= 0 then
-        for _, tool in ipairs(char:GetChildren()) do
-          if tool:IsA("Tool") then
-            tool.Parent = workspace
-          end
+      if not hum then return end
+      hum.Died:Wait()
+      for _, tool in ipairs(char:GetChildren()) do
+        if tool:IsA("Tool") then
+          tool.Parent = workspace
         end
-        for _, tool in ipairs(localplr.Backpack:GetChildren()) do
-          if tool:IsA("Tool") then
-            tool.Parent = workspace
-          end
-         end
+      end
+      for _, tool in ipairs(localplr.Backpack:GetChildren()) do
+        if tool:IsA("Tool") then
+          tool.Parent = workspace
+        end
+      end
+      local newChar = localplr.CharacterAdded:Wait()
+      newChar:WaitForChild("HumanoidRootPart")
+      for _, obj in ipairs(workspace:GetChildren()) do
+        if obj:IsA("Tool") then
+          obj.Parent = localplr.Backpack
+        end
       end
     end, "KeepTools")
   end
@@ -200,6 +207,11 @@ lbox:AddToggle("Grabtools", {
       GrabtoolsRbxSignal = nil
     end
     if v then
+      for _, obj in ipairs(workspace:GetChildren()) do
+        if obj:IsA("Tool") then
+          obj.Parent = localplr.Backpack
+        end
+      end
       GrabtoolsRbxSignal = workspace.ChildAdded:Connect(function(obj)
         if obj:IsA("Tool") then
           obj.Parent = localplr.Backpack
@@ -208,7 +220,6 @@ lbox:AddToggle("Grabtools", {
     end
   end
 })
-
 rbox:AddDivider()
 lbox:AddDivider()
 rbox:AddLabel({ Text = "WARNING: these need enli." })

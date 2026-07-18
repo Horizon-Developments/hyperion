@@ -18,7 +18,7 @@ local Helpers  = args.Helpers
 tabs.autobuild = Window:AddTab("Autobuild", "blocks")
 local box = tabs.autobuild:AddLeftGroupbox("Autobuild")
 
-local lib = loadstring(game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/src/autobuild.lua"))(...)
+local lib = loadstring(game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/shared/autobuild.lua"))(...)
 
 local players  = Helpers.services.players
 local localplr = players.LocalPlayer

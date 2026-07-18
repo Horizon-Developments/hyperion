@@ -29,7 +29,7 @@ end
 Tabs.plugins = Window:AddTab("Crasher", "blocks")
 local box = Tabs.plugins:AddLeftGroupbox("Crasher")
 local localplr = Helpers.services.players.LocalPlayer
-local lib = loadstring(game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/src/autobuild.lua"))(...)
+local lib = loadstring(game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/shared/autobuild.lua"))(...)
 local brick = nil
 local toggle = false
 local withSpray = true
