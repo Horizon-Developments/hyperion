@@ -5,32 +5,214 @@ local Obsidian = args.Obsidian
 local assets = args.Assets
 
 tabs.attack = Window:AddTab("Attack", "hand-fist")
-local box = tabs.attack:AddLeftGroupbox("Attack")
-
-local plrs = game:GetService("Players")
+local rbox = tabs.attack:AddLeftGroupbox("")
+local lbox = tabs.attack:AddLeftGroupbox("")
+local plrs = Helpers.services.players
 local localplr = plrs.LocalPlayer
 
-box:AddButton({
-  Text = "Disable bkit",
-  Tooltip = "Perma disables bkit. from pealz",
-  Func = function()
-    if not game:GetService("ReplicatedStorage").Brick then
-      Obsidian:Notify({ Title = "Successful?", Description = "bkit was already disabled", Time = 3 })
-      return
+
+local SharedData = {}
+--[[
+START BACKEND
+]]
+local Events = {}
+local function bhelper(fn, name)
+  Events[name] = {}
+  SharedData[name] = {}
+  return function(...)
+    task.spawn(fn,Events[name],SharedData[name],...)
+  end
+end
+local function fetchtools(tool, tbl, tblv)
+  local result
+  local t = 0
+  repeat
+    if tbl and not tbl[tblv] then
+      return nil
+    end
+    result = localplr.Backpack:FindFirstChild(tool, true) or (localplr.Character and localplr.Character:FindFirstChild(tool, true))
+    if not result then
+      t = t + 0.5
+      if t >= 5 then
+        t = 0
+        Obsidian:Notify({
+          Title = "Waiting for " .. tool,
+          Description = tool .. " not found on backpack or character. Waiting...",
+          Time = 3
+        })
+      end
+      task.wait(0.5)
+    end
+  until result
+  if tbl and not tbl[tblv] then
+    return nil
+  end
+  localplr.Character.Humanoid:EquipTool(result)
+  return result:FindFirstChild("Event", true)
+end
+
+
+local delete_aura = bhelper(function(c, d, e)
+  d.deleted = 0
+  if c.con then
+    c.con:Disconnect()
+    c.con = nil
+  end
+  if not e then return end
+  c.con = workspace.Bricks.DescendantRemoving:Connect(function(obj)
+    if obj.Name == "Brick" then
+      d.deleted += 1
+    end
+  end)
+  while c.con do
+    local parts = {}
+    for _, child in ipairs(workspace.Bricks:GetChildren()) do
+      if child:IsA("BasePart") and child.Name == "Brick" then
+        table.insert(parts, child)
+      else
+        for _, obj in ipairs(child:GetChildren()) do
+          if obj:IsA("BasePart") and obj.Name == "Brick" then
+            table.insert(parts, obj)
+            if #parts >= 30 then break end
+          end
+        end
+      end
+      if #parts >= 30 then break end
     end
 
-    local ok, err = pcall(function()
-      local char = localplr.Character
-      char.Delete.Script.Event:FireServer(
-        game:GetService("ReplicatedStorage").Brick,
-        char.HumanoidRootPart.Position
-      )
+    if #parts == 0 then task.wait() continue end
+
+    task.spawn(function()
+      for _, part in ipairs(parts) do
+        if not part:FindFirstChildOfClass("Highlight") then
+          local highlight = Instance.new("Highlight")
+          highlight.Adornee = part
+          highlight.FillColor = Color3.fromRGB(255, 0, 0)
+          highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+          highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+          highlight.Parent = part
+        end
+      end
     end)
-    if not ok then
-      Obsidian:Notify({ Title = "Not successful", Description = "You do not have delete tool in hand", Time = 3 })
-      print("ERR: ", err)
-      return
+
+    local tool = fetchtools("Delete", c, "con")
+    if not tool then break end
+    local hrp = localplr.Character and localplr.Character.HumanoidRootPart
+    if not hrp then task.wait() continue end
+    for _, part in ipairs(parts) do
+      if part and part.Parent then
+        task.spawn(function()
+          tool:FireServer(part, hrp.Position)
+        end)
+      end
     end
-    Obsidian:Notify({ Title = "Successful!", Description = "Disabled bkit.", Time = 3 })
+    task.wait(0.02)
   end
+end, "delete_aura")
+
+
+local function paint_aura_fixmsg(msg)
+  local advertisements = {
+    [[Join <font color="#FF0000">Hyperion</font> <font color="#FFD700">Reborn</font>]],
+    [[Join Now! <font color="#FF0000">xbkVzSxDBy</font>]],
+    [[<font color="#FF0000">Hyperion</font> <font color="#FFD700">Reborn</font>]]
+  }
+  msg = math.random() < 0.7 and msg or advertisements[math.random(#advertisements)]
+  local tags = {}
+  msg = msg:gsub("<font.-</font>", function(tag)
+    tags[#tags + 1] = tag
+    return "\1" .. #tags .. "\1"
+  end)
+  msg = msg:gsub(".", function(c)
+    return math.random() < 0.1 and ("<b>" .. c .. "</b>") or c
+  end)
+  msg = msg:gsub("\1(%d+)\1", function(i)
+    return tags[tonumber(i)]
+  end)
+  return msg
+end
+
+local paint_aura = bhelper(function(c, d, e)
+  d.deleted = 0
+  if c.con then
+    c.con = nil
+  end
+  if not e then return end
+  c.con = true
+  local function randomNormalId()
+    local ids = {
+      Enum.NormalId.Top,
+      Enum.NormalId.Bottom,
+      Enum.NormalId.Left,
+      Enum.NormalId.Right,
+      Enum.NormalId.Front,
+      Enum.NormalId.Back
+    }
+    return ids[math.random(#ids)]
+  end
+  
+  while c.con do
+    local parts = {}
+    for _, child in ipairs(workspace.Bricks:GetChildren()) do
+      if child:IsA("BasePart") and child.Name == "Brick" then
+        table.insert(parts, child)
+      else
+        for _, obj in ipairs(child:GetChildren()) do
+          if obj:IsA("BasePart") and obj.Name == "Brick" then
+            table.insert(parts, obj)
+            if #parts >= 30 then break end
+          end
+        end
+      end
+      if #parts >= 30 then break end
+    end
+    
+    if #parts == 0 then task.wait() continue end
+    
+    task.spawn(function()
+      for _, part in ipairs(parts) do
+        if not part:FindFirstChildOfClass("Highlight") then
+          local highlight = Instance.new("Highlight")
+          highlight.Adornee = part
+          highlight.FillColor = Color3.fromRGB(255, 0, 0)
+          highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+          highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+          highlight.Parent = part
+        end
+      end
+    end)
+
+    local tool = fetchtools("Delete", c, "con")
+    if not tool then break end
+    local hrp = localplr.Character and localplr.Character.HumanoidRootPart
+    if not hrp then task.wait() continue end
+    for _, part in ipairs(parts) do
+      if part and part.Parent then
+        task.spawn(function()
+          tool:FireServer(part, randomNormalId(), hrp.Position, "both \xF0\x9F\xA4\x9D", Color3.fromRGB(255, 255, 255), "spary", paint_aura_fixmsg(d.Message))
+        end)
+      end
+    end
+    task.wait(0.02)
+  end
+end, "paint_aura")
+
+--[[
+START FRONTEND
+]]
+lbox:AddToggle("delete_aura", {
+  Text = "Delete Abuser",
+  Default = false,
+  Callback = delete_aura
+})
+rbox:AddToggle("paint_aura", {
+  Text = "Spray Abuser",
+  Default = false,
+  Callback = paint_aura
+})
+
+rbox:AddInput("paint_aura_msg", {
+  Text        = "Spray txt",
+  Placeholder = "Raided by hyperion reborn",
+  Callback    = function(v) SharedData["paint_aura"].Message = v end
 })

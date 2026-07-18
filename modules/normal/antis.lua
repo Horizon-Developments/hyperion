@@ -169,24 +169,44 @@ lbox:AddToggle("KeepTools", {
   Default = false,
   Callback = function(v)
     registerWhile(v, function()
-      local char = (localplr.Character or localplr.CharacterAdded:Wait())
-      local hum = char:WaitForChild("Humanoid")
-      if hum:GetState() == Enum.HumanoidStateType.Dead then
+      local char = localplr.Character
+      if not char then return end
+      local hum = char:FindFirstChildOfClass("Humanoid")
+      if hum and hum.Health <= 0 then
         for _, tool in ipairs(char:GetChildren()) do
           if tool:IsA("Tool") then
             tool.Parent = workspace
           end
         end
-      end
-      for _, tool in ipairs(localplr.Backpack:GetChildren()) do
-        if tool:IsA("Tool") then
-          tool.Parent = workspace
-        end
+        for _, tool in ipairs(localplr.Backpack:GetChildren()) do
+          if tool:IsA("Tool") then
+            tool.Parent = workspace
+          end
+         end
       end
     end, "KeepTools")
   end
 })
 
+
+local GrabtoolsRbxSignal;
+lbox:AddToggle("Grabtools", {
+  Text = "Grabtools",
+  Default = false,
+  Callback = function(v)
+    if GrabtoolsRbxSignal then
+      GrabtoolsRbxSignal:Disconnect()
+      GrabtoolsRbxSignal = nil
+    end
+    if v then
+      GrabtoolsRbxSignal = workspace.ChildAdded:Connect(function(obj)
+        if obj:IsA("Tool") then
+          obj.Parent = localplr.Backpack
+        end
+      end)
+    end
+  end
+})
 
 rbox:AddDivider()
 lbox:AddDivider()
