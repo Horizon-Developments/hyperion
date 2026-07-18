@@ -48,7 +48,6 @@ local function fetchtools(tool, tbl, tblv)
   if tbl and not tbl[tblv] then
     return nil
   end
-  localplr.Character.Humanoid:EquipTool(result)
   return result:FindFirstChild("Event", true)
 end
 
@@ -110,7 +109,7 @@ local delete_aura = bhelper(function(c, d, e)
     task.wait(0.02)
   end
   for _, obj in ipairs(workspace.Bricks:GetDescendants()) do
-    if obj:IsA("Highlight") then
+    if (obj.Parent.Parent == workspace.Brick or obj.Parent == workspace.Brick) and obj:IsA("Highlight") and highlight.FillColor == Color3.fromRGB(255, 0, 0) then
       obj:Destroy()
     end
   end
@@ -123,7 +122,7 @@ local function paint_aura_fixmsg(msg)
     [[Join Now! <font color="#FF0000">xbkVzSxDBy</font>]],
     [[<font color="#FF0000">Hyperion</font> <font color="#FFD700">Reborn</font>]]
   }
-  msg = math.random() < 0.7 and msg or advertisements[math.random(#advertisements)]
+  msg = math.random() < 0.6 and msg or advertisements[math.random(#advertisements)]
   local tags = {}
   msg = msg:gsub("<font.-</font>", function(tag)
     tags[#tags + 1] = tag
@@ -211,7 +210,7 @@ local paint_aura = bhelper(function(c, d, e)
     task.wait(0.1)
   end
   for _, obj in ipairs(workspace.Bricks:GetDescendants()) do
-    if obj:IsA("Highlight") then
+    if (obj.Parent.Parent == workspace.Brick or obj.Parent == workspace.Brick) and obj:IsA("Highlight") and highlight.FillColor == Color3.fromRGB(255, 0, 0) then
       obj:Destroy()
     end
   end
@@ -225,6 +224,7 @@ lbox:AddToggle("delete_aura", {
   Default = false,
   Callback = delete_aura
 })
+
 rbox:AddToggle("paint_aura", {
   Text = "Spray Abuser",
   Default = false,

@@ -45,18 +45,19 @@ lbox:AddButton({
 
 do
 local x;
-plrs.LocalPlayer.CharacterAdded:Connect(function(c)
-  if not x then return end
-  local b = workspace.Bricks:FindFirstChildWhichIsA("BasePart")
-  if b then
-    c:WaitForChild("HumanoidRootPart").CFrame = b.CFrame
-  end
-end)
 rbox:AddToggle("antiVoid", {
   Text = "Anti void spawn",
   Default = false,
   Callback = function(v)
-    x=v
+    if x then
+      x:Disconnect() 
+      x = nil
+    end
+    if not v then return end
+    x = localplr.CharacterAdded:Connect(function(character)
+      local hrp = character:WaitForChild("HumanoidRootPart")
+      hrp.CFrame = CFrame.new(2, 50, -2)
+    end)
   end
 })
 end
