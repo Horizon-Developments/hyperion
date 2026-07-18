@@ -189,13 +189,12 @@ local paint_aura = bhelper(function(c, d, e)
     if not hrp then task.wait() continue end
     for _, part in ipairs(parts) do
       if part and part.Parent then
-        task.spawn(function()
-          d.sprayed += 1
-          tool:FireServer(part, randomNormalId(), hrp.Position, "both \xF0\x9F\xA4\x9D", Color3.fromRGB(255, 255, 255), "spary", paint_aura_fixmsg(d.Message))
-        end)
+        d.sprayed += 1
+        tool:FireServer(part, randomNormalId(), hrp.Position, "both \xF0\x9F\xA4\x9D", Color3.fromRGB(255, 255, 255), "spary", paint_aura_fixmsg(d.Message))
+        task.wait(0.12)
       end
     end
-    task.wait(0.02)
+    task.wait(0.1)
   end
 end, "paint_aura")
 
