@@ -199,7 +199,7 @@ local paint_aura = bhelper(function(c, d, e)
           part,
           randomNormalId(),
           hrp.Position, 
-          "both \240\159\164\157",,
+          "both \240\159\164\157",
           Color3.fromRGB(math.random(0, 255), math.random(0, 255), math.random(0, 255)),
           "spary",
           d.Message or paint_aura_fixmsg(d.Message) or "test"
