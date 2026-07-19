@@ -202,6 +202,7 @@ local paint_aura = bhelper(function(c, d, e)
       if part and part.Parent then
         d.sprayed += 1
         painted[part] = true
+        
         tool:FireServer(
           part,
           ids[math.random(#ids)],
@@ -211,7 +212,10 @@ local paint_aura = bhelper(function(c, d, e)
           "spray",
           paint_aura_fixmsg(d.Message)
         )
-        task.wait(0.1)
+        
+        if part:WaitForChild("spray", 0.1) then
+          task.wait(0.05)
+        end
       end
     end
   end
