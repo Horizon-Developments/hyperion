@@ -10,7 +10,7 @@ local rbox = tabs.attack:AddLeftGroupbox("")
 local lbox = tabs.attack:AddRightGroupbox("")
 local plrs = Helpers.services.players
 local localplr = plrs.LocalPlayer
-
+local lib = loadstring(game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/shared/autobuild.lua"))(...)
 
 local SharedData = {}
 --[[
@@ -210,6 +210,226 @@ local paint_aura = bhelper(function(c, d, e)
   end
 end, "paint_aura")
 
+local crasher_start = bhelper(function(c, d, e)
+  if c.anticrash then
+    c.anticrash:Disconnect()
+    c.anticrash = nil
+  end
+  if c.thread then
+    task.cancel(c.thread)
+    c.thread = nil
+  end
+  if not e then
+    c.seen = nil
+    return
+  end
+  if not SharedData["crasher_init"] or not SharedData["crasher_init"].Brick.Parent then
+    return Obsidian:Notify({
+      Title = "Setup crasher.",
+      Description = "Cannot continue",
+      Time = 3
+    })
+  end
+  c.thread = task.spawn(function()
+    while task.wait() do
+      local b = SharedData["crasher_init"].Brick
+      local t = fetchtools("Build", c, "thread")
+      if not t then
+        return
+      end
+      t:FireServer(
+        b,
+        Enum.NormalId.Top,
+        b.Position + Vector3.new(0, 1, 0),
+        "detailed"
+      )
+    end
+  end)
+  local _floor  = math.floor
+  local _rawget = rawget
+  local _rawset = rawset
+  local folder  = workspace.Bricks:WaitForChild(localplr.Name)
+  c.seen = setmetatable({}, { __mode = "v" })
+  local seen = c.seen
+  local children = folder:GetChildren()
+  for i = 1, #children do
+    local inst = children[i]
+    if inst.Name == "Brick" then
+      local pos = inst.Position
+      local k = _floor(pos.X) .. "." .. _floor(pos.Y) .. "." .. _floor(pos.Z)
+      if _rawget(seen, k) then
+        inst:Destroy()
+      else
+        _rawset(seen, k, inst)
+      end
+    end
+  end
+  c.anticrash = folder.ChildAdded:Connect(function(inst)
+    if inst.Name ~= "Brick" then
+      return
+    end
+    local pos = inst.Position
+    local k = _floor(pos.X) .. "." .. _floor(pos.Y) .. "." .. _floor(pos.Z)
+    local existing = _rawget(seen, k)
+    if existing then
+      if not existing:IsDescendantOf(folder) then
+        _rawset(seen, k, inst)
+      elseif existing ~= inst then
+        inst:Destroy()
+      end
+    else
+      _rawset(seen, k, inst)
+    end
+  end)
+end, "crasher_start")
+
+local crasher_anti = bhelper(function(c, d, e)
+  if c.anticrash then
+    c.anticrash:Disconnect()
+    c.anticrash = nil
+  end
+  if not e then
+    c.seen = nil
+    return
+  end
+  
+  local _floor  = math.floor
+  local _rawget = rawget
+  local _rawset = rawset
+  local folder  = workspace.Bricks:WaitForChild(localplr.Name)
+  
+  if not c.seen then
+    c.seen = setmetatable({}, { __mode = "v" })
+  end
+  local seen = c.seen
+  c.anticrash = folder.ChildAdded:Connect(function(inst)
+    if inst.Name ~= "Brick" then return end
+    local pos = inst.Position
+    local k = _floor(pos.X) .. "." .. _floor(pos.Y) .. "." .. _floor(pos.Z)
+    local existing = _rawget(seen, k)
+    if existing then
+      if not existing:IsDescendantOf(folder) then
+        _rawset(seen, k, inst)
+      elseif existing ~= inst then
+        inst:Destroy()
+      end
+    else
+      _rawset(seen, k, inst)
+    end
+  end)
+  local children = folder:GetChildren()
+  for i = 1, #children do
+    local inst = children[i]
+    if inst.Name == "Brick" then
+      local pos = inst.Position
+      local k = _floor(pos.X) .. "." .. _floor(pos.Y) .. "." .. _floor(pos.Z)
+      if _rawget(seen, k) then
+        inst:Destroy()
+      else
+        _rawset(seen, k, inst)
+      end
+    end
+  end
+end, "crasher_anti")
+
+local crasher_init = bhelper(function(c, d)
+  d.Brick = nil
+  local tool = localplr.Backpack:FindFirstChild("Build", true)
+    or (localplr.Character and localplr.Character:FindFirstChild("Build", true))
+  local event = tool and tool:FindFirstChild("Event", true)
+  if not event then
+    return Obsidian:Notify({
+      Title = "No build tool found.",
+      Description = "Build not found on backpack or character.",
+      Time = 3
+    })
+  end
+  local character = localplr.Character or localplr.CharacterAdded:Wait()
+  local hrp = character:WaitForChild("HumanoidRootPart")
+  local folder = workspace.Bricks:WaitForChild(localplr.Name)
+  local conn
+  conn = folder.ChildAdded:Connect(function(brick)
+    if brick.Name ~= "Brick" then return end
+    local tool = fetchtools("Paint", c, "idk")
+    
+    tool:FireServer(
+      brick,
+      Enum.NormalId.Top,
+      hrp.Position,
+      "material",
+      Color3.fromRGB(224, 224, 112),
+      "collide",
+      ""
+    )
+    task.wait(0.2)
+    tool:FireServer(
+      brick,
+      Enum.NormalId.Top,
+      hrp.Position,
+      "both \240\159\164\157",
+      Color3.new(0, 0, 0),
+      "neon",
+      ""
+    )
+    task.wait(0.2)
+    local sides = {
+      {Enum.NormalId.Bottom, brick.Position - brick.CFrame.UpVector * brick.Size.Y / 2},
+      {Enum.NormalId.Front,  brick.Position + brick.CFrame.LookVector * brick.Size.Z / 2},
+      {Enum.NormalId.Back,   brick.Position - brick.CFrame.LookVector * brick.Size.Z / 2},
+      {Enum.NormalId.Left,   brick.Position - brick.CFrame.RightVector * brick.Size.X / 2},
+      {Enum.NormalId.Right,  brick.Position + brick.CFrame.RightVector * brick.Size.X / 2},
+    }
+    for _, side in ipairs(sides) do
+      for i = 1, 50 do
+        tool:FireServer(
+          brick,
+          side[1],
+          side[2],
+          "both \240\159\164\157",
+          Color3.new(0, 0, 0),
+          "spray",
+          table.concat((function(t)local c="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=[]{}|;:,.<>?" for i=1,80 do local r=math.random(1,#c)t[i]=c:sub(r,r) end return t end)())
+        )
+        task.wait(0.001)
+      end
+      task.wait(0.04)
+    end
+    if brick.CanCollide then
+      tool:FireServer(
+        brick,
+        Enum.NormalId.Top,
+        hrp.Position,
+        "material",
+        Color3.fromRGB(224, 224, 112),
+        "collide",
+        ""
+      )
+    end
+    d.Brick = brick
+    conn:Disconnect()
+    Obsidian:Notify({
+      Title = "Success!",
+      Description = "Start crasher now!",
+      Time = 3
+    })
+  end)
+  task.delay(5, function()
+    if conn.Connected then
+      conn:Disconnect()
+    end
+  end)
+  task.delay(0.5, function()
+    event:FireServer(
+      workspace.Terrain,
+      Enum.NormalId.Top,
+      hrp.Position + Vector3.new(0, 2, 0),
+      "detailed"
+    )
+  end)
+end, "crasher_init")
+
+
+
 --[[
 START FRONTEND
 ]]
@@ -231,6 +451,26 @@ rbox:AddInput("paint_aura_msg", {
   Callback    = function(v) SharedData["paint_aura"].Message = v end
 })
 
+rbox:AddDivider()
+lbox:AddDivider()
+rbox:AddButton({
+  Text = "setup crasher",
+  Func = crasher_init
+})
 
+rbox:AddToggle("crasher.toggle", {
+  Text     = "start crasher",
+  Default  = false,
+  Disabled = false,
+  Callback = crasher_start
+})
 
-
+lbox:AddLabel({ Text = "Downside, blocks in the same position are locally removed.", DoesWrap = true })
+local floor = math.floor
+local bricks = workspace.Bricks
+lbox:AddToggle("crasher.anticrash", {
+  Text     = "anti crash",
+  Default  = false,
+  Disabled = false,
+  Callback = crasher_anti
+})

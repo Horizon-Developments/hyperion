@@ -204,7 +204,7 @@ local mainok, mainres = pcall(task.spawn, function()
   InfoBoxLeft:AddDivider()
   InfoBoxLeft:AddLabel({ Text = "Adding a Plugin: place your plugin file in Hyperion/modules/ (located inside your executor's folder).", DoesWrap = true })
   InfoBoxRight:AddLabel({ Text = "Creating your own plugin: full documentation is available on #plugins-dev on our Discord server.", DoesWrap = true })
-  InfoBoxRight:AddLabel({ Text = "Credits: areyoumental, pealz, wilson", DoesWrap = true })
+  InfoBoxRight:AddLabel({ Text = "Credits: areyoumental, pealz, wilson, agarv, raja", DoesWrap = true })
   print("[STEP 12]: info tab populated")
 
   repeat task.wait() until ThemeManager ~= nil
