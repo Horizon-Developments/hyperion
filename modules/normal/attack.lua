@@ -472,7 +472,7 @@ rbox:AddLabel("uni.label", {
 })
 
 Helpers.services.run.RenderStepped:Connect(function()
-  Obsidian.Options["uni.label"]:SetText(
+  Obsidian.Labels["uni.label"]:SetText(
     ("Blocks painted: %d\nBlocks Deleted: %d\nBlocks placed: %d"):format(
       SharedData.paint_aura and SharedData.paint_aura.sprayed or 0,
       SharedData.delete_aura and SharedData.delete_aura.deleted or 0,
