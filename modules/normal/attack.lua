@@ -211,7 +211,7 @@ local paint_aura = bhelper(function(c, d, e)
           "spray",
           paint_aura_fixmsg(d.Message)
         )
-        task.wait(0.05)
+        task.wait(0.15)
       end
     end
   end
@@ -405,7 +405,7 @@ local crasher_init = bhelper(function(c, d)
           "spray",
           table.concat((function(t)local c="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=[]{}|;:,.<>?" for i=1,80 do local r=math.random(1,#c)t[i]=c:sub(r,r) end return t end)({}))
         )
-        task.wait(0.05)
+        task.wait(0.1)
       end
       task.wait(0.1)
     end
