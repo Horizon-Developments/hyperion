@@ -481,7 +481,6 @@ Helpers.services.run.RenderStepped:Connect(function()
   )
 end)
 
-
 rbox:AddLabel({ Text = "Downside, blocks in the same position are locally removed.", DoesWrap = true })
 local floor = math.floor
 local bricks = workspace.Bricks
