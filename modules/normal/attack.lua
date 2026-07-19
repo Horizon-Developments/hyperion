@@ -105,7 +105,7 @@ local delete_aura = bhelper(function(c, d, e)
     task.wait(0.05)
   end
   for _, obj in ipairs(workspace.Bricks:GetDescendants()) do
-    if obj:IsA("Highlight") and obj.FillColor == Color3.fromRGB(255, 0, 0) then
+    if obj:IsA("Highlight") then
       obj:Destroy()
     end
   end
@@ -211,13 +211,13 @@ local paint_aura = bhelper(function(c, d, e)
           "spray",
           paint_aura_fixmsg(d.Message)
         )
-        task.wait(0.15)
+        task.wait(0.1)
       end
     end
   end
   
   for _, obj in ipairs(workspace.Bricks:GetDescendants()) do
-    if obj:IsA("Highlight") and obj.FillColor == Color3.fromRGB(255, 0, 0) then
+    if obj:IsA("Highlight") then
       obj:Destroy()
     end
   end
