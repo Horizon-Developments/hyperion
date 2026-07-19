@@ -102,7 +102,7 @@ local delete_aura = bhelper(function(c, d, e)
         tool:FireServer(part, hrp.Position)
       end
     end
-    task.wait(0.02)
+    task.wait(0.05)
   end
   for _, obj in ipairs(workspace.Bricks:GetDescendants()) do
     if obj:IsA("Highlight") and obj.FillColor == Color3.fromRGB(255, 0, 0) then
@@ -211,7 +211,7 @@ local paint_aura = bhelper(function(c, d, e)
           "spray",
           paint_aura_fixmsg(d.Message)
         )
-        task.wait(0.03)
+        task.wait(0.05)
       end
     end
   end
@@ -405,9 +405,9 @@ local crasher_init = bhelper(function(c, d)
           "spray",
           table.concat((function(t)local c="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=[]{}|;:,.<>?" for i=1,80 do local r=math.random(1,#c)t[i]=c:sub(r,r) end return t end)({}))
         )
-        task.wait(0.002)
+        task.wait(0.05)
       end
-      task.wait(0.04)
+      task.wait(0.1)
     end
     if brick.CanCollide then
       tool:FireServer(
