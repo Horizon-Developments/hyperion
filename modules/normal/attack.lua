@@ -181,7 +181,7 @@ local paint_aura = bhelper(function(c, d, e)
         end
       end
     end)
-
+    
     local tool = fetchtools("Paint", c, "con")
     if not tool then break end
     local hrp = localplr.Character and localplr.Character.HumanoidRootPart
@@ -198,6 +198,7 @@ local paint_aura = bhelper(function(c, d, e)
           "spray",
           paint_aura_fixmsg(d.Message)
         )
+        task.wait(0.02)
       end
     end
   end
@@ -433,9 +434,10 @@ end, "crasher_init")
 --[[
 START FRONTEND
 ]]
-local pbox = tabs.attack:AddLeftGroupbox("")
-local cbox = tabs.attack:AddRightGroupbox("")
-local dbox = tabs.attack:AddRightGroupbox("")
+local pbox = tabs.attack:AddLeftGroupbox("Paint")
+local cbox = tabs.attack:AddRightGroupbox("Crasher")
+local dbox = tabs.attack:AddRightGroupbox("Delete")
+local sbox = tabs.attack:AddRightGroupbox("Stats")
 dbox:AddToggle("delete_aura", {
   Text = "Delete Abuser",
   Default = false,
@@ -465,7 +467,8 @@ cbox:AddToggle("crasher.toggle", {
   Disabled = false,
   Callback = crasher_start
 })
-cbox:AddLabel("uni.label", {
+
+sbox:AddLabel("uni.label", {
   Text = "Blocks painted: 0\nBlocks Deleted: 0\nBlocks placed: 0",
   DoesWrap = true,
 })
