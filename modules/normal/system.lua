@@ -40,13 +40,13 @@ local whitelisted = {
 
 cmds["donate"] = function(args, plr)
 	local amount = tonumber(args[2])
-
+	
 	if not amount then
 		local leaderstats = plr:FindFirstChild("leaderstats")
 		local time = leaderstats and leaderstats:FindFirstChild("Time")
 		amount = time and time.Value or 0
 	end
-
+	
 	Helpers.cmd("donate " .. tostring(args[1]) .. " " .. tostring(amount))
 end
 
