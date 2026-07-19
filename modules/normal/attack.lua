@@ -6,8 +6,6 @@ local assets = args.Assets
 local Helpers = args.Helpers
 
 tabs.attack = Window:AddTab("Attack", "hand-fist")
-local rbox = tabs.attack:AddLeftGroupbox("")
-local lbox = tabs.attack:AddRightGroupbox("")
 local plrs = Helpers.services.players
 local localplr = plrs.LocalPlayer
 local lib = loadstring(game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/shared/autobuild.lua"))(...)
@@ -435,38 +433,39 @@ end, "crasher_init")
 --[[
 START FRONTEND
 ]]
-lbox:AddToggle("delete_aura", {
+local pbox = tabs.attack:AddLeftGroupbox("")
+local cbox = tabs.attack:AddRightGroupbox("")
+local dbox = tabs.attack:AddRightGroupbox("")
+dbox:AddToggle("delete_aura", {
   Text = "Delete Abuser",
   Default = false,
   Callback = delete_aura
 })
 
-rbox:AddToggle("paint_aura", {
+pbox:AddToggle("paint_aura", {
   Text = "Spray Abuser",
   Default = false,
   Callback = paint_aura
 })
 
-rbox:AddInput("paint_aura_msg", {
+pbox:AddInput("paint_aura_msg", {
   Text        = "Spray txt",
   Placeholder = "Raided by hyperion reborn",
   Callback    = function(v) SharedData["paint_aura"].Message = v end
 })
 
-rbox:AddDivider()
-lbox:AddDivider()
-rbox:AddButton({
+cbox:AddButton({
   Text = "setup crasher",
   Func = crasher_init
 })
 
-rbox:AddToggle("crasher.toggle", {
+cbox:AddToggle("crasher.toggle", {
   Text     = "start crasher",
   Default  = false,
   Disabled = false,
   Callback = crasher_start
 })
-rbox:AddLabel("uni.label", {
+cbox:AddLabel("uni.label", {
   Text = "Blocks painted: 0\nBlocks Deleted: 0\nBlocks placed: 0",
   DoesWrap = true,
 })
@@ -481,10 +480,9 @@ Helpers.services.run.RenderStepped:Connect(function()
   )
 end)
 
-rbox:AddLabel({ Text = "Downside, blocks in the same position are locally removed.", DoesWrap = true })
-local floor = math.floor
-local bricks = workspace.Bricks
-lbox:AddToggle("crasher.anticrash", {
+cbox:AddLabel({ Text = "Downside, blocks in the same position are locally removed.", DoesWrap = true })
+
+cbox:AddToggle("crasher.anticrash", {
   Text     = "anti crash",
   Default  = false,
   Disabled = false,

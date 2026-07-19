@@ -170,7 +170,6 @@ loadstring(game:HttpGet("https://pastebin.com/raw/zqyDSUWX"))()
     ]]):format(table.concat(args, " "))
   end
 })
-
 table.insert(commands, system); end
 
 
@@ -276,4 +275,3 @@ Helpers.on("ChatListener", function(msg)
 end)
 
 Obsidian.Options["botter@cmds.input"]:OnChanged(handleCmd)
-
