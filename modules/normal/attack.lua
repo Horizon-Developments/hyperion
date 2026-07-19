@@ -101,9 +101,7 @@ local delete_aura = bhelper(function(c, d, e)
     if not hrp then task.wait() continue end
     for _, part in ipairs(parts) do
       if part and part.Parent then
-        task.spawn(function()
-          tool:FireServer(part, hrp.Position)
-        end)
+        tool:FireServer(part, hrp.Position)
       end
     end
     task.wait(0.02)
@@ -145,17 +143,15 @@ local paint_aura = bhelper(function(c, d, e)
   if not e then return end
   if not d.Message then d.Message = "" end
   c.con = true
-  local function randomNormalId()
-    local ids = {
-      Enum.NormalId.Top,
-      Enum.NormalId.Bottom,
-      Enum.NormalId.Left,
-      Enum.NormalId.Right,
-      Enum.NormalId.Front,
-      Enum.NormalId.Back
-    }
-    return ids[math.random(#ids)]
-  end
+  local ids = {
+    Enum.NormalId.Top,
+    Enum.NormalId.Bottom,
+    Enum.NormalId.Left,
+    Enum.NormalId.Right,
+    Enum.NormalId.Front,
+    Enum.NormalId.Back
+  }
+  
   
   while c.con and task.wait(0.1) do
     local parts = {}
@@ -197,14 +193,13 @@ local paint_aura = bhelper(function(c, d, e)
         d.sprayed += 1
         tool:FireServer(
           part,
-          randomNormalId(),
+          ids[math.random(#ids)],
           hrp.Position, 
           "both \240\159\164\157",
           Color3.fromRGB(math.random(0, 255), math.random(0, 255), math.random(0, 255)),
           "spray",
           paint_aura_fixmsg(d.Message)
         )
-        task.wait(0.05)
       end
     end
   end
