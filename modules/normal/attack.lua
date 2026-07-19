@@ -211,6 +211,7 @@ local paint_aura = bhelper(function(c, d, e)
 end, "paint_aura")
 
 local crasher_start = bhelper(function(c, d, e)
+  d.Placed = 0
   if c.anticrash then
     c.anticrash:Disconnect()
     c.anticrash = nil
@@ -268,6 +269,7 @@ local crasher_start = bhelper(function(c, d, e)
     if inst.Name ~= "Brick" then
       return
     end
+    d.Placed += 1
     local pos = inst.Position
     local k = _floor(pos.X) .. "." .. _floor(pos.Y) .. "." .. _floor(pos.Z)
     local existing = _rawget(seen, k)
@@ -464,8 +466,23 @@ rbox:AddToggle("crasher.toggle", {
   Disabled = false,
   Callback = crasher_start
 })
+rbox:AddLabel("uni.label", {
+  Text = "Blocks painted: 0\nBlocks Deleted: 0\nBlocks placed: 0",
+  DoesWrap = true,
+})
 
-lbox:AddLabel({ Text = "Downside, blocks in the same position are locally removed.", DoesWrap = true })
+Helpers.services.run.RenderStepped:Connect(function()
+  Options["uni.label"]:SetText(
+    ("Blocks painted: %d\nBlocks Deleted: %d\nBlocks placed: %d"):format(
+      SharedData.paint_aura and SharedData.paint_aura.sprayed or 0,
+      SharedData.delete_aura and SharedData.delete_aura.deleted or 0,
+      SharedData.crasher_start and SharedData.crasher_start.Placed or 0
+    )
+  )
+end)
+
+
+rbox:AddLabel({ Text = "Downside, blocks in the same position are locally removed.", DoesWrap = true })
 local floor = math.floor
 local bricks = workspace.Bricks
 lbox:AddToggle("crasher.anticrash", {
