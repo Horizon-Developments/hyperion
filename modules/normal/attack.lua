@@ -223,7 +223,7 @@ local crasher_start = bhelper(function(c, d, e)
     c.seen = nil
     return
   end
-  if not SharedData["crasher_init"] or not SharedData["crasher_init"].Brick.Parent then
+  if not SharedData["crasher_init"] or not SharedData["crasher_init"].Brick or not SharedData["crasher_init"].Brick.Parent then
     return Obsidian:Notify({
       Title = "Setup crasher.",
       Description = "Cannot continue",
@@ -350,7 +350,7 @@ local crasher_init = bhelper(function(c, d)
   local conn
   conn = folder.ChildAdded:Connect(function(brick)
     if brick.Name ~= "Brick" then return end
-    local tool = fetchtools("Paint", c, "idk")
+    local tool = fetchtools("Paint")
     
     tool:FireServer(
       brick,
