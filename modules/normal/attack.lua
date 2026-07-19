@@ -150,17 +150,29 @@ local paint_aura = bhelper(function(c, d, e)
     Enum.NormalId.Back
   }
   
+  local painted = setmetatable({}, { __mode = "k" })
   
   while c.con and task.wait(0.1) do
+    local children = workspace.Bricks:GetChildren()
+  
+    for i = #children, 2, -1 do
+      local j = math.random(i)
+      children[i], children[j] = children[j], children[i]
+    end
+    
     local parts = {}
-    for _, child in ipairs(workspace.Bricks:GetChildren()) do
+    for _, child in ipairs(children) do
       if child:IsA("BasePart") and child.Name == "Brick" then
-        table.insert(parts, child)
+        if not painted[child] then
+          table.insert(parts, child)
+        end
       else
         for _, obj in ipairs(child:GetChildren()) do
           if obj:IsA("BasePart") and obj.Name == "Brick" then
-            table.insert(parts, obj)
-            if #parts >= 30 then break end
+            if not painted[obj] then
+              table.insert(parts, obj)
+              if #parts >= 30 then break end
+            end
           end
         end
       end
@@ -189,21 +201,23 @@ local paint_aura = bhelper(function(c, d, e)
     for _, part in ipairs(parts) do
       if part and part.Parent then
         d.sprayed += 1
+        painted[part] = true
         tool:FireServer(
           part,
           ids[math.random(#ids)],
-          hrp.Position, 
+          hrp.Position,
           "both \240\159\164\157",
           Color3.fromRGB(math.random(0, 255), math.random(0, 255), math.random(0, 255)),
           "spray",
           paint_aura_fixmsg(d.Message)
         )
-        task.wait(0.02)
+        task.wait()
       end
     end
   end
+  
   for _, obj in ipairs(workspace.Bricks:GetDescendants()) do
-    if (obj.Parent.Parent == workspace.Bricks or obj.Parent == workspace.Bricks) and obj:IsA("Highlight") and highlight.FillColor == Color3.fromRGB(255, 0, 0) then
+    if (obj.Parent.Parent == workspace.Bricks or obj.Parent == workspace.Bricks) and obj:IsA("Highlight") and obj.FillColor == Color3.fromRGB(255, 0, 0) then
       obj:Destroy()
     end
   end
