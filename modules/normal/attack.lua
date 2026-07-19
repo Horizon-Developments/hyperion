@@ -353,7 +353,6 @@ local crasher_init = bhelper(function(c, d)
   conn = folder.ChildAdded:Connect(function(brick)
     if brick.Name ~= "Brick" then return end
     local tool = fetchtools("Paint")
-    
     tool:FireServer(
       brick,
       Enum.NormalId.Top,
@@ -363,7 +362,7 @@ local crasher_init = bhelper(function(c, d)
       "collide",
       ""
     )
-    task.wait(0.2)
+    task.wait(0.3)
     tool:FireServer(
       brick,
       Enum.NormalId.Top,
@@ -373,8 +372,9 @@ local crasher_init = bhelper(function(c, d)
       "neon",
       ""
     )
-    task.wait(0.2)
+    task.wait(0.3)
     local sides = {
+      {Enum.NormalId.Top,    brick.Position + brick.CFrame.UpVector * brick.Size.Y / 2},
       {Enum.NormalId.Bottom, brick.Position - brick.CFrame.UpVector * brick.Size.Y / 2},
       {Enum.NormalId.Front,  brick.Position + brick.CFrame.LookVector * brick.Size.Z / 2},
       {Enum.NormalId.Back,   brick.Position - brick.CFrame.LookVector * brick.Size.Z / 2},
@@ -392,7 +392,7 @@ local crasher_init = bhelper(function(c, d)
           "spray",
           table.concat((function(t)local c="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=[]{}|;:,.<>?" for i=1,80 do local r=math.random(1,#c)t[i]=c:sub(r,r) end return t end)({}))
         )
-        task.wait(0.001)
+        task.wait(0.002)
       end
       task.wait(0.04)
     end
@@ -472,7 +472,7 @@ rbox:AddLabel("uni.label", {
 })
 
 Helpers.services.run.RenderStepped:Connect(function()
-  Options["uni.label"]:SetText(
+  Obsidian.Options["uni.label"]:SetText(
     ("Blocks painted: %d\nBlocks Deleted: %d\nBlocks placed: %d"):format(
       SharedData.paint_aura and SharedData.paint_aura.sprayed or 0,
       SharedData.delete_aura and SharedData.delete_aura.deleted or 0,
