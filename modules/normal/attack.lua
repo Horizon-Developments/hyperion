@@ -240,7 +240,7 @@ local paint_aura = bhelper(function(env, shared, enabled)
       Enum.NormalId.Left,
       Enum.NormalId.Right,
   }
-  while env.loop and task.wait(0.05) do
+  while env.loop  do
     local parts = env.pick(30)
     local tool = fetchtool("Paint", env, "loop")
     if not tool then break end   -- FIX: prevent nil tool error when toggled off
@@ -270,7 +270,7 @@ local paint_aura = bhelper(function(env, shared, enabled)
         env.fix_msg(msg)
       )
       shared.sprayed += 1
-      task.wait(0.05)
+      task.wait(0.05 + math.random(-30, 30) / 1000)
       local hl = part:FindFirstChild("HyperionHL")
       if hl then hl:Destroy() end
     end
