@@ -24,7 +24,7 @@ local function bhelper(fn, name)
     task.spawn(fn,Env[name],SharedData[name],...)
   end
 end
-local function waitfetchtool(tool, tbl, tblv)
+local function fetchtool(tool, tbl, tblv)
   local result
   local t = 0
   repeat
