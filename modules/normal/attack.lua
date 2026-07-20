@@ -60,6 +60,7 @@ end
 
 
 local delete_aura = bhelper(function(env, shared, enabled)
+  shared.deleted = 0
   if env.loop then
     env.loop = nil
   end
@@ -153,6 +154,7 @@ local delete_aura = bhelper(function(env, shared, enabled)
     for _, part in ipairs(parts) do
       tool:FireServer(part, (localplr.Character or localplr.CharacterAdded:Wait()):WaitForChild("HumanoidRootPart").Position)
       task.wait(0.1)
+      shared.deleted += 1
     end
 
     local remaining = #parts
@@ -184,6 +186,7 @@ end, "delete_aura")
 
 
 local paint_aura = bhelper(function(env, shared, enabled)
+  shared.sparyed = 0
   if env.loop then
     env.loop = nil
   end
@@ -292,6 +295,7 @@ local paint_aura = bhelper(function(env, shared, enabled)
         "spray",
         env.fix_msg(shared.Message)
       )
+      shared.sparyed += 0
       task.wait(0.1)
       local hl = part["HyperionHL"]
       if hl then hl:Destroy() end
