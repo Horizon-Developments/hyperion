@@ -8,8 +8,6 @@ local Helpers = args.Helpers
 tabs.attack = Window:AddTab("Attack", "hand-fist")
 local plrs = Helpers.services.players
 local localplr = plrs.LocalPlayer
-local lib = loadstring(game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/shared/autobuild.lua"))(...)
-
 
 --[[
 START BACKEND
@@ -20,10 +18,11 @@ local backend = {}
 local function bhelper(fn, name)
   Env[name] = {}
   SharedData[name] = {}
-  backend[name] = function(...)
+  return backend[name] = function(...)
     task.spawn(fn,Env[name],SharedData[name],...)
   end
 end
+
 local function fetchtool(tool, tbl, tblv)
   local result
   local t = 0
@@ -50,12 +49,6 @@ local function fetchtool(tool, tbl, tblv)
   end
   return result:FindFirstChild("Event", true)
 end
-local function fetchtoolOrNil(tool)
-  local t = localplr.Backpack:FindFirstChild(tool, true) or (localplr.Character and localplr.Character:FindFirstChild(tool, true))
-  return t and t:FindFirstChild("Event", true) 
-end
-
-
 
 
 
@@ -138,7 +131,7 @@ local delete_aura = bhelper(function(env, shared, enabled)
   
   while env.loop and task.wait(0.05) do
     local parts = env.pick(30)
-    local tool = fetchtools("Delete", env, "loop")
+    local tool = fetchtool("Delete", env, "loop")
     
     for _, part in ipairs(parts) do
       local highlight = Instance.new("Highlight")
@@ -186,7 +179,7 @@ end, "delete_aura")
 
 
 local paint_aura = bhelper(function(env, shared, enabled)
-  shared.sparyed = 0
+  shared.sprayed = 0
   if env.loop then
     env.loop = nil
   end
@@ -272,7 +265,7 @@ local paint_aura = bhelper(function(env, shared, enabled)
   }
   while env.loop and task.wait(0.05) do
     local parts = env.pick(30)
-    local tool = fetchtools("Paint", env, "loop")
+    local tool = fetchtool("Paint", env, "loop")
     
     for _, part in ipairs(parts) do
       local highlight = Instance.new("Highlight")
@@ -288,14 +281,14 @@ local paint_aura = bhelper(function(env, shared, enabled)
     for _, part in ipairs(parts) do
       tool:FireServer(
         part,
-        id[math.random(#ids)],
+        id[math.random(#id)],
         (localplr.Character or localplr.CharacterAdded:Wait()):WaitForChild("HumanoidRootPart").Position,
         "both \240\159\164\157",
         Color3.fromRGB(math.random(0, 255), math.random(0, 255), math.random(0, 255)),
         "spray",
         env.fix_msg(shared.Message)
       )
-      shared.sparyed += 0
+      shared.sprayed += 1
       task.wait(0.1)
       local hl = part["HyperionHL"]
       if hl then hl:Destroy() end
@@ -367,7 +360,7 @@ local crasher_start = bhelper(function(c, d, e)
   c.thread = task.spawn(function()
     while task.wait() do
       local b = SharedData["crasher_init"].Brick
-      local t = fetchtools("Build", c, "thread")
+      local t = fetchtool("Build", c, "thread")
       if not t then
         return
       end
@@ -485,7 +478,7 @@ local crasher_init = bhelper(function(c, d)
   local conn
   conn = folder.ChildAdded:Connect(function(brick)
     if brick.Name ~= "Brick" then return end
-    local tool = fetchtools("Paint")
+    local tool = fetchtool("Paint")
     tool:FireServer(
       brick,
       Enum.NormalId.Top,
