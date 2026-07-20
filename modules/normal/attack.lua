@@ -14,11 +14,12 @@ START BACKEND
 ]]
 local Env = {}
 local SharedData = {}
-local backend = {}
+
+
 local function bhelper(fn, name)
   Env[name] = {}
   SharedData[name] = {}
-  return backend[name] = function(...)
+  return function(...)
     task.spawn(fn,Env[name],SharedData[name],...)
   end
 end
