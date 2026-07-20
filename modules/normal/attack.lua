@@ -60,7 +60,7 @@ local delete_aura = bhelper(function(env, shared, enabled)
   end
   if env.Highlighted then
     for _, v in ipairs(env.Highlighted) do
-      local hl = v["HyperionHL"]
+      local hl = v:FindFirstChild("HyperionHL")
       if hl then hl:Destroy() end
     end
   end
@@ -186,7 +186,7 @@ local paint_aura = bhelper(function(env, shared, enabled)
   end
   if env.Highlighted then
     for _, v in ipairs(env.Highlighted) do
-      local hl = v["HyperionHL"]
+      local hl = v:FindFirstChild("HyperionHL")
       if hl then hl:Destroy() end
     end
   end
@@ -291,7 +291,7 @@ local paint_aura = bhelper(function(env, shared, enabled)
       )
       shared.sprayed += 1
       task.wait(0.1)
-      local hl = part["HyperionHL"]
+      local hl = part:FindFirstChild("HyperionHL"]
       if hl then hl:Destroy() end
     end
   end
@@ -308,19 +308,15 @@ Env["paint_aura"]["fix_msg"] = function(msg)
     return msg
   end
   
-  
   local tags = {}
-  msg = msg:gsub("<font.-</font>", function(tag)
+  return msg:gsub("<font.-</font>", function(tag)
     tags[#tags + 1] = tag
     return "\1" .. #tags .. "\1"
-  end)
-  msg = msg:gsub(".", function(c)
+  end):gsub(".", function(c)
     return math.random() < 0.1 and ("<b>" .. c .. "</b>") or c
-  end)
-  msg = msg:gsub("\1(%d+)\1", function(i)
+  end):gsub("\1(%d+)\1", function(i)
     return tags[tonumber(i)]
   end)
-  return msg
 end
 
 
