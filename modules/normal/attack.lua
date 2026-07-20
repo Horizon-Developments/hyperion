@@ -130,9 +130,10 @@ local delete_aura = bhelper(function(env, shared, enabled)
   
   env.loop = enabled
   
-  while env.loop and task.wait(0.05) do
+  while env.loop and task.wait(0.1) do
     local parts = env.pick(30)
     local tool = fetchtool("Delete", env, "loop")
+    if not tool then break end   -- FIX: prevent nil tool error when toggled off
     
     for _, part in ipairs(parts) do
       local highlight = Instance.new("Highlight")
@@ -147,33 +148,8 @@ local delete_aura = bhelper(function(env, shared, enabled)
     
     for _, part in ipairs(parts) do
       tool:FireServer(part, (localplr.Character or localplr.CharacterAdded:Wait()):WaitForChild("HumanoidRootPart").Position)
-      task.wait(0.1)
+      task.wait(0.05)
       shared.deleted += 1
-    end
-
-    local remaining = #parts
-    if remaining > 0 then
-      local completed = Instance.new("BindableEvent")
-      for _, part in ipairs(parts) do
-        if not part.Parent then
-          remaining -= 1
-        else
-          part.Destroying:Connect(function()
-            remaining -= 1
-            if remaining == 0 then
-              completed:Fire()
-            end
-          end)
-        end
-      end
-      if remaining > 0 then
-        local timeoutThread = task.delay(2, function()
-          completed:Fire()
-        end)
-        completed.Event:Wait()
-        task.cancel(timeoutThread)
-      end
-      completed:Destroy()
     end
   end
 end, "delete_aura")
@@ -267,6 +243,10 @@ local paint_aura = bhelper(function(env, shared, enabled)
   while env.loop and task.wait(0.05) do
     local parts = env.pick(30)
     local tool = fetchtool("Paint", env, "loop")
+    if not tool then break end   -- FIX: prevent nil tool error when toggled off
+    
+    -- FIX: default message to avoid nil errors in fix_msg
+    local msg = shared.Message or "Raided by hyperion reborn"
     
     for _, part in ipairs(parts) do
       local highlight = Instance.new("Highlight")
@@ -287,10 +267,10 @@ local paint_aura = bhelper(function(env, shared, enabled)
         "both \240\159\164\157",
         Color3.fromRGB(math.random(0, 255), math.random(0, 255), math.random(0, 255)),
         "spray",
-        env.fix_msg(shared.Message)
+        env.fix_msg(msg)
       )
       shared.sprayed += 1
-      task.wait(0.1)
+      task.wait(0.05)
       local hl = part:FindFirstChild("HyperionHL")
       if hl then hl:Destroy() end
     end
@@ -298,16 +278,16 @@ local paint_aura = bhelper(function(env, shared, enabled)
 end, "paint_aura")
 
 Env["paint_aura"]["fix_msg"] = function(msg)
+  msg = msg or ""
   local advertisements = {
-    [[Join <font color="#FF0000">Hyperion</font> <font color="#FFD700">Reborn</font>]],
-    [[Join Now! <font color="#FF0000">xbkVzSxDBy</font>]],
-    [[<font color="#FF0000">Hyperion</font> <font color="#FFD700">Reborn</font>]]
+    [[Join Hyperion Reborn!]],
+    [[Join Now! \240\159\145\137 xbkVzSxDBy \240\159\145\136]],
+    [[Use Hyperion Reborn!]]
   }
   msg = math.random() < 0.6 and msg or advertisements[math.random(#advertisements)]
   if tonumber(msg) then --// isA image
     return msg
   end
-  
   local tags = {}
   return msg:gsub("<font.-</font>", function(tag)
     tags[#tags + 1] = tag
@@ -316,9 +296,14 @@ Env["paint_aura"]["fix_msg"] = function(msg)
     return math.random() < 0.1 and ("<b>" .. c .. "</b>") or c
   end):gsub("\1(%d+)\1", function(i)
     return tags[tonumber(i)]
-  end)
+  end) .. " " .. (function()
+    local l = "qwertyuiopsdhjklzxvbnm"
+    local _1 = math.random(#l)
+    local _2 = math.random(#l)
+    local _3 = math.random(#l)
+    return l:sub(_1, _1) .. l:sub(_2, _2) .. (math.random() > 0.2 and l:sub(_3,_3) or "")
+  end)()
 end
-
 
 
 
@@ -475,7 +460,16 @@ local crasher_init = bhelper(function(c, d)
   local conn
   conn = folder.ChildAdded:Connect(function(brick)
     if brick.Name ~= "Brick" then return end
-    local tool = fetchtool("Paint")
+    local tool = fetchtool("Paint", (function()
+      local c = {}
+      return c
+      task.delay(3, function()
+        c.d = true
+      end)
+    end)(), "d")
+    if not tool then
+      break
+    end
     tool:FireServer(
       brick,
       Enum.NormalId.Top,
@@ -505,7 +499,7 @@ local crasher_init = bhelper(function(c, d)
       {Enum.NormalId.Right,  brick.Position + brick.CFrame.RightVector * brick.Size.X / 2},
     }
     for _, side in ipairs(sides) do
-      for i = 1, 50 do
+      for i = 1, 25 do
         tool:FireServer(
           brick,
           side[1],
@@ -513,7 +507,7 @@ local crasher_init = bhelper(function(c, d)
           "both \240\159\164\157",
           Color3.new(0, 0, 0),
           "spray",
-          table.concat((function(t)local c="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=[]{}|;:,.<>?" for i=1,80 do local r=math.random(1,#c)t[i]=c:sub(r,r) end return t end)({}))
+          table.concat((function(t)local c="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=[]{}|;:,.<>?" for i=1,math.random(70,80) do local r=math.random(1,#c)t[i]=c:sub(r,r) end return t end)({}))
         )
         task.wait(0.1)
       end
