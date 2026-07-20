@@ -193,6 +193,7 @@ local paint_aura = bhelper(function(env, shared, enabled)
       if hl then hl:Destroy() end
     end
   end
+  
   env.Highlighted = {}
   if not env.pick then
     local pool = {}
@@ -258,7 +259,14 @@ local paint_aura = bhelper(function(env, shared, enabled)
   end
   
   env.loop = enabled
-  
+  local id = {
+      Enum.NormalId.Top,
+      Enum.NormalId.Bottom,
+      Enum.NormalId.Front,
+      Enum.NormalId.Back,
+      Enum.NormalId.Left,
+      Enum.NormalId.Right,
+  }
   while env.loop and task.wait(0.05) do
     local parts = env.pick(30)
     local tool = fetchtools("Paint", env, "loop")
@@ -277,15 +285,15 @@ local paint_aura = bhelper(function(env, shared, enabled)
     for _, part in ipairs(parts) do
       tool:FireServer(
         part,
-        ids[math.random(#ids)],
+        id[math.random(#ids)],
         (localplr.Character or localplr.CharacterAdded:Wait()):WaitForChild("HumanoidRootPart").Position,
         "both \240\159\164\157",
         Color3.fromRGB(math.random(0, 255), math.random(0, 255), math.random(0, 255)),
         "spray",
-        env.fix_msg(d.Message)
+        env.fix_msg(shared.Message)
       )
       task.wait(0.1)
-      local hl = v["HyperionHL"]
+      local hl = part["HyperionHL"]
       if hl then hl:Destroy() end
     end
   end
