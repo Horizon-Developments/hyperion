@@ -291,7 +291,7 @@ local paint_aura = bhelper(function(env, shared, enabled)
       )
       shared.sprayed += 1
       task.wait(0.1)
-      local hl = part:FindFirstChild("HyperionHL"]
+      local hl = part:FindFirstChild("HyperionHL")
       if hl then hl:Destroy() end
     end
   end
