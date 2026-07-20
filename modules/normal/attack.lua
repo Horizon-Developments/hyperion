@@ -10,19 +10,21 @@ local plrs = Helpers.services.players
 local localplr = plrs.LocalPlayer
 local lib = loadstring(game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/shared/autobuild.lua"))(...)
 
-local SharedData = {}
+
 --[[
 START BACKEND
 ]]
-local Events = {}
+local Env = {}
+local SharedData = {}
+local backend = {}
 local function bhelper(fn, name)
-  Events[name] = {}
+  Env[name] = {}
   SharedData[name] = {}
-  return function(...)
-    task.spawn(fn,Events[name],SharedData[name],...)
+  backend[name] = function(...)
+    task.spawn(fn,Env[name],SharedData[name],...)
   end
 end
-local function fetchtools(tool, tbl, tblv)
+local function waitfetchtool(tool, tbl, tblv)
   local result
   local t = 0
   repeat
@@ -48,77 +50,259 @@ local function fetchtools(tool, tbl, tblv)
   end
   return result:FindFirstChild("Event", true)
 end
+local function fetchtoolOrNil(tool)
+  local t = localplr.Backpack:FindFirstChild(tool, true) or (localplr.Character and localplr.Character:FindFirstChild(tool, true))
+  return t and t:FindFirstChild("Event", true) 
+end
 
 
-local delete_aura = bhelper(function(c, d, e)
-  d.deleted = 0
-  if c.con then
-    c.con:Disconnect()
-    c.con = nil
+
+
+
+local delete_aura = bhelper(function(env, shared, enabled)
+  if env.loop then
+    env.loop = nil
   end
-  if not e then return end
-  c.con = workspace.Bricks.DescendantRemoving:Connect(function(obj)
-    if obj.Name == "Brick" then
-      d.deleted += 1
+  if env.Highlighted then
+    for _, v in ipairs(env.Highlighted) do
+      local hl = v["HyperionHL"]
+      if hl then hl:Destroy() end
     end
-  end)
-  while c.con do
-    local parts = {}
-    for _, child in ipairs(workspace.Bricks:GetChildren()) do
-      if child:IsA("BasePart") and child.Name == "Brick" then
-        table.insert(parts, child)
-      else
-        for _, obj in ipairs(child:GetChildren()) do
-          if obj:IsA("BasePart") and obj.Name == "Brick" then
-            table.insert(parts, obj)
-            if #parts >= 30 then break end
-          end
-        end
+  end
+  env.Highlighted = {}
+  if not env.pick then
+    local pool = {}
+    local brickIndex = {}
+    local function addBrick(brick)
+      local i = #pool + 1
+      pool[i] = brick
+      brickIndex[brick] = i
+    end
+    local function removeBrick(brick)
+      local i = brickIndex[brick]
+      if not i then return end
+      local last = pool[#pool]
+      pool[i] = last
+      pool[#pool] = nil
+      brickIndex[last] = i
+      brickIndex[brick] = nil
+    end
+    local function watchFolder(folder)
+      for _, brick in ipairs(folder:GetChildren()) do
+        addBrick(brick)
       end
-      if #parts >= 30 then break end
+      folder.ChildAdded:Connect(addBrick)
+      folder.ChildRemoved:Connect(removeBrick)
     end
-
-    if #parts == 0 then task.wait() continue end
-
-    task.spawn(function()
-      for _, part in ipairs(parts) do
-        if not part:FindFirstChildOfClass("Highlight") then
-          local highlight = Instance.new("Highlight")
-          highlight.Adornee = part
-          highlight.FillColor = Color3.fromRGB(255, 0, 0)
-          highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-          highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-          highlight.Parent = part
-        end
+    for _, child in ipairs(workspace.Bricks:GetChildren()) do
+      if child:IsA("BasePart") then
+        addBrick(child)
+      elseif child:IsA("Folder") then
+        watchFolder(child)
+      end
+    end
+    workspace.Bricks.ChildAdded:Connect(function(child)
+      if child:IsA("Folder") then
+        watchFolder(child)
+      end
+    end)
+    workspace.Bricks.ChildRemoved:Connect(function(child)
+      if child:IsA("BasePart") then
+        removeBrick(child)
       end
     end)
 
-    local tool = fetchtools("Delete", c, "con")
-    if not tool then break end
-    local hrp = localplr.Character and localplr.Character.HumanoidRootPart
-    if not hrp then task.wait() continue end
-    for _, part in ipairs(parts) do
-      if part and part.Parent then
-        tool:FireServer(part, hrp.Position)
+    env.pick = function(k)
+      local n = #pool
+      k = math.min(k, n)
+      if k == n then
+        return table.move(pool, 1, n, 1, table.create(n))
       end
+      local out = table.create(k)
+      local seen = {}
+      local count = 0
+      while count < k do
+        local i = math.random(n)
+        if not seen[i] then
+          seen[i] = true
+          count += 1
+          out[count] = pool[i]
+        end
+      end
+      return out
     end
-    task.wait(0.05)
   end
-  for _, obj in ipairs(workspace.Bricks:GetDescendants()) do
-    if obj:IsA("Highlight") then
-      obj:Destroy()
+  
+  env.loop = enabled
+  
+  while env.loop and task.wait(0.05) do
+    local parts = env.pick(30)
+    local tool = fetchtools("Delete", env, "loop")
+    
+    for _, part in ipairs(parts) do
+      local highlight = Instance.new("Highlight")
+      highlight.Name = "HyperionHL"
+      highlight.Adornee = part
+      highlight.FillColor = Color3.fromRGB(255, 0, 0)
+      highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+      highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+      highlight.Parent = part
+      table.insert(env.Highlighted, part)
+    end
+    
+    for _, part in ipairs(parts) do
+      tool:FireServer(part, (localplr.Character or localplr.CharacterAdded:Wait()):WaitForChild("HumanoidRootPart").Position)
+      task.wait(0.1)
+    end
+
+    local remaining = #parts
+    if remaining > 0 then
+      local completed = Instance.new("BindableEvent")
+      for _, part in ipairs(parts) do
+        if not part.Parent then
+          remaining -= 1
+        else
+          part.Destroying:Connect(function()
+            remaining -= 1
+            if remaining == 0 then
+              completed:Fire()
+            end
+          end)
+        end
+      end
+      if remaining > 0 then
+        local timeoutThread = task.delay(2, function()
+          completed:Fire()
+        end)
+        completed.Event:Wait()
+        task.cancel(timeoutThread)
+      end
+      completed:Destroy()
     end
   end
 end, "delete_aura")
 
 
-local function paint_aura_fixmsg(msg)
+local paint_aura = bhelper(function(env, shared, enabled)
+  if env.loop then
+    env.loop = nil
+  end
+  if env.Highlighted then
+    for _, v in ipairs(env.Highlighted) do
+      local hl = v["HyperionHL"]
+      if hl then hl:Destroy() end
+    end
+  end
+  env.Highlighted = {}
+  if not env.pick then
+    local pool = {}
+    local brickIndex = {}
+    local function addBrick(brick)
+      local i = #pool + 1
+      pool[i] = brick
+      brickIndex[brick] = i
+    end
+    local function removeBrick(brick)
+      local i = brickIndex[brick]
+      if not i then return end
+      local last = pool[#pool]
+      pool[i] = last
+      pool[#pool] = nil
+      brickIndex[last] = i
+      brickIndex[brick] = nil
+    end
+    local function watchFolder(folder)
+      for _, brick in ipairs(folder:GetChildren()) do
+        addBrick(brick)
+      end
+      folder.ChildAdded:Connect(addBrick)
+      folder.ChildRemoved:Connect(removeBrick)
+    end
+    for _, child in ipairs(workspace.Bricks:GetChildren()) do
+      if child:IsA("BasePart") then
+        addBrick(child)
+      elseif child:IsA("Folder") then
+        watchFolder(child)
+      end
+    end
+    workspace.Bricks.ChildAdded:Connect(function(child)
+      if child:IsA("Folder") then
+        watchFolder(child)
+      end
+    end)
+    workspace.Bricks.ChildRemoved:Connect(function(child)
+      if child:IsA("BasePart") then
+        removeBrick(child)
+      end
+    end)
+
+    env.pick = function(k)
+      local n = #pool
+      k = math.min(k, n)
+      if k == n then
+        return table.move(pool, 1, n, 1, table.create(n))
+      end
+      local out = table.create(k)
+      local seen = {}
+      local count = 0
+      while count < k do
+        local i = math.random(n)
+        if not seen[i] then
+          seen[i] = true
+          count += 1
+          out[count] = pool[i]
+        end
+      end
+      return out
+    end
+  end
+  
+  env.loop = enabled
+  
+  while env.loop and task.wait(0.05) do
+    local parts = env.pick(30)
+    local tool = fetchtools("Paint", env, "loop")
+    
+    for _, part in ipairs(parts) do
+      local highlight = Instance.new("Highlight")
+      highlight.Name = "HyperionHL"
+      highlight.Adornee = part
+      highlight.FillColor = Color3.fromRGB(255, 0, 0)
+      highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+      highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+      highlight.Parent = part
+      table.insert(env.Highlighted, part)
+    end
+    
+    for _, part in ipairs(parts) do
+      tool:FireServer(
+        part,
+        ids[math.random(#ids)],
+        (localplr.Character or localplr.CharacterAdded:Wait()):WaitForChild("HumanoidRootPart").Position,
+        "both \240\159\164\157",
+        Color3.fromRGB(math.random(0, 255), math.random(0, 255), math.random(0, 255)),
+        "spray",
+        env.fix_msg(d.Message)
+      )
+      task.wait(0.1)
+      local hl = v["HyperionHL"]
+      if hl then hl:Destroy() end
+    end
+  end
+end, "paint_aura")
+
+Env["paint_aura"]["fix_msg"] = function(msg)
   local advertisements = {
     [[Join <font color="#FF0000">Hyperion</font> <font color="#FFD700">Reborn</font>]],
     [[Join Now! <font color="#FF0000">xbkVzSxDBy</font>]],
     [[<font color="#FF0000">Hyperion</font> <font color="#FFD700">Reborn</font>]]
   }
   msg = math.random() < 0.6 and msg or advertisements[math.random(#advertisements)]
+  if tonumber(msg) then --// isA image
+    return msg
+  end
+  
+  
   local tags = {}
   msg = msg:gsub("<font.-</font>", function(tag)
     tags[#tags + 1] = tag
@@ -133,99 +317,19 @@ local function paint_aura_fixmsg(msg)
   return msg
 end
 
-local paint_aura = bhelper(function(c, d, e)
-  d.sprayed = 0
-  if c.con then
-    c.con = nil
-  end
-  if not e then return end
-  if not d.Message then d.Message = "" end
-  c.con = true
-  local ids = {
-    Enum.NormalId.Top,
-    Enum.NormalId.Bottom,
-    Enum.NormalId.Left,
-    Enum.NormalId.Right,
-    Enum.NormalId.Front,
-    Enum.NormalId.Back
-  }
-  
-  local painted = setmetatable({}, { __mode = "k" })
-  
-  while c.con and task.wait(0.1) do
-    local children = workspace.Bricks:GetChildren()
-  
-    for i = #children, 2, -1 do
-      local j = math.random(i)
-      children[i], children[j] = children[j], children[i]
-    end
-    
-    local parts = {}
-    for _, child in ipairs(children) do
-      if child:IsA("BasePart") and child.Name == "Brick" then
-        if not painted[child] then
-          table.insert(parts, child)
-        end
-      else
-        for _, obj in ipairs(child:GetChildren()) do
-          if obj:IsA("BasePart") and obj.Name == "Brick" then
-            if not painted[obj] then
-              table.insert(parts, obj)
-              if #parts >= 30 then break end
-            end
-          end
-        end
-      end
-      if #parts >= 30 then break end
-    end
-    
-    if #parts == 0 then task.wait() continue end
-    
-    task.spawn(function()
-      for _, part in ipairs(parts) do
-        if not part:FindFirstChildOfClass("Highlight") then
-          local highlight = Instance.new("Highlight")
-          highlight.Adornee = part
-          highlight.FillColor = Color3.fromRGB(255, 0, 0)
-          highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-          highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-          highlight.Parent = part
-        end
-      end
-    end)
-    
-    local tool = fetchtools("Paint", c, "con")
-    if not tool then break end
-    local hrp = localplr.Character and localplr.Character.HumanoidRootPart
-    if not hrp then task.wait() continue end
-    for _, part in ipairs(parts) do
-      if part and part.Parent then
-        d.sprayed += 1
-        painted[part] = true
-        
-        tool:FireServer(
-          part,
-          ids[math.random(#ids)],
-          hrp.Position,
-          "both \240\159\164\157",
-          Color3.fromRGB(math.random(0, 255), math.random(0, 255), math.random(0, 255)),
-          "spray",
-          paint_aura_fixmsg(d.Message)
-        )
-        
-        if part:WaitForChild("spray", 0.1) then
-          task.wait(0.05)
-        end
-      end
-    end
-  end
-  
-  for _, obj in ipairs(workspace.Bricks:GetDescendants()) do
-    if obj:IsA("Highlight") then
-      obj:Destroy()
-    end
-  end
-end, "paint_aura")
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 local crasher_start = bhelper(function(c, d, e)
   d.Placed = 0
@@ -487,7 +591,7 @@ cbox:AddToggle("crasher.toggle", {
 })
 
 sbox:AddLabel("uni.label", {
-  Text = "Blocks painted: 0\nBlocks Deleted: 0\nBlocks placed: 0",
+  Text = "Blocks painted: 0\nBlocks Deleted: 0\nBlocks placed: 0\n",
   DoesWrap = true,
 })
 
