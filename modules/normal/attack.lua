@@ -10,19 +10,107 @@ local plrs = Helpers.services.players
 local localplr = plrs.LocalPlayer
 
 --[[
-START BACKEND
+START FE
 ]]
+local pbox = tabs.attack:AddLeftGroupbox("Paint")
+local cbox = tabs.attack:AddLeftGroupbox("Crasher")
+local dbox = tabs.attack:AddRightGroupbox("Delete")
+local sbox = tabs.attack:AddRightGroupbox("Stats")
+
+dbox:AddToggle("delete_aura@attack.lua", {
+  Text = "Delete Aura",
+  Default = false
+})
+
+pbox:AddToggle("paint_aura@attack.lua", {
+  Text = "Spray Aura",
+  Default = false
+})
+pbox:AddInput("paint_msg@attack.lua", {
+  Text        = "Spray txt",
+  Placeholder = "ez"
+})
+pbox:AddToggle("paint_unanchor@attack.lua", {
+  Text     = "anti crash",
+  Default  = false,
+  Disabled = false
+})
+pbox:AddToggle("paint_toxic@attack.lua", {
+  Text     = "anti crash",
+  Default  = false,
+  Disabled = false
+})
+
+cbox:AddButton("crasher_init@attack.lua",{
+  Text = "setup crasher"
+})
+
+cbox:AddToggle("crasher_start@attack.lua", {
+  Text     = "start crasher",
+  Default  = false,
+  Disabled = false
+})
+
+cbox:AddLabel({ Text = "Downside, blocks in the same position are locally removed.", DoesWrap = true })
+
+cbox:AddToggle("anticrash@attack.lua", {
+  Text     = "anti crash",
+  Default  = false,
+  Disabled = false,
+})
+
+sbox:AddLabel("stats@attack.lua", {
+  Text = " ",
+  DoesWrap = true,
+})
+--[[
+START BE
+]]
+
+local stats = {}
+Helpers.services.run.RenderStepped:Connect(function()
+  local text = ""
+  for _, e in ipairs(stats) do
+    text ..= e.name .. ": " .. e.value .. (e.on and " (on)" or " (off)") .. "\n"
+  end
+  Obsidian.Labels["stats@attack.lua"]:SetText(text)
+end)
+
 local Env = {}
-local SharedData = {}
+local Shared = {}
+local Funcs = {}
 
-
-local function bhelper(fn, name)
+local function register(fn, name)
   Env[name] = {}
-  SharedData[name] = {}
-  return function(...)
-    task.spawn(fn,Env[name],SharedData[name],...)
+  Shared[name] = {}
+  Funcs[name] = function(...)
+    task.spawn(fn,Env[name],Shared[name],...)
   end
 end
+
+register(function(env, shared, enabled)
+  
+end,"delete_aura@attack.lua")
+
+register(function(env, shared, enabled)
+  
+  
+end,"")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 local function fetchtool(tool, tbl, tblv)
   local result
@@ -50,8 +138,6 @@ local function fetchtool(tool, tbl, tblv)
   end
   return result:FindFirstChild("Event", true)
 end
-
-
 
 local delete_aura = bhelper(function(env, shared, enabled)
   shared.deleted = 0
@@ -153,7 +239,6 @@ local delete_aura = bhelper(function(env, shared, enabled)
     end
   end
 end, "delete_aura")
-
 
 local paint_aura = bhelper(function(env, shared, enabled)
   shared.sprayed = 0
@@ -304,19 +389,6 @@ Env["paint_aura"]["fix_msg"] = function(msg)
     return l:sub(_1, _1) .. l:sub(_2, _2) .. (math.random() > 0.2 and l:sub(_3,_3) or "")
   end)()
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 local crasher_start = bhelper(function(c, d, e)
   d.Placed = 0
@@ -546,66 +618,3 @@ local crasher_init = bhelper(function(c, d)
     )
   end)
 end, "crasher_init")
-
-
-
---[[
-START FRONTEND
-]]
-local pbox = tabs.attack:AddLeftGroupbox("Paint")
-local cbox = tabs.attack:AddRightGroupbox("Crasher")
-local dbox = tabs.attack:AddRightGroupbox("Delete")
-local sbox = tabs.attack:AddRightGroupbox("Stats")
-dbox:AddToggle("delete_aura", {
-  Text = "Delete Abuser",
-  Default = false,
-  Callback = delete_aura
-})
-
-pbox:AddToggle("paint_aura", {
-  Text = "Spray Abuser",
-  Default = false,
-  Callback = paint_aura
-})
-
-pbox:AddInput("paint_aura_msg", {
-  Text        = "Spray txt",
-  Placeholder = "Raided by hyperion reborn",
-  Callback    = function(v) SharedData["paint_aura"].Message = v end
-})
-
-cbox:AddButton({
-  Text = "setup crasher",
-  Func = crasher_init
-})
-
-cbox:AddToggle("crasher.toggle", {
-  Text     = "start crasher",
-  Default  = false,
-  Disabled = false,
-  Callback = crasher_start
-})
-
-sbox:AddLabel("uni.label", {
-  Text = "Blocks painted: 0\nBlocks Deleted: 0\nBlocks placed: 0\n",
-  DoesWrap = true,
-})
-
-Helpers.services.run.RenderStepped:Connect(function()
-  Obsidian.Labels["uni.label"]:SetText(
-    ("Blocks painted: %d\nBlocks Deleted: %d\nBlocks placed: %d"):format(
-      SharedData.paint_aura and SharedData.paint_aura.sprayed or 0,
-      SharedData.delete_aura and SharedData.delete_aura.deleted or 0,
-      SharedData.crasher_start and SharedData.crasher_start.Placed or 0
-    )
-  )
-end)
-
-cbox:AddLabel({ Text = "Downside, blocks in the same position are locally removed.", DoesWrap = true })
-
-cbox:AddToggle("crasher.anticrash", {
-  Text     = "anti crash",
-  Default  = false,
-  Disabled = false,
-  Callback = crasher_anti
-})

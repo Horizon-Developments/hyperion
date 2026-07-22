@@ -5,6 +5,83 @@ local Window = args.Window
 local Obsidian = args.Obsidian
 local assets = args.Assets
 local Helpers = args.Helpers
+
+ 
+ 
+ 
+ 
+ 
+ 
+local report = function() end
+
+--[[ BACKEND ]]
+
+local Env = {}
+local SharedData = {}
+local fns = {}
+local function bhelper(fn, name)
+  Env[name] = {}
+  SharedData[name] = {}
+  fns[namse] = function(...)
+    task.spawn(fn,Env[name],SharedData[name],...)
+  end
+end
+
+--[[
+settings: {
+  
+  
+}
+]]
+bhelper(function(env,shared,enabled)
+  env.enabled = enabled
+  if env.thread then return end
+  env.thread = task.spawn(function()
+    local plrs = Helpers.services.players
+    local settings = shared.settings
+    Helpers.services.run.Heartbeat:Connect(function()
+      if not env.enabled then return end
+      for _, player in ipairs(plrs:GetPlayers()) do
+        local character = player.Character
+        if not character then continue end
+        local root = character:FindFirstChild("HumanoidRootPart")
+        if not root then continue end
+        
+        if root.AssemblyLinearVelocity.Magnitude > settings.linear or root.AssemblyAngularVelocity.Magnitude > settings.angular then
+          report({
+            name = "fling detect",
+            detected = player,
+            reason = "Unusual angular or linear velocity",
+          })
+        end
+      end
+    end)
+  end)
+end, "fling_detect")
+
+bhelper(function(env,shared,enabled)
+  
+end, "")
+bhelper(function(env,shared,enabled)
+  
+end, "fling_detect")
+
+
+
+
+
+--[[ FRONTEND ]]
+
+
+
+
+
+
+
+
+
+
+
 --[=[
 tabs.adminkit = Window:AddTab("AdminKit", "wrench")
 local leftbox = tabs.adminkit:AddLeftGroupbox("Bkit")

@@ -209,15 +209,14 @@ local mainok, mainres = pcall(task.spawn, function()
 
   repeat task.wait() until ThemeManager ~= nil
   print("[STEP 13]: ThemeManager ready, applying theme...")
-
+  
   ThemeManager:SetLibrary(Obsidian)
-  ThemeManager:SetFolder("Hyperion")
   ThemeManager:SetDefaultTheme({
-    FontColor = Color3.fromHex("#ffffff"),
-    MainColor = Color3.fromHex("#1a1a1a"),
-    AccentColor = Color3.fromHex("#cc0000"),
-    BackgroundColor = Color3.fromHex("#0a0a0a"),
-    OutlineColor = Color3.fromHex("#cc0000"),
+    FontColor = Color3.fromHex("#f0f0f0"),
+    MainColor = Color3.fromHex("#1a1d26"),
+    AccentColor = Color3.fromHex("#e63535"),
+    BackgroundColor = Color3.fromHex("#0f1117"),
+    OutlineColor = Color3.fromHex("#e63535"),
   })
   ThemeManager:ApplyToTab(tabs.settings)
   ThemeManager:LoadDefault()
