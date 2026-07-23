@@ -9,6 +9,7 @@ env:
   UPSTREAM: boatbomber/Highlighter
   DARKLUA_VERSION: "0.19.0"
   ROJO_VERSION: "7.4.4"
+  LUNE_VERSION: "0.10.4"
   ENTRYPOINT: src/init.luau
   OUTPUT: Highlighter.lua
 
@@ -25,6 +26,7 @@ jobs:
         run: |
           SHA=$(gh api repos/${{ env.UPSTREAM }}/commits/HEAD --jq '.sha')
           echo "sha=$SHA" >> $GITHUB_OUTPUT
+
       - name: Skip if already built
         id: guard
         env:
@@ -39,35 +41,37 @@ jobs:
           else
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
+
       - name: Clone upstream
         if: steps.guard.outputs.skip == 'false'
         run: git clone https://github.com/${{ env.UPSTREAM }}.git upstream
-      - name: Install Rojo and darklua
+
+      - name: Install Rojo, darklua, Lune, and Wax
         if: steps.guard.outputs.skip == 'false'
         run: |
           curl -L -o rojo.zip \
             "https://github.com/rojo-rbx/rojo/releases/download/v${{ env.ROJO_VERSION }}/rojo-${{ env.ROJO_VERSION }}-linux-x86_64.zip"
           unzip -o rojo.zip -d rojo-bin
           sudo mv rojo-bin/rojo /usr/local/bin/rojo
+
           curl -L -o darklua.zip \
             "https://github.com/seaofvoices/darklua/releases/download/v${{ env.DARKLUA_VERSION }}/darklua-linux-x86_64.zip"
           unzip -o darklua.zip -d darklua-bin
           sudo mv darklua-bin/darklua /usr/local/bin/darklua
-      - name: Generate sourcemap
-        if: steps.guard.outputs.skip == 'false'
-        run: rojo sourcemap default.project.json -o sourcemap.json
-        working-directory: upstream
+
+          curl -L -o lune.zip \
+            "https://github.com/lune-org/lune/releases/download/v${{ env.LUNE_VERSION }}/lune-${{ env.LUNE_VERSION }}-linux-x86_64.zip"
+          unzip -o lune.zip -d lune-bin
+          sudo mv lune-bin/lune /usr/local/bin/lune
+
+          curl -fsSL -o wax.luau \
+            "https://github.com/latte-soft/wax/releases/latest/download/wax.luau"
+
       - name: Write darklua config
         if: steps.guard.outputs.skip == 'false'
         run: |
           cat > upstream/.darklua.json << 'EOF'
           {
-            "bundle": {
-              "require_mode": {
-                "name": "rojo_sourcemap",
-                "sourcemap": "sourcemap.json"
-              }
-            },
             "generator": {
               "name": "dense",
               "column_span": 1000000
@@ -94,10 +98,18 @@ jobs:
             ]
           }
           EOF
+
       - name: Bundle
         if: steps.guard.outputs.skip == 'false'
-        run: darklua process src/init.luau ../Highlighter.lua
+        run: |
+          lune run ../wax.luau bundle \
+            input=default.project.json \
+            output=../${{ env.OUTPUT }} \
+            minify=true \
+            ci-mode=true \
+            darklua-config-path=.darklua.json
         working-directory: upstream
+
       - name: Release
         if: steps.guard.outputs.skip == 'false'
         env:
