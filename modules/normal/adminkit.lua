@@ -8,6 +8,93 @@ local Helpers = args.Helpers
 
  
  
+local ReportUI = {
+  Iris = loadstring(game:HttpGet("https://raw.githubusercontent.com/x0581/Iris-Exploit-Bundle/main/bundle.lua"))().Init(),
+  reports = {},
+  auto = false,
+}
+
+ReportUI.WindowState = ReportUI.Iris.State(false)
+ReportUI.AutoState = ReportUI.Iris.State(false)
+
+local function report(data)
+  local entry = {
+    text = string.format(
+      "[%s]: %s %s got detected:\n%s",
+      os.date("%H:%M"),
+      data.name,
+      data.player.Name,
+      data.reason
+    ),
+    callback = data.callback,
+    response = nil,
+    auto = ReportUI.auto,
+  }
+
+  table.insert(ReportUI.reports, entry)
+
+  if entry.auto then
+    entry.response = true
+    task.spawn(entry.callback, true)
+  end
+end
+
+ReportUI.Iris:Connect(function()
+  local Iris = ReportUI.Iris
+
+  Iris.Window({ "Reports" }, { isOpened = ReportUI.WindowState })
+
+  Iris.Checkbox({ "Auto Allow" }, {
+    isChecked = ReportUI.AutoState
+  })
+
+  ReportUI.auto = ReportUI.AutoState.value
+
+  if Iris.Button({ "Clear" }).clicked then
+    table.clear(ReportUI.reports)
+    table.insert(ReportUI.reports, {
+      text = "Advanced Grief Detection UI"
+    })
+  end
+
+  Iris.Separator()
+
+  for _, entry in ipairs(ReportUI.reports) do
+    Iris.Text({ entry.text })
+  
+    if entry.callback then
+      if entry.auto then
+        Iris.Text({ "Automatically Allowed" })
+      else
+        if entry.response == nil then
+          if Iris.Button({ "Allow" }).clicked then
+            entry.response = true
+            task.spawn(entry.callback, true)
+          end
+  
+          Iris.SameLine()
+  
+          if Iris.Button({ "Deny" }).clicked then
+            entry.response = false
+            task.spawn(entry.callback, false)
+          end
+        elseif entry.response then
+          Iris.Text({ "Allowed" })
+        else
+          Iris.Text({ "Denied" })
+        end
+      end
+  end
+
+  Iris.Text({ "\n" })
+  Iris.Separator()
+end
+
+  Iris.End()
+end)
+
+
+ 
  
  
  

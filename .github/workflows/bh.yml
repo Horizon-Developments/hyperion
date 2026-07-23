@@ -1,0 +1,109 @@
+name: Mirror & Bundle
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+env:
+  UPSTREAM: boatbomber/Highlighter
+  DARKLUA_VERSION: "0.19.0"
+  ENTRYPOINT: src/init.luau
+  OUTPUT: Highlighter.lua
+
+jobs:
+  bundle:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Get upstream HEAD
+        id: up
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          SHA=$(gh api repos/${{ env.UPSTREAM }}/commits/HEAD --jq '.sha')
+          echo "sha=$SHA" >> $GITHUB_OUTPUT
+
+      - name: Skip if already built
+        id: guard
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          LAST=$(gh release view latest \
+            --repo ${{ github.repository }} \
+            --json body --jq '.body' 2>/dev/null \
+            | grep -oP '(?<=commit/)[a-f0-9]{40}' | head -1 || echo "")
+          if [ "$LAST" = "${{ steps.up.outputs.sha }}" ]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Clone upstream
+        if: steps.guard.outputs.skip == 'false'
+        run: git clone https://github.com/${{ env.UPSTREAM }}.git upstream
+
+      - name: Install darklua
+        if: steps.guard.outputs.skip == 'false'
+        run: |
+          curl -L -o darklua.zip \
+            "https://github.com/seaofvoices/darklua/releases/download/v${{ env.DARKLUA_VERSION }}/darklua-linux-x86_64.zip"
+          unzip -o darklua.zip -d darklua-bin
+          sudo mv darklua-bin/darklua /usr/local/bin/darklua
+
+      - name: Write darklua config
+        if: steps.guard.outputs.skip == 'false'
+        run: |
+          cat > upstream/.darklua.json << 'EOF'
+          {
+            "bundle": {
+              "require_mode": "luau"
+            },
+            "generator": {
+              "name": "dense",
+              "column_span": 1000000
+            },
+            "rules": [
+              "remove_comments",
+              "remove_types",
+              "remove_spaces",
+              "remove_attribute",
+              "remove_method_definition",
+              "remove_method_call",
+              "compute_expression",
+              "filter_after_early_return",
+              "make_assignment_local",
+              {
+                "rule": "rename_variables",
+                "globals": ["$default", "$roblox"],
+                "include_functions": true
+              },
+              {
+                "rule": "append_text_comment",
+                "comment": "This source code is not mine.\nrefer to license at: https://github.com/${{ env.UPSTREAM }}/blob/main/LICENSE\nthe original repo: https://github.com/${{ env.UPSTREAM }}"
+              }
+            ]
+          }
+          EOF
+
+      - name: Bundle
+        if: steps.guard.outputs.skip == 'false'
+        run: darklua bundle ${{ env.ENTRYPOINT }} ../${{ env.OUTPUT }}
+        working-directory: upstream
+
+      - name: Release
+        if: steps.guard.outputs.skip == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ steps.up.outputs.sha }}
+        run: |
+          gh release delete latest \
+            --repo ${{ github.repository }} \
+            --yes --cleanup-tag 2>/dev/null || true
+
+          gh release create latest ${{ env.OUTPUT }} \
+            --repo ${{ github.repository }} \
+            --title "Update boatbomber/Highlighter" \
+            --notes "why are you here inspecting my repo huh... https://github.com/${{ env.UPSTREAM }}/commit/$SHA"
