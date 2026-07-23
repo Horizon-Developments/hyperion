@@ -1,3 +1,6 @@
+# 100% claude
+
+
 name: Mirror & Bundle
 
 on:
@@ -16,7 +19,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-
     steps:
       - name: Get upstream HEAD
         id: up
@@ -25,7 +27,6 @@ jobs:
         run: |
           SHA=$(gh api repos/${{ env.UPSTREAM }}/commits/HEAD --jq '.sha')
           echo "sha=$SHA" >> $GITHUB_OUTPUT
-
       - name: Skip if already built
         id: guard
         env:
@@ -40,11 +41,9 @@ jobs:
           else
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
-
       - name: Clone upstream
         if: steps.guard.outputs.skip == 'false'
         run: git clone https://github.com/${{ env.UPSTREAM }}.git upstream
-
       - name: Install darklua
         if: steps.guard.outputs.skip == 'false'
         run: |
@@ -52,7 +51,6 @@ jobs:
             "https://github.com/seaofvoices/darklua/releases/download/v${{ env.DARKLUA_VERSION }}/darklua-linux-x86_64.zip"
           unzip -o darklua.zip -d darklua-bin
           sudo mv darklua-bin/darklua /usr/local/bin/darklua
-
       - name: Write darklua config
         if: steps.guard.outputs.skip == 'false'
         run: |
@@ -82,7 +80,7 @@ jobs:
               },
               {
                 "rule": "append_text_comment",
-                "comment": "This source code is not mine.\nrefer to license at: https://github.com/${{ env.UPSTREAM }}/blob/main/LICENSE\nthe original repo: https://github.com/${{ env.UPSTREAM }}"
+                "text": "This source code is not mine.\nrefer to license at: https://github.com/${{ env.UPSTREAM }}/blob/main/LICENSE\nthe original repo: https://github.com/${{ env.UPSTREAM }}"
               }
             ]
           }
@@ -100,7 +98,6 @@ jobs:
           gh release delete latest \
             --repo ${{ github.repository }} \
             --yes --cleanup-tag 2>/dev/null || true
-
           gh release create latest ${{ env.OUTPUT }} \
             --repo ${{ github.repository }} \
             --title "Update boatbomber/Highlighter" \
