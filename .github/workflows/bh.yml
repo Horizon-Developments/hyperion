@@ -1,6 +1,5 @@
 # 100% claude
 
-
 name: Mirror & Bundle
 
 on:
@@ -11,6 +10,7 @@ on:
 env:
   UPSTREAM: boatbomber/Highlighter
   DARKLUA_VERSION: "0.19.0"
+  ROJO_VERSION: "7.4.4"
   ENTRYPOINT: src/init.luau
   OUTPUT: Highlighter.lua
 
@@ -44,20 +44,31 @@ jobs:
       - name: Clone upstream
         if: steps.guard.outputs.skip == 'false'
         run: git clone https://github.com/${{ env.UPSTREAM }}.git upstream
-      - name: Install darklua
+      - name: Install Rojo and darklua
         if: steps.guard.outputs.skip == 'false'
         run: |
+          curl -fsSL \
+            "https://github.com/rojo-rbx/rojo/releases/download/v${{ env.ROJO_VERSION }}/rojo-linux-x86_64" \
+            -o rojo
+          chmod +x rojo
           curl -L -o darklua.zip \
             "https://github.com/seaofvoices/darklua/releases/download/v${{ env.DARKLUA_VERSION }}/darklua-linux-x86_64.zip"
           unzip -o darklua.zip -d darklua-bin
           sudo mv darklua-bin/darklua /usr/local/bin/darklua
+      - name: Generate sourcemap
+        if: steps.guard.outputs.skip == 'false'
+        run: ../rojo sourcemap default.project.json -o sourcemap.json
+        working-directory: upstream
       - name: Write darklua config
         if: steps.guard.outputs.skip == 'false'
         run: |
           cat > upstream/.darklua.json << 'EOF'
           {
             "bundle": {
-              "require_mode": "luau"
+              "require_mode": {
+                "name": "rojo_sourcemap",
+                "sourcemap": "sourcemap.json"
+              }
             },
             "generator": {
               "name": "dense",
@@ -96,9 +107,3 @@ jobs:
           SHA: ${{ steps.up.outputs.sha }}
         run: |
           gh release delete latest \
-            --repo ${{ github.repository }} \
-            --yes --cleanup-tag 2>/dev/null || true
-          gh release create latest ${{ env.OUTPUT }} \
-            --repo ${{ github.repository }} \
-            --title "Update boatbomber/Highlighter" \
-            --notes "why are you here inspecting my repo huh... https://github.com/${{ env.UPSTREAM }}/commit/$SHA"
