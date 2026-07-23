@@ -1,5 +1,3 @@
-# 100% claude
-
 name: Mirror & Bundle
 
 on:
@@ -57,7 +55,7 @@ jobs:
           sudo mv darklua-bin/darklua /usr/local/bin/darklua
       - name: Generate sourcemap
         if: steps.guard.outputs.skip == 'false'
-        run: ../rojo sourcemap default.project.json -o sourcemap.json
+        run: rojo sourcemap default.project.json -o sourcemap.json
         working-directory: upstream
       - name: Write darklua config
         if: steps.guard.outputs.skip == 'false'
@@ -107,3 +105,9 @@ jobs:
           SHA: ${{ steps.up.outputs.sha }}
         run: |
           gh release delete latest \
+            --repo ${{ github.repository }} \
+            --yes --cleanup-tag 2>/dev/null || true
+          gh release create latest ${{ env.OUTPUT }} \
+            --repo ${{ github.repository }} \
+            --title "Update boatbomber/Highlighter" \
+            --notes "why are you here inspecting my repo huh... https://github.com/${{ env.UPSTREAM }}/commit/$SHA"
