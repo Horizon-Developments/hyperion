@@ -87,12 +87,10 @@ jobs:
             ]
           }
           EOF
-
       - name: Bundle
         if: steps.guard.outputs.skip == 'false'
-        run: darklua bundle ${{ env.ENTRYPOINT }} ../${{ env.OUTPUT }}
+        run: darklua process src/init.luau ../Highlighter.lua
         working-directory: upstream
-
       - name: Release
         if: steps.guard.outputs.skip == 'false'
         env:
