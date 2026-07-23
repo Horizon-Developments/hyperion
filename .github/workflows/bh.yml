@@ -47,10 +47,10 @@ jobs:
       - name: Install Rojo and darklua
         if: steps.guard.outputs.skip == 'false'
         run: |
-          curl -fsSL \
-            "https://github.com/rojo-rbx/rojo/releases/download/v${{ env.ROJO_VERSION }}/rojo-linux-x86_64" \
-            -o rojo
-          chmod +x rojo
+          curl -L -o rojo.zip \
+            "https://github.com/rojo-rbx/rojo/releases/download/v${{ env.ROJO_VERSION }}/rojo-${{ env.ROJO_VERSION }}-linux-x86_64.zip"
+          unzip -o rojo.zip -d rojo-bin
+          sudo mv rojo-bin/rojo /usr/local/bin/rojo
           curl -L -o darklua.zip \
             "https://github.com/seaofvoices/darklua/releases/download/v${{ env.DARKLUA_VERSION }}/darklua-linux-x86_64.zip"
           unzip -o darklua.zip -d darklua-bin
