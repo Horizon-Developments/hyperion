@@ -114,7 +114,7 @@ function Bots:CreateInstance(kind, adminkitdata)
     local ctx = playerContext()
 
     local startRes = request({
-      Url     = ENDPOINTS.adminkitStart,
+      Url     = ENDPOINTS.adminkit_start,
       Method  = "POST",
       Headers = { ["Content-Type"] = "application/json" },
       Body    = http:JSONEncode({
