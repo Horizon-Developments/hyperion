@@ -6,6 +6,67 @@ local Obsidian = args.Obsidian
 local assets = args.Assets
 local Helpers = args.Helpers
 
+tabs.adminkit = Window:AddTab("Admin kit", "wrench")
+local groups = {} -- array
+local add = function(d)
+  table.insert(groups, d)
+end
+
+add("info")
+add("bkit mod")
+add("enli mod")
+add("fling mod")
+add("player reports")
+add("discord bot")
+add("moderation")
+
+do
+  local _groups = {}
+  for i,v in ipairs(groups) do
+    _groups[v] = i % 2 == 0 and tabs.adminkit:AddRightGroupbox(v) or tabs.adminkit:AddLeftGroupbox(v)
+  end
+  groups = _groups
+end
+
+
+
+groups["discord bot"]
+:AddLabel([[
+  
+  
+  
+]])
+:AddInput("MyInput", {
+  Text = "",
+  Placeholder = "Type here...",
+        Default = "",
+        Callback = function(Value)
+            print("Input changed:", Value)
+        end,
+    })
+    :AddToggle("MyToggle", {
+        Text = "My Toggle",
+        Default = false,
+        Callback = function(Value)
+            print("Toggle changed:", Value)
+        end,
+    })
+    :AddLabel("This is another label")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
  
  
 local ReportUI = {
@@ -94,64 +155,10 @@ end
 end)
 
 
- 
- 
- 
- 
- 
-local report = function() end
 
---[[ BACKEND ]]
 
-local Env = {}
-local SharedData = {}
-local fns = {}
-local function bhelper(fn, name)
-  Env[name] = {}
-  SharedData[name] = {}
-  fns[namse] = function(...)
-    task.spawn(fn,Env[name],SharedData[name],...)
-  end
-end
 
---[[
-settings: {
-  
-  
-}
-]]
-bhelper(function(env,shared,enabled)
-  env.enabled = enabled
-  if env.thread then return end
-  env.thread = task.spawn(function()
-    local plrs = Helpers.services.players
-    local settings = shared.settings
-    Helpers.services.run.Heartbeat:Connect(function()
-      if not env.enabled then return end
-      for _, player in ipairs(plrs:GetPlayers()) do
-        local character = player.Character
-        if not character then continue end
-        local root = character:FindFirstChild("HumanoidRootPart")
-        if not root then continue end
-        
-        if root.AssemblyLinearVelocity.Magnitude > settings.linear or root.AssemblyAngularVelocity.Magnitude > settings.angular then
-          report({
-            name = "fling detect",
-            detected = player,
-            reason = "Unusual angular or linear velocity",
-          })
-        end
-      end
-    end)
-  end)
-end, "fling_detect")
 
-bhelper(function(env,shared,enabled)
-  
-end, "")
-bhelper(function(env,shared,enabled)
-  
-end, "fling_detect")
 
 
 

@@ -90,10 +90,6 @@ jobs:
                 "rule": "rename_variables",
                 "globals": ["$default", "$roblox"],
                 "include_functions": true
-              },
-              {
-                "rule": "append_text_comment",
-                "text": "This source code is not mine.\nrefer to license at: https://github.com/${{ env.UPSTREAM }}/blob/main/LICENSE\nthe original repo: https://github.com/${{ env.UPSTREAM }}"
               }
             ]
           }

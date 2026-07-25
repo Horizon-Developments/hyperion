@@ -13,7 +13,227 @@ local box = Tabs.events:AddLeftGroupbox("Events")
 local plrs = Helpers.services.players
 local localplr = plrs.LocalPlayer
 local MarketplaceService = game:GetService("MarketplaceService")
+--[[
+local repo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
+local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
+local ThemeManager = loadstring(game:HttpGet(repo .. "addons/ThemeManager.lua"))()
+local SaveManager = loadstring(game:HttpGet(repo .. "addons/SaveManager.lua"))()
 
+local hookEnv = setmetatable({}, { __index = getfenv() })
+hookEnv.oldEnumIndex = hookmetamethod(Enum, "__index", setfenv(function(self, key)
+    if key == "StudioStyleGuideColor" then
+        return setmetatable({}, { __index = function(_, k) return k end })
+    end
+    return oldEnumIndex(self, key)
+end, hookEnv))
+
+local Highlighter = loadstring(game:HttpGet(
+    "https://github.com/Horizon-Developments/hyperion/releases/download/latest/Highlighter.lua"
+))()
+
+hookmetamethod(Enum, "__index", hookEnv.oldEnumIndex)
+
+Highlighter.setTokenColors({
+    background = Color3.fromRGB(30, 30, 30),
+    iden       = Color3.fromRGB(220, 220, 220),
+    keyword    = Color3.fromRGB(197, 134, 192),
+    builtin    = Color3.fromRGB(86, 156, 214),
+    type       = Color3.fromRGB(78, 201, 176),
+    string     = Color3.fromRGB(206, 145, 120),
+    number     = Color3.fromRGB(181, 206, 168),
+    comment    = Color3.fromRGB(106, 153, 85),
+    operator   = Color3.fromRGB(212, 212, 212),
+    custom     = Color3.fromRGB(220, 220, 170),
+})
+
+local injectedFunctions = {
+    -- environment
+    ["getgenv"]            = "builtin",
+    ["getrenv"]            = "builtin",
+    ["getfenv"]            = "builtin",
+    ["setfenv"]            = "builtin",
+    ["getsenv"]            = "builtin",
+    -- hooking
+    ["hookfunction"]       = "keyword",
+    ["hookmetamethod"]     = "keyword",
+    ["newcclosure"]        = "keyword",
+    ["clonefunction"]      = "keyword",
+    ["replaceclosure"]     = "keyword",
+    -- memory / instances
+    ["getrawmetatable"]    = "builtin",
+    ["setrawmetatable"]    = "builtin",
+    ["makereadonly"]       = "builtin",
+    ["makewriteable"]      = "builtin",
+    ["isreadonly"]         = "builtin",
+    ["cloneref"]           = "builtin",
+    ["compareinstances"]   = "builtin",
+    -- scripts / execution
+    ["loadstring"]         = "builtin",
+    ["getscripts"]         = "builtin",
+    ["getrunningscripts"]  = "builtin",
+    ["getscriptbytecode"]  = "builtin",
+    ["getscriptclosure"]   = "builtin",
+    ["getscripthash"]      = "builtin",
+    ["decompile"]          = "builtin",
+    -- upvalues
+    ["getupvalues"]        = "custom",
+    ["getupvalue"]         = "custom",
+    ["setupvalue"]         = "custom",
+    ["getconstants"]       = "custom",
+    ["getconstant"]        = "custom",
+    ["setconstant"]        = "custom",
+    ["getprotos"]          = "custom",
+    ["getproto"]           = "custom",
+    -- filesystem
+    ["readfile"]           = "type",
+    ["writefile"]          = "type",
+    ["appendfile"]         = "type",
+    ["makefolder"]         = "type",
+    ["isfolder"]           = "type",
+    ["isfile"]             = "type",
+    ["delfile"]            = "type",
+    ["delfolder"]          = "type",
+    ["listfiles"]          = "type",
+    ["loadfile"]           = "type",
+    -- http
+    ["request"]            = "builtin",
+    ["http_request"]       = "builtin",
+    ["HttpGet"]            = "builtin",
+    ["HttpPost"]           = "builtin",
+    -- misc
+    ["identifyexecutor"]   = "custom",
+    ["getexecutorname"]    = "custom",
+    ["messagebox"]         = "custom",
+    ["setclipboard"]       = "custom",
+    ["toclipboard"]        = "custom",
+    ["getclipboard"]       = "custom",
+    ["setfpscap"]          = "custom",
+    ["fireclickdetector"]  = "custom",
+    ["firetouchinterest"]  = "custom",
+    ["fireproximityprompt"]= "custom",
+    ["getcallstack"]       = "custom",
+    ["getinstances"]       = "builtin",
+    ["getnilinstances"]    = "builtin",
+    ["isluau"]             = "custom",
+    ["checkcaller"]        = "custom",
+    ["islclosure"]         = "custom",
+    ["iscclosure"]         = "custom",
+    ["syn"]                = "builtin",
+    ["rconsoleprint"]      = "custom",
+    ["rconsolewarn"]       = "custom",
+    ["rconsoleerr"]        = "custom",
+    ["rconsoleclear"]      = "custom",
+    ["rconsoletitle"]      = "custom",
+}
+
+local Options = Library.Options
+local Toggles = Library.Toggles
+
+local Window = Library:CreateWindow({
+    Title = "Highlighter Demo",
+    Footer = "v1.0",
+    AutoShow = true,
+    Center = true,
+})
+
+local Tabs = {
+    Main = Window:AddTab("Main", "code"),
+    ["UI Settings"] = Window:AddTab("UI Settings", "settings"),
+}
+
+local Box = Tabs.Main:AddLeftGroupbox("Code Editor")
+
+local FONT = Enum.Font.Code
+local TEXT_SIZE = 14
+local EDITOR_HEIGHT = 200
+local LINE_NUM_WIDTH = 36
+
+local container = Instance.new("Frame")
+container.Size = UDim2.new(1, 0, 0, EDITOR_HEIGHT)
+container.BackgroundTransparency = 1
+container.ClipsDescendants = true
+
+local lineNumbers = Instance.new("TextLabel")
+lineNumbers.Size = UDim2.new(0, LINE_NUM_WIDTH, 1, 0)
+lineNumbers.Position = UDim2.new(0, 0, 0, 0)
+lineNumbers.BackgroundTransparency = 1
+lineNumbers.Font = FONT
+lineNumbers.TextSize = TEXT_SIZE
+lineNumbers.TextColor3 = Color3.fromRGB(100, 100, 100)
+lineNumbers.TextXAlignment = Enum.TextXAlignment.Right
+lineNumbers.TextYAlignment = Enum.TextYAlignment.Top
+lineNumbers.RichText = false
+lineNumbers.Text = "1"
+lineNumbers.Parent = container
+
+local divider = Instance.new("Frame")
+divider.Size = UDim2.new(0, 1, 1, 0)
+divider.Position = UDim2.new(0, LINE_NUM_WIDTH + 4, 0, 0)
+divider.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+divider.BorderSizePixel = 0
+divider.Parent = container
+
+local codeBox = Instance.new("TextBox")
+codeBox.Size = UDim2.new(1, -(LINE_NUM_WIDTH + 10), 1, 0)
+codeBox.Position = UDim2.new(0, LINE_NUM_WIDTH + 10, 0, 0)
+codeBox.BackgroundTransparency = 1
+codeBox.Font = FONT
+codeBox.TextSize = TEXT_SIZE
+codeBox.TextXAlignment = Enum.TextXAlignment.Left
+codeBox.TextYAlignment = Enum.TextYAlignment.Top
+codeBox.TextColor3 = Color3.new(1, 1, 1)
+codeBox.TextWrapped = false
+codeBox.MultiLine = true
+codeBox.ClearTextOnFocus = false
+codeBox.PlaceholderText = "-- type code here"
+codeBox.Parent = container
+
+codeBox:GetPropertyChangedSignal("Text"):Connect(function()
+    local count = 1
+    for _ in codeBox.Text:gmatch("\n") do count += 1 end
+    local lines = {}
+    for i = 1, count do lines[i] = tostring(i) end
+    lineNumbers.Text = table.concat(lines, "\n")
+end)
+
+Box:AddUIPassthrough("CodeBox", {
+    Instance = container,
+    Height = EDITOR_HEIGHT,
+})
+
+Highlighter.highlight({
+    textObject = codeBox,
+    customLang = injectedFunctions,
+})
+
+Box:AddButton({
+    Text = "Run Code",
+    Func = function()
+        local fn, err = loadstring(codeBox.Text)
+        if fn then
+            fn()
+        else
+            Library:Notify({ Title = "Error", Description = err, Time = 5 })
+        end
+    end,
+})
+
+local MenuGroup = Tabs["UI Settings"]:AddLeftGroupbox("Menu", "wrench")
+MenuGroup:AddLabel("Menu bind")
+    :AddKeyPicker("MenuKeybind", { Default = "RightShift", NoUI = true, Text = "Menu keybind" })
+
+Library.ToggleKeybind = Options.MenuKeybind
+
+ThemeManager:SetLibrary(Library)
+SaveManager:SetLibrary(Library)
+SaveManager:IgnoreThemeSettings()
+SaveManager:SetIgnoreIndexes({ "MenuKeybind" })
+ThemeManager:SetFolder("HighlighterDemo")
+SaveManager:SetFolder("HighlighterDemo")
+ThemeManager:ApplyToTab(Tabs["UI Settings"])
+SaveManager:BuildConfigSection(Tabs["UI Settings"])
+SaveManager:LoadAutoloadConfig()
+]]
 do
   local saveFile = Assets(".events.save.json")
   local HttpService = game:GetService("HttpService")
