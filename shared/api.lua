@@ -10,25 +10,28 @@ if getgenv().hyperion_api then
   return getgenv().hyperion_api
 end
 
+math.randomseed(tick() * 1000 % 2^31) 
+
 local lp      = game:GetService("Players").LocalPlayer
 local http    = game:GetService("HttpService")
 local request = request or http_request or (syn and syn.request)
 
 local ENDPOINTS = {
-  test        = "https://hyperion-server.thehyperiondev.workers.dev/test",
-  signin      = "https://hyperion-server.thehyperiondev.workers.dev/accounts/signin",
-  login       = "https://hyperion-server.thehyperiondev.workers.dev/accounts/login",
-  accountTest = "https://hyperion-server.thehyperiondev.workers.dev/accounts/test",
-  fileUpload  = "https://hyperion-server.thehyperiondev.workers.dev/file/upload",
-  fileDelete  = "https://hyperion-server.thehyperiondev.workers.dev/file/delete",
-  fileList    = "https://hyperion-server.thehyperiondev.workers.dev/file/list",
-  file        = "https://hyperion-server.thehyperiondev.workers.dev/file/",
-  plugins     = "https://hyperion-server.thehyperiondev.workers.dev/plugins",
-  crashReport = "https://hyperion-server.thehyperiondev.workers.dev/Telemetry/CrashReport",
-  logging     = "https://hyperion-server.thehyperiondev.workers.dev/Telemetry/Logging",
-  botStart    = "https://hyperion-server.thehyperiondev.workers.dev/start",
-  botConnect  = "wss://hyperion-server.thehyperiondev.workers.dev/connect/",
-  adminkit_start = "https://hyperion-server.thehyperiondev.workers.dev/discord/adminkit/start"
+  test        = "https://hyperion-server.hyperion-cf.workers.dev/test",
+  signin      = "https://hyperion-server.hyperion-cf.workers.dev/accounts/signin",
+  login       = "https://hyperion-server.hyperion-cf.workers.dev/accounts/login",
+  accountTest = "https://hyperion-server.hyperion-cf.workers.dev/accounts/test",
+  fileUpload  = "https://hyperion-server.hyperion-cf.workers.dev/file/upload",
+  fileDelete  = "https://hyperion-server.hyperion-cf.workers.dev/file/delete",
+  fileList    = "https://hyperion-server.hyperion-cf.workers.dev/file/list",
+  file        = "https://hyperion-server.hyperion-cf.workers.dev/file/",
+  plugins     = "https://hyperion-server.hyperion-cf.workers.dev/plugins",
+  crashReport = "https://hyperion-server.hyperion-cf.workers.dev/Telemetry/CrashReport",
+  logging     = "https://hyperion-server.hyperion-cf.workers.dev/Telemetry/Logging",
+  botStart    = "https://hyperion-server.hyperion-cf.workers.dev/BotRelay/start",
+  botConnect  = "wss://hyperion-server.hyperion-cf.workers.dev/BotRelay/connect/",
+  adminkit_start = "https://hyperion-server.hyperion-cf.workers.dev/discord/adminkit/start",
+  adminkit_invite = "https://hyperion-server.hyperion-cf.workers.dev/discord/adminkit/invite"
 }
 
 local password_path = "Hyperion/password.json"
@@ -44,11 +47,36 @@ if not isfile(password_path) then
     return table.concat(parts)
   end
   
+  local function generateToken()
+    local ok, res = pcall(request, {
+      Url    = "https://raw.githubusercontent.com/leonklingele/passphrase/master/wordlist-eff-large.txt",
+      Method = "GET",
+    })
+  
+    if not ok or not res.Success then
+      return makeConstant():sub(1,20)
+    end
+    
+    local words = {}
+    for w in res.Body:gmatch("[^\r\n]+") do
+      table.insert(words, w)
+    end
+    
+    local parts = {}
+    for i = 1, 3 do
+      parts[i] = words[math.random(1, #words)]
+    end
+    table.insert(parts, string.format("%02d", math.random(0, 99)))
+    
+    return table.concat(parts, "-")
+  end
+  
   writefile(password_path, http:JSONEncode({
     account  = guid(),
     owner    = guid(),
     client   = guid(),
     constant = makeConstant(),
+    token = generateToken()
   }))
 end
 
@@ -169,8 +197,7 @@ function Bots:CreateInstance(kind, adminkitdata)
 
     return true, bot
   end
-
-  -- kind == "bot" (default / legacy)
+  
   local startRes = request({
     Url     = ENDPOINTS.botStart,
     Method  = "POST",
@@ -443,6 +470,8 @@ end
 
 api.fileAPI = fileAPI
 api.testAPI = testAPI
+
+api.ENDPOINTS = ENDPOINTS
 
 getgenv().hyperion_api = api
 return api

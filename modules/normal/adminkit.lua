@@ -30,12 +30,48 @@ end
 
 
 
-groups["discord bot"]
-:AddLabel([[
+do
+  local tab = groups["discord bot"]
+  tab:AddLabel({ Text = [[
+You can now manage your server on discord!
+invite the bot at your own server:
+]] .. api.ENDPOINTS.adminkit_invite .. [[
+
+the bot has NO permissions. it is safe.
+
+commands:
+
+/login password:&lt;token&gt; - Log in to your account.
+/logout - Log out of your account.
+/join type:&lt;url|script&gt; - Join a server using a URL or script.
+/stats - View information about your server.
+/modules action:&lt;list|run&gt; name:&lt;module, optional&gt; - List available modules or run a specific module.
+
+docs for modules at dev docs in the discord server!
+
+if you want more featues added, place a suggestion on our discord!
+
+<font color="#FF0000">WARNING: Do not share your TOKEN! MALICIOUS PEOPLE CAN CONTROL YOUR BOT AND POTENTIALLY GET YOU BANNED</font>
+
+msg to skids: the API is free to use, you just need to ask me for it.
+btw pealz dont steal this just use my api ):
+]], DoesWrap = true })
+  local credentails = game:GetService("HttpService"):JSONDecode(readfile("Hyperion/password.json"))
   
+  tab:AddButton({
+    Text = "Copy TOKEN",
+    Func = function()
+      setclipboard(credentails.token)
+    end
+  })
   
-  
-]])
+  start
+end
+
+
+
+
+
 :AddInput("MyInput", {
   Text = "",
   Placeholder = "Type here...",
