@@ -182,10 +182,38 @@ local mainok, mainres = pcall(task.spawn, function()
   local tabs = {}
   tabs.info = Window:AddTab("Main", "home")
   tabs.settings = Window:AddTab("Settings", "settings")
+  
   print("[STEP 11]: tabs created")
 
   local InfoBoxLeft = tabs.info:AddLeftGroupbox("")
   local InfoBoxRight = tabs.info:AddRightGroupbox("")
+  
+  InfoBoxLeft:AddLabel({ Text = "Read our EULA at\n" .. game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/LICENSE.md"), DoesWrap = true })
+  
+  local eula_path = assets(".eula")
+  
+  if not isfile(eula_path) then
+    local accepted = false
+    InfoBoxLeft:AddButton({
+      Text = "Accept EULA once",
+      Func = function()
+        accepted = true
+      end,
+    })
+    
+    InfoBoxLeft:AddButton({
+      Text = "Accept EULA (saves)",
+      Func = function()
+        accepted = true
+        writefile(eula_path, "")
+      end,
+    })
+    
+    repeat task.wait(0.1) until accepted
+  end
+  
+  
+  
   InfoBoxLeft:AddLabel({ Text = "Join our Discord for suggestions, updates, and help.", DoesWrap = true })
   InfoBoxRight:AddButton({
     Text = "Copy Invite",
@@ -198,6 +226,7 @@ local mainok, mainres = pcall(task.spawn, function()
       end
     end,
   })
+  
   InfoBoxRight:AddDivider()
   InfoBoxLeft:AddDivider()
   InfoBoxLeft:AddLabel({ Text = "About Hyperion: a modular system. Instead of using a separate script, extend it with plugins. Visit #plugins on our Discord to find and share plugins.", DoesWrap = true })
@@ -205,8 +234,10 @@ local mainok, mainres = pcall(task.spawn, function()
   InfoBoxLeft:AddLabel({ Text = "Adding a Plugin: place your plugin file in Hyperion/modules/ (located inside your executor's folder).", DoesWrap = true })
   InfoBoxRight:AddLabel({ Text = "Creating your own plugin: full documentation is available on #plugins-dev on our Discord server.", DoesWrap = true })
   InfoBoxRight:AddLabel({ Text = "Credits: areyoumental, pealz, wilson, agarv, raja", DoesWrap = true })
-  print("[STEP 12]: info tab populated")
-
+  print("[STEP 12]: added stuff in info tab")
+  
+  
+  
   repeat task.wait() until ThemeManager ~= nil
   print("[STEP 13]: ThemeManager ready, applying theme...")
   
