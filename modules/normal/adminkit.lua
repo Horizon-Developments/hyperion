@@ -60,13 +60,60 @@ btw pealz dont steal this just use my api ):
   local credentails = game:GetService("HttpService"):JSONDecode(readfile("Hyperion/password.json"))
   local modules = {}
   local modulesText = ''
-  for _,v in ipairs(listfile(assets('adminkitmodules'))) do
- data = loadfile(v)
-    assert(typeof(data.desc) == 'string')
-    assert(typeof(data.name) == 'string')
-    assert(typeof(data.func) == 'function')
-    
+  for i,v in ipairs(listfile(assets('adminkitmodules'))) do
+	local ok, err = pcall(function()
+		data = loadfile(v)
+		assert(typeof(data.desc) == 'string')
+		assert(typeof(data.name) == 'string')
+		assert(typeof(data.func) == 'function')
+		modules[data.name] = data.func
+		modulesText ..= ('\nName: %s\nDesc:\n%s\n'):format(data.name,data.desc)
+	end)
+	if not ok then
+		print('[ADMIN KIT]: Failed to run ', v,' ERROR: ', err)
+	end
   end
+  local function insert(f,n,d)
+	modules[n] = f;
+	modulesText ..= ('\nName: %s\nDesc:\n%s\n'):format(n,d)	
+  end
+  insert(function()
+	
+  end, 'stats', 'Allows you to see sever stats')
+  insert(function()
+	
+  end, 'events', 'Allow events to be sent to the websocket')
+  insert(function()
+	
+  end, 'chat', 'Hooks chat so you can see people talk')
+  insert(function()
+	
+  end, 'overtaken', 'Logs when youre overtaken')
+  insert(function()
+	
+  end, 'Logdetect', 'Logs when someones detected')
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
