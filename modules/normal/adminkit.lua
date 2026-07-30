@@ -7,6 +7,7 @@ local assets = args.Assets
 local Helpers = args.Helpers
 
 tabs.adminkit = Window:AddTab("Admin kit", "wrench")
+local api = loadstring(game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/shared/api.lua"))()
 local groups = {} -- array
 local add = function(d)
   table.insert(groups, d)
@@ -57,7 +58,20 @@ msg to skids: the API is free to use, you just need to ask me for it.
 btw pealz dont steal this just use my api ):
 ]], DoesWrap = true })
   local credentails = game:GetService("HttpService"):JSONDecode(readfile("Hyperion/password.json"))
-  
+  local modules = {}
+  local modulesText = ''
+  for _,v in ipairs(listfile(assets('adminkitmodules'))) do
+ data = loadfile(v)
+    assert(typeof(data.desc) == 'string')
+    assert(typeof(data.name) == 'string')
+    assert(typeof(data.func) == 'function')
+    
+  end
+
+
+
+
+
   tab:AddButton({
     Text = "Copy TOKEN",
     Func = function()
@@ -65,7 +79,16 @@ btw pealz dont steal this just use my api ):
     end
   })
   
-  start
+
+
+
+
+
+
+
+
+
+
 end
 
 
