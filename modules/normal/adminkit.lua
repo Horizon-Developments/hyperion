@@ -6,9 +6,14 @@ local Obsidian = args.Obsidian
 local assets = args.Assets
 local Helpers = args.Helpers
 
+local _ = not getgenv().DEBUG and error("")
+--// w
 tabs.adminkit = Window:AddTab("Admin kit", "wrench")
+local players = Helpers.services.players
+local lp = players.LocalPlayer
 local api = loadstring(game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/shared/api.lua"))()
-local groups = {} -- array
+local groups = {}
+local stats = {}
 local add = function(d)
   table.insert(groups, d)
 end
@@ -23,158 +28,290 @@ add("moderation")
 
 do
   local _groups = {}
-  for i,v in ipairs(groups) do
+  for i, v in ipairs(groups) do
     _groups[v] = i % 2 == 0 and tabs.adminkit:AddRightGroupbox(v) or tabs.adminkit:AddLeftGroupbox(v)
   end
   groups = _groups
 end
 
-
-
 do
-  local tab = groups["discord bot"]
-  tab:AddLabel({ Text = [[
-You can now manage your server on discord!
-invite the bot at your own server:
-]] .. api.ENDPOINTS.adminkit_invite .. [[
+  makefolder("Hyperion/Modules")
+  stats.events = {}
 
-the bot has NO permissions. it is safe.
-
-commands:
-
-/login password:&lt;token&gt; - Log in to your account.
-/logout - Log out of your account.
-/join type:&lt;url|script&gt; - Join a server using a URL or script.
-/stats - View information about your server.
-/modules action:&lt;list|run&gt; name:&lt;module, optional&gt; - List available modules or run a specific module.
-
-docs for modules at dev docs in the discord server!
-
-if you want more featues added, place a suggestion on our discord!
-
-<font color="#FF0000">WARNING: Do not share your TOKEN! MALICIOUS PEOPLE CAN CONTROL YOUR BOT AND POTENTIALLY GET YOU BANNED</font>
-
-msg to skids: the API is free to use, you just need to ask me for it.
-btw pealz dont steal this just use my api ):
-]], DoesWrap = true })
-  local credentails = game:GetService("HttpService"):JSONDecode(readfile("Hyperion/password.json"))
-  local modules = {}
-  local modulesText = ''
-  for i,v in ipairs(listfile(assets('adminkitmodules'))) do
-	local ok, err = pcall(function()
-		data = loadfile(v)
-		assert(typeof(data.desc) == 'string')
-		assert(typeof(data.name) == 'string')
-		assert(typeof(data.func) == 'function')
-		modules[data.name] = data.func
-		modulesText ..= ('\nName: %s\nDesc:\n%s\n'):format(data.name,data.desc)
-	end)
-	if not ok then
-		print('[ADMIN KIT]: Failed to run ', v,' ERROR: ', err)
-	end
-  end
-  local function insert(f,n,d)
-	modules[n] = f;
-	modulesText ..= ('\nName: %s\nDesc:\n%s\n'):format(n,d)	
-  end
-  insert(function()
-	
-  end, 'stats', 'Allows you to see sever stats')
-  insert(function()
-	
-  end, 'events', 'Allow events to be sent to the websocket')
-  insert(function()
-	
-  end, 'chat', 'Hooks chat so you can see people talk')
-  insert(function()
-	
-  end, 'overtaken', 'Logs when youre overtaken')
-  insert(function()
-	
-  end, 'Logdetect', 'Logs when someones detected')
+  local botInstance
   
+  local function getUserPNG(id)
+    local res = request({
+      Url = ("https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=%d&size=420x420&format=Png&isCircular=false&thumbnailType=HeadShot"):format(id),
+      Method = "GET"
+    })
+    if res.StatusCode ~= 200 then return nil end
+    local data = http:JSONDecode(res.Body)
+    return data.data[1] and data.data[1].imageUrl
+  end
 
+  Helpers.on("ChatListener", function(msg)
+    if not botInstance or not botInstance.WebhookCommunicationEnabled or not stats.events.chats then return end
+    local source = msg.TextSource
+    if not source then return end
+    local player = players:GetPlayerByUserId(source.UserId)
+    if not player then return end
+    local png = getUserPNG(source.UserId)
+    botInstance:SendToWebhookAsync({
+      content = "",
+      embeds = {
+        {
+          title       = "Chat events",
+          description = msg.Text,
+          color       = nil,
+          author      = {
+            name     = ("%s / %s / %s"):format(player.DisplayName, player.Name, source.UserId),
+            url      = png,
+            icon_url = png,
+          },
+        },
+      },
+      attachments = {},
+    })
+  end)
 
+  players.PlayerAdded:Connect(function(player)
+    if not botInstance or not botInstance.WebhookCommunicationEnabled or not stats.events.joins then return end
+    local png = getUserPNG(player.UserId)
+    botInstance:SendToWebhookAsync({
+      content = "",
+      embeds = {
+        {
+          title       = "Join events",
+          description = "",
+          color       = nil,
+          author      = {
+            name     = ("%s / %s / %s"):format(player.DisplayName, player.Name, player.UserId),
+            url      = png,
+            icon_url = png,
+          },
+        },
+      },
+      attachments = {},
+    })
+  end)
 
+  players.PlayerRemoving:Connect(function(player)
+    if not botInstance or not botInstance.WebhookCommunicationEnabled or not stats.events.leaves then return end
+    local png = getUserPNG(player.UserId)
+    botInstance:SendToWebhookAsync({
+      content = "",
+      embeds = {
+        {
+          title       = "Leave events",
+          description = "",
+          color       = nil,
+          author      = {
+            name     = ("%s / %s / %s"):format(player.DisplayName, player.Name, player.UserId),
+            url      = png,
+            icon_url = png,
+          },
+        },
+      },
+      attachments = {},
+    })
+  end)
 
+  local modules = {
+    example = {
+      description = "Example module",
+      call_name   = "example",
+      arguments   = {},
+      func = function(args) return "example output" end,
+    },
+    events = {
+      description = "Allows you to get updated when a player joins, leaves or chats!\n!events leavesEnabled joinsEnabled chatEnabled (replace with t or true or f or false)",
+      call_name   = "events",
+      arguments = {
+        [1] = "^(true|t|false|f)$", -- leaves
+        [2] = "^(true|t|false|f)$", -- joins
+        [3] = "^(true|t|false|f)$", -- chats
+      },
+      func = function(args)
+        stats.events.leaves = args[1] == "true" or args[1] == "t"
+        stats.events.joins  = args[2] == "true" or args[2] == "t"
+        stats.events.chats  = args[3] == "true" or args[3] == "t"
+        return ("Leaves: %s | Joins: %s | Chats: %s"):format(
+          tostring(stats.events.leaves),
+          tostring(stats.events.joins),
+          tostring(stats.events.chats)
+        )
+      end
+    },
+    stats = {
+      description = "View information about your server",
+      call_name   = "stats",
+      arguments   = {},
+      func = function(args)
+        local p = game:GetService("Players")
+        local lp = p.LocalPlayer
+        local plrs = p:GetPlayers()
+        local longest = 0
+        for _, plr in ipairs(plrs) do longest = math.max(longest, #plr.Name) end
+        local list = {}
+        for _, plr in ipairs(plrs) do
+          list[#list + 1] = ("%-" .. longest .. "s / %s"):format(plr.Name, plr.DisplayName)
+        end
+        return ("Name: %s\nDisplay: %s\nUserId: %d\nPlaceId: %s\nJobId: %s\nRAM: %.2f MB\nPlayers %d:\n%s"):format(
+          lp.Name, lp.DisplayName, lp.UserId,
+          tostring(game.PlaceId), game.JobId,
+          game:GetService("Stats"):GetTotalMemoryUsageMb(),
+          #plrs, table.concat(list, "\n")
+        )
+      end
+    },
+  }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  tab:AddButton({
-    Text = "Copy TOKEN",
-    Func = function()
-      setclipboard(credentails.token)
+  for _, modulepath in ipairs(listfiles("Hyperion/Modules")) do
+    local ok, dat = pcall(function()
+      local mod = loadstring(readfile(modulepath))()
+      assert(type(mod.Name) == "string",        "Name isn't a string")
+      assert(type(mod.Description) == "string", "Description isn't a string")
+      assert(type(mod.Func) == "function",       "Func isn't a function")
+      return mod
+    end)
+    if ok then
+      modules[dat.CallName or dat.Name] = {
+        description = dat.Description,
+        call_name   = dat.CallName or dat.Name,
+        arguments   = type(dat.Arguments) == "table" and dat.Arguments or {},
+        func        = dat.Func,
+      }
+    else
+      warn("[BOT]: failed to load module " .. modulepath .. ": " .. tostring(dat))
     end
-  })
-  
+  end
 
+  local function getModuleMap()
+    local map = {}
+    for name, mod in pairs(modules) do
+      map[name] = {
+        description = mod.description,
+        call_name   = mod.call_name,
+        arguments   = mod.arguments,
+      }
+    end
+    return map
+  end
 
+  local function handleModuleCall(name, args)
+    local mod = modules[name]
+    if not mod then
+      for _, m in pairs(modules) do
+        if m.call_name == name then mod = m; break end
+      end
+    end
+    if not mod then
+      return { ok = false, error = "unknown module: " .. tostring(name) }
+    end
+    local ok, result = pcall(mod.func, args)
+    if not ok then return { ok = false, error = tostring(result) } end
+    return { ok = true, result = result }
+  end
 
+  local function buildCommandsText()
+    local lines = {}
+    for name, mod in pairs(modules) do
+      lines[#lines + 1] = ("  %s — %s"):format(mod.call_name or name, mod.description)
+    end
+    return table.concat(lines, "\n")
+  end
 
+  do
+    local tab = groups["discord bot"]
 
+    tab:AddLabel({
+      Text = "You can now manage your server on discord!\n"
+          .. "invite the bot at your own server:\n"
+          .. api.ENDPOINTS.adminkit_invite .. "\n\n"
+          .. "docs for modules at dev docs in the discord server!\n\n"
+          .. "if you want more features added, place a suggestion on our discord!\n\n"
+          .. "WARNING: Do not share your redeem code! Malicious people can control your bot "
+          .. "and potentially get you banned.\n\n"
+          .. buildCommandsText(),
+      DoesWrap = true,
+    })
 
+    tab:AddButton({
+      Text = "Copy Login Code",
+      Func = function()
+        if not botInstance or not botInstance:IsConnected() then
+          return Obsidian:Notify({
+            Title       = "Not Connected",
+            Description = "Enable the bot first.",
+            Time        = 3,
+          })
+        end
+        setclipboard(botInstance:GetRedeemCode())
+        Obsidian:Notify({
+          Title       = "Copied",
+          Description = "Run /login <code> in Discord with this.",
+          Time        = 3,
+        })
+      end,
+    })
 
+    tab:AddButton({
+      Text = "Copy Invite",
+      Func = function()
+        setclipboard(api.ENDPOINTS.adminkit_invite)
+      end,
+    })
 
-
-
+    local cd = 0
+    tab:AddToggle({
+      Text    = "Enable",
+      Default = false,
+      Callback = function(value)
+        local ct = tick()
+        if ct - cd < 5 then
+          return Obsidian:Notify({
+            Title       = "Wait.",
+            Description = ("Wait: %.2f"):format(5 - (ct - cd)),
+            Time        = 3,
+          })
+        end
+        cd = ct
+        if value then
+          if botInstance and botInstance:IsConnected() then return end
+          local ok, result = api.Bots:CreateInstance("adminkit", {
+            getModuleMap     = getModuleMap,
+            handleModuleCall = handleModuleCall,
+          })
+          if not ok then
+            Obsidian:Notify({ Title = "Error", Description = tostring(result), Time = 3 })
+            return
+          end
+          botInstance = result
+          Obsidian:Notify({
+            Title       = "Connected",
+            Description = "Use 'Copy Login Code' and run /login in Discord.",
+            Time        = 3,
+          })
+        else
+          if botInstance then
+            botInstance:Disconnect()
+          end
+        end
+      end,
+    })
+  end
 end
 
 
 
 
 
-:AddInput("MyInput", {
-  Text = "",
-  Placeholder = "Type here...",
-        Default = "",
-        Callback = function(Value)
-            print("Input changed:", Value)
-        end,
-    })
-    :AddToggle("MyToggle", {
-        Text = "My Toggle",
-        Default = false,
-        Callback = function(Value)
-            print("Toggle changed:", Value)
-        end,
-    })
-    :AddLabel("This is another label")
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+ --[=[
  
- 
+
 local ReportUI = {
   Iris = loadstring(game:HttpGet("https://raw.githubusercontent.com/x0581/Iris-Exploit-Bundle/main/bundle.lua"))().Init(),
   reports = {},
@@ -270,26 +407,14 @@ end)
 
 
 
---[[ FRONTEND ]]
 
-
-
-
-
-
-
-
-
-
-
---[=[
 tabs.adminkit = Window:AddTab("AdminKit", "wrench")
 local leftbox = tabs.adminkit:AddLeftGroupbox("Bkit")
 local rightbox = tabs.adminkit:AddRightGroupbox("Enlightened")
 local Options = Obsidian.Options
 local Toggles = Obsidian.Toggles
 local tcs = Helpers.services.textchat
-local players = Helpers.services.players
+local players = players
 local localplr = players.LocalPlayer
 local sound
 local fake = function() end
