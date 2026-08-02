@@ -2,8 +2,9 @@
 loadstring(game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/loader.lua"))()
 ]]
 
-if getgenv().hyperion and not (...) then return end
+if getgenv().hyperion and not getgenv().DEBUG then return end
 getgenv().hyperion = true
+
 print("[STEP 1]: loader start")
 
 local Api = loadstring(game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/shared/api.lua"))()

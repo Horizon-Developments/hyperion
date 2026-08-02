@@ -14,7 +14,7 @@ math.randomseed(tick() * 1000 % 2^31)
 
 
 local function dbg(msg)
-  if getgenv()._DEBUG then
+  if getgenv().DEBUG then
     print("[DEBUG]: " .. msg)
   end
 end
@@ -39,7 +39,7 @@ local ENDPOINTS = {
   logging     = "https://hyperion-server.hyperion-cf.workers.dev/Telemetry/Logging",
   adminkit_start  = "https://hyperion-server.hyperion-cf.workers.dev/discord/adminkit/start",
   adminkit_invite = "https://hyperion-server.hyperion-cf.workers.dev/discord/adminkit/invite",
-  generate        = "https://hyperion-server.hyperion-cf.workers.dev/generate",
+  generate        = "https://hyperion-server.hyperion-cf.workers.dev/key/generate",
   keyRedeem       = "https://hyperion-server.hyperion-cf.workers.dev/key/redeem/"
 }
 
