@@ -212,8 +212,6 @@ local mainok, mainres = pcall(task.spawn, function()
     repeat task.wait(0.1) until accepted
   end
   
-  
-  
   InfoBoxLeft:AddLabel({ Text = "Join our Discord for suggestions, updates, and help.", DoesWrap = true })
   InfoBoxRight:AddButton({
     Text = "Copy Invite",

@@ -13,6 +13,9 @@ local lbox = Tabs.botting:AddLeftGroupbox("")
 local rbox = Tabs.botting:AddRightGroupbox("")
 
 lbox:AddLabel([[
+WARNING:
+If you wanna MANAGE a server. USE ADMIN KIT'S feature. FOR FREE
+
 Tired of logging into your alts just to donate or run commands?
 Now you only need to execute once on each bot.
 
@@ -250,6 +253,13 @@ local function handleCmd(msg)
       return Obsidian:Notify({
         Title       = "Error",
         Description = "Command does not exist",
+        Time        = 2,
+      })
+    end
+    if not botInstance:IsConnected() then
+      return Obsidian:Notify({
+        Title       = "Error",
+        Description = "Session closed! renew (you dont need to change loadstring)",
         Time        = 2,
       })
     end
