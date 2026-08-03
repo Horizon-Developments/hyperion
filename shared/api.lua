@@ -43,8 +43,9 @@ local ENDPOINTS = {
   keyRedeem       = "https://hyperion-server.hyperion-cf.workers.dev/key/redeem/"
 }
 
-local password_path = "Hyperion/password.json"
-local AUTH_WAIT_TIMEOUT = 15
+local password_path        = "Hyperion/password.json"
+local ADMINKIT_TOKEN_PATH  = "Hyperion/adminkit_token.json"
+local AUTH_WAIT_TIMEOUT    = 15
 
 if not isfile(password_path) then
   dbg("no password file found so we're making one now")
@@ -95,6 +96,45 @@ end
 
 local function saveCredentials(creds)
   writefile(password_path, http:JSONEncode(creds))
+end
+
+-- Adminkit token persistence.
+-- The JWT returned by /key/redeem is valid for 24h. We cache it so that
+-- toggling the bot off/on (or crashing and restarting) within the same day
+-- never triggers /key/generate again — which has a hard 7-day cooldown.
+local function loadAdminkitToken()
+  local ok, raw = pcall(readfile, ADMINKIT_TOKEN_PATH)
+  if not ok or not raw or raw == "" then return nil end
+  local parseOk, data = pcall(http.JSONDecode, http, raw)
+  return (parseOk and data) or nil
+end
+
+local function saveAdminkitToken(token)
+  -- exp is stored in seconds (tick()-based). The server sets exp = now + 24h;
+  -- we subtract 120s so we never hand an about-to-expire token to the server.
+  local exp = tick() + 86400 - 120
+  local ok = pcall(writefile, ADMINKIT_TOKEN_PATH, http:JSONEncode({
+    token = token,
+    exp   = exp,
+  }))
+  if ok then
+    dbg("adminkit token saved, expires in ~23h58m")
+  else
+    dbg("failed to save adminkit token to disk")
+  end
+end
+
+local function deleteAdminkitToken()
+  pcall(delfile, ADMINKIT_TOKEN_PATH)
+  dbg("adminkit token deleted from disk")
+end
+
+local function isAdminkitTokenValid(data)
+  return type(data)        == "table"
+     and type(data.token)  == "string"
+     and data.token        ~= ""
+     and type(data.exp)    == "number"
+     and tick()            <  data.exp
 end
 
 local function httpError(res)
@@ -157,8 +197,10 @@ local function requestStart(body)
   return data
 end
 
-local function connectAdminkit(adminkitdata, key, ctx)
-  dbg("generating redeem code now")
+-- Fetches a fresh JWT by generating a one-time code and immediately redeeming it.
+-- Returns token (string) on success, or nil + error string on failure.
+local function generateAndRedeemToken()
+  dbg("generating a new one-time code now")
   local codeOk, codeRes = pcall(request, {
     Url     = ENDPOINTS.generate,
     Method  = "POST",
@@ -167,28 +209,95 @@ local function connectAdminkit(adminkitdata, key, ctx)
   })
   if not codeOk then
     dbg("generate request had a network error")
-    return false, "Generate request failed (network error)"
+    return nil, "Generate request failed (network error)"
+  end
+  if codeRes.StatusCode == 429 then
+    dbg("generate hit the 7-day cooldown")
+    return nil, "Code generation is on cooldown (7-day limit). Use the saved token or wait."
   end
   if codeRes.StatusCode ~= 200 then
     dbg("generate came back with bad status " .. tostring(codeRes.StatusCode))
-    return false, "Failed to generate code (HTTP " .. codeRes.StatusCode .. ")"
+    return nil, "Failed to generate code (HTTP " .. codeRes.StatusCode .. ")"
   end
   local code = extractField(codeRes.Body, "code")
   if not code or code == "" then
-    dbg("generate response missing code")
-    return false, "Server returned malformed generate response"
+    dbg("generate response missing code field")
+    return nil, "Server returned malformed generate response"
   end
-  dbg("got generated code: " .. code)
+  dbg("got code, redeeming it for a JWT now")
+
+  -- Exchange the one-time code for a signed JWT. This is the token the server
+  -- actually validates in /adminkit/start (via verifySessionToken) and that the
+  -- Discord user pastes into /login.
+  local redeemOk, redeemRes = pcall(request, {
+    Url     = ENDPOINTS.keyRedeem .. http:UrlEncode(code),
+    Method  = "POST",
+    Headers = { ["Content-Type"] = "application/json" },
+  })
+  if not redeemOk then
+    dbg("redeem request had a network error")
+    return nil, "Redeem request failed (network error)"
+  end
+  if redeemRes.StatusCode ~= 200 then
+    dbg("redeem came back with bad status " .. tostring(redeemRes.StatusCode))
+    return nil, "Failed to redeem code (HTTP " .. redeemRes.StatusCode .. ")"
+  end
+  local token = extractField(redeemRes.Body, "token")
+  if not token or token == "" then
+    dbg("redeem response missing token field")
+    return nil, "Server returned malformed redeem response"
+  end
+
+  dbg("got JWT token, saving to disk for reuse")
+  saveAdminkitToken(token)
+  return token
+end
+
+local function connectAdminkit(adminkitdata, key, ctx)
+  -- Try to reuse the cached JWT so we never hit the 7-day generate cooldown
+  -- on reconnects within the same 24h window.
+  local token
+  local saved = loadAdminkitToken()
+  if isAdminkitTokenValid(saved) then
+    dbg("found valid cached adminkit token, skipping generate+redeem")
+    token = saved.token
+  else
+    dbg("no valid cached token found, generating a fresh one")
+    local err
+    token, err = generateAndRedeemToken()
+    if not token then return false, err end
+  end
 
   local startData, err = requestStart({
     type     = "admin",
-    token    = code,
+    token    = token,
     jobid    = ctx.jobId,
     placeid  = tostring(ctx.placeid),
     name     = ctx.name,
     userid   = tostring(ctx.userid),
     constant = key,
   })
+
+  -- 401 means the server rejected the token — most likely the SessionDO was
+  -- killed by its 1-hour idle alarm after the previous disconnect. Wipe the
+  -- stale token from disk and get a fresh one (if still within the 7-day window).
+  if not startData and type(err) == "string" and err:find("401") then
+    dbg("server rejected cached token (401), wiping it and regenerating")
+    deleteAdminkitToken()
+    local newErr
+    token, newErr = generateAndRedeemToken()
+    if not token then return false, newErr end
+    startData, err = requestStart({
+      type     = "admin",
+      token    = token,
+      jobid    = ctx.jobId,
+      placeid  = tostring(ctx.placeid),
+      name     = ctx.name,
+      userid   = tostring(ctx.userid),
+      constant = key,
+    })
+  end
+
   if not startData then return false, err end
 
   dbg("connecting the websocket now")
@@ -200,12 +309,12 @@ local function connectAdminkit(adminkitdata, key, ctx)
   dbg("websocket connected good")
 
   local bot = {
-    Authenticated             = false,
+    Authenticated               = false,
     WebhookCommunicationEnabled = false,
-    connect_url                = startData.url,
-    ws                         = ws,
-    redeemCode                 = code,
-    pendingQueries             = {}, -- Id -> callback, for our own client-initiated requests
+    connect_url                 = startData.url,
+    ws                          = ws,
+    redeemCode                  = token,  -- JWT: paste this into /login in Discord
+    pendingQueries              = {},     -- Id -> callback, for our own client-initiated requests
   }
 
   function bot:GetRedeemCode()
