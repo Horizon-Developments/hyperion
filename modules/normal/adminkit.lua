@@ -10,6 +10,7 @@ local _ = not getgenv().DEBUG and error("")
 --// w
 tabs.adminkit = Window:AddTab("Admin kit", "wrench")
 local players = Helpers.services.players
+local http = Helpers.services.http
 local lp = players.LocalPlayer
 local api = loadstring(game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/shared/api.lua"))()
 local groups = {}
@@ -140,7 +141,7 @@ do
           tostring(stats.events.leaves),
           tostring(stats.events.joins),
           tostring(stats.events.chats)
-        )
+        ) .. (botInstance.WebhookCommunicationEnabled and "\nWARNING SET WEBHOOK FIRST THIS WILL **NOT** RUN WITHOUT IT" or "")
       end
     },
     stats = {
@@ -148,7 +149,7 @@ do
       call_name   = "stats",
       arguments   = {},
       func = function(args)
-        local p = game:GetService("Players")
+        local p = Helpers.services.players
         local lp = p.LocalPlayer
         local plrs = p:GetPlayers()
         local longest = 0
@@ -167,7 +168,7 @@ do
     },
   }
 
-  for _, modulepath in ipairs(listfiles("Hyperion/Modules")) do
+  for _, modulepath in ipairs(listfiles("Hyperion/AKM")) do
     local ok, dat = pcall(function()
       local mod = loadstring(readfile(modulepath))()
       assert(type(mod.Name) == "string",        "Name isn't a string")
