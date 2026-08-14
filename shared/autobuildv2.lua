@@ -13,19 +13,20 @@ local LocalPlayer = PlayersService.LocalPlayer
 local Sera = loadstring(game:HttpGet("https://raw.githubusercontent.com/MadStudioRoblox/Sera/refs/heads/main/Sera.luau"))()
 local EncodingService = game:GetService("EncodingService")
 
-local BlockSchema = Sera.Schema({
-  p = Sera.Vector3,
-  s = Sera.Vector3,
-  c = Sera.Color3,
-  m = Sera.String8,
-  a = Sera.Boolean,
-  cc = Sera.Boolean,
-})
-
 local function Compress(Data)
-  local SerializedBuffer = Sera.Serialize(BlockSchema, Data)
+  local Entries = {}
+  for i, Block in ipairs(Data) do
+    local SerializedBuffer, SerializeError = Sera.Serialize(BlockSchema, Block)
+    if SerializeError then
+      error("[AutoBuild] Sera.Serialize failed on block " .. i .. ": " .. tostring(SerializeError))
+    end
+    Entries[i] = buffer.tostring(SerializedBuffer)
+  end
+  -- Pack as JSON array of per-block binary strings, then compress the whole thing
+  local Packed = HttpService:JSONEncode(Entries)
+  local PackedBuffer = buffer.fromstring(Packed)
   local CompressedBuffer = EncodingService:CompressBuffer(
-    SerializedBuffer,
+    PackedBuffer,
     Enum.CompressionAlgorithm.Zstd,
     22
   )
@@ -38,9 +39,15 @@ local function Decompress(CompressedData)
     CompressedBuffer,
     Enum.CompressionAlgorithm.Zstd
   )
-  return Sera.Deserialize(BlockSchema, DecompressedBuffer)
+  local Packed = buffer.tostring(DecompressedBuffer)
+  local Entries = HttpService:JSONDecode(Packed)
+  local Result = {}
+  for i, BlockString in ipairs(Entries) do
+    local BlockBuffer = buffer.fromstring(BlockString)
+    Result[i] = Sera.Deserialize(BlockSchema, BlockBuffer)
+  end
+  return Result
 end
-
 
 
 
