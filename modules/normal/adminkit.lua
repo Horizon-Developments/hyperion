@@ -1,18 +1,21 @@
 --WHITELIST
-local args = ...
+local args = ...n
 local tabs = args.Tabs
 local Window = args.Window
 local Obsidian = args.Obsidian
-local assets = args.Assets
+local Assets = args.Assets
 local Helpers = args.Helpers
 
-local _ = not getgenv().DEBUG and error("")
---// w
+if not getgenv().DEBUG then
+  error("")
+end
+
 tabs.adminkit = Window:AddTab("Admin kit", "wrench")
-local players = Helpers.services.players
-local http = Helpers.services.http
-local lp = players.LocalPlayer
-local api = loadstring(game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/shared/api.lua"))()
+local players = Helpers.services.Players
+local http = Helpers.services.Http
+local LocalPlayer = players.LocalPlayer
+local Api = loadstring(game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/shared/api.lua"))()
+local ModulesInstaller = loadstring(game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/shared/modules_manger.lua"))()
 local groups = {}
 local stats = {}
 local add = function(d)
@@ -35,6 +38,99 @@ do
   groups = _groups
 end
 
+
+
+
+--// commanda
+local commands = {}
+--[[
+sturct:
+{
+  name: string
+  description: string
+  require_discord: boolean? (default false)
+  commands: array of {
+    name: string
+    description: string
+    require_discord: boolean? (default to main)
+    arguments: {} array of regex (lua)
+    func: (funcargs): => {}
+  }
+}
+funcargs: {
+  discord: { ... }
+  isdiscordcommand: boolean
+  arguments: {}
+}
+]]
+
+
+
+
+
+local Modules = {}
+
+do
+  local function ExpectValueOrError(Value, _Type, GivenErrMsg)
+    if typeof(Value) ~= _Type then
+      local ErrMsg = GivenErrMsg or ("Expected '%s' got '%s'"):format(_Type, typeof(Value))
+      error(ErrMsg, 2)
+    end
+  end
+  local success, result = ModulesInstaller({
+    ModulesPath = Assets("modules", "adminkit"),
+    GithubFolderUrl = "https://api.github.com/repos/Horizon-Developments/hyperion/contents/modules/adminkit",
+    ModuleHandler = function(fileContent, fileInfo)
+      print("Loaded:", fileInfo.Name)
+      local Ok, ModuleDataOrError = pcall(loadstring(fileContent))
+      
+      if not Ok then
+        return warn("Loaded ",fileInfo.Name," But failed, Error: ", ModuleDataOrError)
+      end
+      
+      local ModuleData = ModuleDataOrError
+      
+      --[[
+      
+      struct:
+      {
+        
+      }
+      
+      ]]
+      pcall(function()
+        ExpectValueOrError()
+        
+      end)
+      
+      
+      
+      
+      
+    end,
+    Async = true,
+    Cache = true,
+  })
+  if success then
+    print("Done! Failed files: ", #result)
+  else
+    warn("Installer failed: ", result)
+  end
+end
+
+
+
+
+
+
+
+do
+  
+  
+  
+end
+
+--// discord
 do
   makefolder("Hyperion/Modules")
   stats.events = {}
@@ -119,12 +215,12 @@ do
   end)
 
   local modules = {
-    example = {
+    --[[example = {
       description = "Example module",
       call_name   = "example",
       arguments   = {},
       func = function(args) return "example output" end,
-    },
+    },]]
     events = {
       description = "Allows you to get updated when a player joins, leaves or chats!\n!events leavesEnabled joinsEnabled chatEnabled (replace with t or true or f or false)",
       call_name   = "events",
@@ -227,13 +323,16 @@ do
     local tab = groups["discord bot"]
 
     tab:AddLabel({
-      Text = "You can now manage your server on discord!\n"
-          .. "invite the bot at your own server:\n"
-          .. api.ENDPOINTS.adminkit_invite .. "\n\n"
-          .. "docs for modules at dev docs in the discord server!\n\n"
-          .. "if you want more features added, place a suggestion on our discord!\n\n"
-          .. "WARNING: Do not share your redeem code! Malicious people can control your bot "
-          .. "and potentially get you banned.\n\n"
+      Text = [[
+You can now manage your server on discord!
+invite the bot at your own server:
+]] .. api.ENDPOINTS.adminkit_invite .. [[
+
+docs for modules at dev docs in the discord server!
+
+if you want more features added, place a suggestion on our discord!
+
+WARNING: Do not share your redeem code! Malicious people can control your bot and potentially get you banned.]]
           .. buildCommandsText(),
       DoesWrap = true,
     })
@@ -303,7 +402,7 @@ do
     })
   end
 end
-
+--// end
 
 
 

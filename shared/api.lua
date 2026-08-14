@@ -12,7 +12,6 @@ end
 
 math.randomseed(tick() * 1000 % 2^31) 
 
-
 local function dbg(msg)
   if getgenv().DEBUG then
     print("[DEBUG]: " .. msg)
@@ -26,30 +25,32 @@ local request = request or http_request or (syn and syn.request)
 
 --// all api urls used
 local ENDPOINTS = {
-  test        = "https://hyperion-server.hyperion-cf.workers.dev/test",
-  signin      = "https://hyperion-server.hyperion-cf.workers.dev/accounts/signin",
-  login       = "https://hyperion-server.hyperion-cf.workers.dev/accounts/login",
-  accountTest = "https://hyperion-server.hyperion-cf.workers.dev/accounts/test",
-  fileUpload  = "https://hyperion-server.hyperion-cf.workers.dev/file/upload",
-  fileDelete  = "https://hyperion-server.hyperion-cf.workers.dev/file/delete",
-  fileList    = "https://hyperion-server.hyperion-cf.workers.dev/file/list",
-  file        = "https://hyperion-server.hyperion-cf.workers.dev/file/",
-  plugins     = "https://hyperion-server.hyperion-cf.workers.dev/plugins",
-  crashReport = "https://hyperion-server.hyperion-cf.workers.dev/Telemetry/CrashReport",
-  logging     = "https://hyperion-server.hyperion-cf.workers.dev/Telemetry/Logging",
-  adminkit_start  = "https://hyperion-server.hyperion-cf.workers.dev/discord/adminkit/start",
-  adminkit_invite = "https://hyperion-server.hyperion-cf.workers.dev/discord/adminkit/invite",
-  generate        = "https://hyperion-server.hyperion-cf.workers.dev/key/generate",
-  keyRedeem       = "https://hyperion-server.hyperion-cf.workers.dev/key/redeem/"
+  test        = "test",
+  signin      = "accounts/signin",
+  login       = "accounts/login",
+  accountTest = "accounts/test",
+  fileUpload  = "file/upload",
+  fileDelete  = "file/delete",
+  fileList    = "file/list",
+  file        = "file/",
+  plugins     = "plugins",
+  crashReport = "Telemetry/CrashReport",
+  logging     = "Telemetry/Logging",
+  adminkit_start  = "discord/adminkit/start",
+  adminkit_invite = "discord/adminkit/invite",
+  generate        = "key/generate",
+  keyRedeem       = "key/redeem/"
 }
+for key, path in pairs(ENDPOINTS) do
+  ENDPOINTS[key] = "https://hyperion-server.hyperion-cf.workers.dev/" .. path
+end
 
 local password_path        = "Hyperion/password.json"
-local ADMINKIT_TOKEN_PATH  = "Hyperion/adminkit_token.json"
 local AUTH_WAIT_TIMEOUT    = 15
 
 if not isfile(password_path) then
-  dbg("no password file found so we're making one now")
-
+  dbg("no password file found, generating...")
+  
   local function guid()
     return http:GenerateGUID(false):gsub("-", "")
   end
@@ -66,13 +67,12 @@ if not isfile(password_path) then
     client   = guid(),
     constant = makeConstant(),
   }))
-  dbg("Password file written")
+  dbg("password file written")
 else
-  dbg("Skipped password file")
+  dbg("password file exists")
 end
 
 local function playerContext()
-  dbg("building player context now")
   return {
     executor = identifyexecutor and identifyexecutor() or "unsupported",
     hwid     = gethwid         and gethwid()          or "unsupported",
@@ -98,45 +98,6 @@ local function saveCredentials(creds)
   writefile(password_path, http:JSONEncode(creds))
 end
 
--- Adminkit token persistence.
--- The JWT returned by /key/redeem is valid for 24h. We cache it so that
--- toggling the bot off/on (or crashing and restarting) within the same day
--- never triggers /key/generate again — which has a hard 7-day cooldown.
-local function loadAdminkitToken()
-  local ok, raw = pcall(readfile, ADMINKIT_TOKEN_PATH)
-  if not ok or not raw or raw == "" then return nil end
-  local parseOk, data = pcall(http.JSONDecode, http, raw)
-  return (parseOk and data) or nil
-end
-
-local function saveAdminkitToken(token)
-  -- exp is stored in seconds (tick()-based). The server sets exp = now + 24h;
-  -- we subtract 120s so we never hand an about-to-expire token to the server.
-  local exp = tick() + 86400 - 120
-  local ok = pcall(writefile, ADMINKIT_TOKEN_PATH, http:JSONEncode({
-    token = token,
-    exp   = exp,
-  }))
-  if ok then
-    dbg("adminkit token saved, expires in ~23h58m")
-  else
-    dbg("failed to save adminkit token to disk")
-  end
-end
-
-local function deleteAdminkitToken()
-  pcall(delfile, ADMINKIT_TOKEN_PATH)
-  dbg("adminkit token deleted from disk")
-end
-
-local function isAdminkitTokenValid(data)
-  return type(data)        == "table"
-     and type(data.token)  == "string"
-     and data.token        ~= ""
-     and type(data.exp)    == "number"
-     and tick()            <  data.exp
-end
-
 local function httpError(res)
   return { status = res.StatusCode, message = res.StatusMessage, body = res.Body }
 end
@@ -151,56 +112,50 @@ local Telemetry = api.Telemetry
 local Bots      = api.Bots
 
 function Telemetry:CrashReportSend(err)
-  dbg("sending crash report.")
   local payload = playerContext()
   payload.error = tostring(err)
   
-  pcall(request, {
+  dbg("sent crash report. out:",pcall(request, {
     Url    = ENDPOINTS.crashReport,
     Method = "POST",
     Body   = http:JSONEncode(payload),
-  })
+  }))
 end
 
 function Telemetry:LoggingSend(data)
-  dbg("sending logging payload now")
   local payload = playerContext()
   
-  pcall(request, {
-    Url    = ENDPOINTS.logging,
-    Method = "POST",
-    Body   = tostring(data),
-  })
-end
-
-local function requestStart(body)
-  dbg("sending adminkit start request to server, type=" .. tostring(body.type))
-  local res = request({
-    Url     = ENDPOINTS.adminkit_start,
-    Method  = "POST",
-    Headers = { ["Content-Type"] = "application/json" },
-    Body    = http:JSONEncode(body),
-  })
-
-  if res.StatusCode ~= 200 then
-    dbg("start request came back bad status code " .. tostring(res.StatusCode))
-    return nil, "Failed to start session (HTTP " .. res.StatusCode .. ")"
+  dbg("sent log report. output:", pcall(request, {
+      Url    = ENDPOINTS.logging,
+      Method = "POST",
+      Body   = tostring(data),
+    }))
   end
-
-  local data = http:JSONDecode(res.Body)
-  if not data or not data.url then
-    dbg("start body was busted no url in it")
-    return nil, "Server returned malformed /adminkit/start body"
+  
+  local function requestStart(body)
+    dbg("sending adminkit start request to server, type=" .. tostring(body.type))
+    local res = request({
+      Url     = ENDPOINTS.adminkit_start,
+      Method  = "POST",
+      Headers = { ["Content-Type"] = "application/json" },
+      Body    = http:JSONEncode(body),
+    })
+    
+    if res.StatusCode ~= 200 then
+      dbg("start request came back bad status code " .. tostring(res.StatusCode))
+      return nil, "Failed to start session (HTTP " .. res.StatusCode .. ")"
+    end
+    
+    local data = http:JSONDecode(res.Body)
+    if not data or not data.url then
+      dbg("start body has no url in it")
+      return nil, "Server returned malformed /adminkit/start body"
+    end
+    
+    dbg("start request is ok, url=" .. data.url)
+    return data
   end
-
-  dbg("start request came back ok, url=" .. data.url)
-  return data
-end
-
--- Fetches a fresh JWT by generating a one-time code and immediately redeeming it.
--- Returns token (string) on success, or nil + error string on failure.
-local function generateAndRedeemToken()
-  dbg("generating a new one-time code now")
+  dbg("generating one time code...")
   local codeOk, codeRes = pcall(request, {
     Url     = ENDPOINTS.generate,
     Method  = "POST",
@@ -212,8 +167,8 @@ local function generateAndRedeemToken()
     return nil, "Generate request failed (network error)"
   end
   if codeRes.StatusCode == 429 then
-    dbg("generate hit the 7-day cooldown")
-    return nil, "Code generation is on cooldown (7-day limit). Use the saved token or wait."
+    dbg("generate hit the rate limit")
+    return nil, "Rate limited, try again shortly."
   end
   if codeRes.StatusCode ~= 200 then
     dbg("generate came back with bad status " .. tostring(codeRes.StatusCode))
@@ -224,11 +179,8 @@ local function generateAndRedeemToken()
     dbg("generate response missing code field")
     return nil, "Server returned malformed generate response"
   end
-  dbg("got code, redeeming it for a JWT now")
-
-  -- Exchange the one-time code for a signed JWT. This is the token the server
-  -- actually validates in /adminkit/start (via verifySessionToken) and that the
-  -- Discord user pastes into /login.
+  dbg("got code redeeming it for a JWT now")
+  
   local redeemOk, redeemRes = pcall(request, {
     Url     = ENDPOINTS.keyRedeem .. http:UrlEncode(code),
     Method  = "POST",
@@ -247,28 +199,17 @@ local function generateAndRedeemToken()
     dbg("redeem response missing token field")
     return nil, "Server returned malformed redeem response"
   end
-
-  dbg("got JWT token, saving to disk for reuse")
-  saveAdminkitToken(token)
+  
+  dbg("got JWT token")
   return token
 end
 
 local function connectAdminkit(adminkitdata, key, ctx)
-  -- Try to reuse the cached JWT so we never hit the 7-day generate cooldown
-  -- on reconnects within the same 24h window.
-  local token
-  local saved = loadAdminkitToken()
-  if isAdminkitTokenValid(saved) then
-    dbg("found valid cached adminkit token, skipping generate+redeem")
-    token = saved.token
-  else
-    dbg("no valid cached token found, generating a fresh one")
-    local err
-    token, err = generateAndRedeemToken()
-    if not token then return false, err end
-  end
+  local token, err = generateAndRedeemToken()
+  if not token then return false, err end
 
-  local startData, err = requestStart({
+  local startData
+  startData, err = requestStart({
     type     = "admin",
     token    = token,
     jobid    = ctx.jobId,
@@ -277,26 +218,6 @@ local function connectAdminkit(adminkitdata, key, ctx)
     userid   = tostring(ctx.userid),
     constant = key,
   })
-
-  -- 401 means the server rejected the token — most likely the SessionDO was
-  -- killed by its 1-hour idle alarm after the previous disconnect. Wipe the
-  -- stale token from disk and get a fresh one (if still within the 7-day window).
-  if not startData and type(err) == "string" and err:find("401") then
-    dbg("server rejected cached token (401), wiping it and regenerating")
-    deleteAdminkitToken()
-    local newErr
-    token, newErr = generateAndRedeemToken()
-    if not token then return false, newErr end
-    startData, err = requestStart({
-      type     = "admin",
-      token    = token,
-      jobid    = ctx.jobId,
-      placeid  = tostring(ctx.placeid),
-      name     = ctx.name,
-      userid   = tostring(ctx.userid),
-      constant = key,
-    })
-  end
 
   if not startData then return false, err end
 
@@ -307,28 +228,28 @@ local function connectAdminkit(adminkitdata, key, ctx)
     return false, "WebSocket connection failed"
   end
   dbg("websocket connected good")
-
+  
   local bot = {
     Authenticated               = false,
     WebhookCommunicationEnabled = false,
     connect_url                 = startData.url,
     ws                          = ws,
-    redeemCode                  = token,  -- JWT: paste this into /login in Discord
-    pendingQueries              = {},     -- Id -> callback, for our own client-initiated requests
+    redeemCode                  = token,
+    pendingQueries              = {}
   }
-
+  
   function bot:GetRedeemCode()
     return self.redeemCode
   end
-
+  
   ws.OnMessage:Connect(function(message)
     dbg("[ADMINKIT] recv: " .. tostring(message))
     local ok, decoded = pcall(http.JSONDecode, http, message)
     if not ok or not decoded then
-      dbg("recv message wasnt json we just drop it")
+      dbg("recv message wasnt json, dropped: ", message)
       return
     end
-
+    
     task.spawn(function()
       local pendingCallback = bot.pendingQueries[decoded.Id]
       if pendingCallback then
@@ -336,9 +257,9 @@ local function connectAdminkit(adminkitdata, key, ctx)
         pendingCallback(decoded.data)
         return
       end
-
+      
       if type(decoded.data) == "table" and decoded.data.webhook_communication_enabled then
-        dbg("server says webhook communication is now enabled")
+        dbg("server: webhook communication is now enabled")
         bot.WebhookCommunicationEnabled = true
         return
       end
@@ -349,7 +270,7 @@ local function connectAdminkit(adminkitdata, key, ctx)
         ws:Send(http:JSONEncode({ Id = decoded.Id, data = moduleMap }))
         return
       end
-
+      
       if type(decoded.data) == "table" and type(decoded.data.module_run) == "table" then
         dbg("got a module_run call handling it now")
         local run  = decoded.data.module_run
@@ -366,20 +287,20 @@ local function connectAdminkit(adminkitdata, key, ctx)
         dbg("module_run result sent back")
         return
       end
-
-      dbg("unrecognised message shape, dropping")
+      dbg("unrecognised message shape, dropping: ",message)
     end)
   end)
-
+  
   local sendOk = pcall(function() ws:Send(http:JSONEncode({ ok = true })) end)
   if sendOk then
-    dbg("sent the ok true handshake thing")
+    dbg("sent ok to handshake")
+    task.wait(1)
     bot.Authenticated = true
-    dbg("bot marked as authenticated now")
+    dbg("bot marked as authenticated.")
   else
     dbg("failed to send ok true handshake, not marking authenticated")
   end
-
+  
   if ws.OnClose then
     ws.OnClose:Connect(function()
       dbg("[ADMINKIT] websocket closed")
@@ -388,14 +309,14 @@ local function connectAdminkit(adminkitdata, key, ctx)
     end)
   end
   bot.Connected = true
-
+  
   function bot:Disconnect()
     dbg("[ADMINKIT] disconnecting, sending TS:CLOSE")
     pcall(function() self.ws:Send("TS:CLOSE") end)
     self.Authenticated = false
     self.Connected = false
   end
-
+  
   function bot:SendMessageAsync(message)
     task.spawn(function()
       local waited = 0
@@ -416,7 +337,7 @@ local function connectAdminkit(adminkitdata, key, ctx)
       dbg("[ADMINKIT] sent: " .. tostring(message))
     end)
   end
-
+  
   -- Fires { Id, is_webhook_communication_enabled = true } and waits for the
   -- { Id, data: bool } reply.
   function bot:IsWebhookCommunicationEnabledAsync(callback)
@@ -424,7 +345,7 @@ local function connectAdminkit(adminkitdata, key, ctx)
     self.pendingQueries[id] = callback
     self:SendMessageAsync(http:JSONEncode({ Id = id, is_webhook_communication_enabled = true }))
   end
-
+  
   -- Fires { Id, webhook_communication_send = payload } and waits for the
   -- correlated { Id, data: { ok } } reply.
   function bot:SendToWebhookAsync(payload, callback)
@@ -448,13 +369,12 @@ local function connectRelay(key)
     dbg("relay websocket connect failed")
     return false, "WebSocket connection failed"
   end
-  dbg("relay websocket connected good")
-
+  dbg("relay websocket connected.")
+  
   local bot = { Authenticated = false, connect_url = startData.url, ws = ws }
-
+  
   ws.OnMessage:Connect(function(message)
     dbg("[BOT] recv: " .. tostring(message))
-
     if message == "FS:Authorization" then
       dbg("got auth request sending key back now")
       ws:Send("TS:" .. key)
@@ -465,18 +385,18 @@ local function connectRelay(key)
       dbg("relay bot marked authenticated now")
     end
   end)
-
+  
   local function sendHello()
     ws:Send("TS:OK")
     dbg("sent ts ok to relay bot")
   end
-
+  
   if ws.OnOpen then
     ws.OnOpen:Connect(sendHello)
   else
     sendHello()
   end
-
+  
   if ws.OnClose then
     ws.OnClose:Connect(function()
       dbg("[BOT] websocket closed")
@@ -485,7 +405,6 @@ local function connectRelay(key)
     end)
   end
   bot.Connected = true
-
   function bot:SendAsync(message)
     task.spawn(function()
       local waited = 0
@@ -506,7 +425,7 @@ local function connectRelay(key)
       dbg("[BOT] sent: " .. tostring(message))
     end)
   end
-
+  
   function bot:GetClientScript()
     return ('loadstring(game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/shared/bot.lua"))("%s", "%s")'):format(
       self.connect_url, key
@@ -524,13 +443,13 @@ function Bots:CreateInstance(kind, adminkitdata)
   local credentials = loadCredentials()
   local key         = credentials.constant
   dbg("read credentials file got the constant now")
-
+  
   if kind == "adminkit" then
-    dbg("kind is adminkit so we go this path")
+    dbg("type is adminkit.")
     return connectAdminkit(adminkitdata, key, playerContext())
   end
 
-  dbg("kind is not adminkit so going relay path")
+  dbg("type is not adminkit, using relay path")
   return connectRelay(key)
 end
 
