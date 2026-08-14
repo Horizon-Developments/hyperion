@@ -53,11 +53,6 @@ end
 
 
 
-
-
-
-
-
 local IsOldGameVariant  = workspace:FindFirstChild("Cubes") ~= nil
 local BlockContainerFolder = IsOldGameVariant
     and workspace:WaitForChild("Cubes")
