@@ -14,19 +14,10 @@ local Sera = loadstring(game:HttpGet("https://raw.githubusercontent.com/MadStudi
 local EncodingService = game:GetService("EncodingService")
 
 local function Compress(Data)
-  local Entries = {}
-  for i, Block in ipairs(Data) do
-    local SerializedBuffer, SerializeError = Sera.Serialize(BlockSchema, Block)
-    if SerializeError then
-      error("[AutoBuild] Sera.Serialize failed on block " .. i .. ": " .. tostring(SerializeError))
-    end
-    Entries[i] = buffer.tostring(SerializedBuffer)
-  end
-  -- Pack as JSON array of per-block binary strings, then compress the whole thing
-  local Packed = HttpService:JSONEncode(Entries)
-  local PackedBuffer = buffer.fromstring(Packed)
+  local Json = HttpService:JSONEncode(Data)
+  local JsonBuffer = buffer.fromstring(Json)
   local CompressedBuffer = EncodingService:CompressBuffer(
-    PackedBuffer,
+    JsonBuffer,
     Enum.CompressionAlgorithm.Zstd,
     22
   )
@@ -39,17 +30,9 @@ local function Decompress(CompressedData)
     CompressedBuffer,
     Enum.CompressionAlgorithm.Zstd
   )
-  local Packed = buffer.tostring(DecompressedBuffer)
-  local Entries = HttpService:JSONDecode(Packed)
-  local Result = {}
-  for i, BlockString in ipairs(Entries) do
-    local BlockBuffer = buffer.fromstring(BlockString)
-    Result[i] = Sera.Deserialize(BlockSchema, BlockBuffer)
-  end
-  return Result
+  local Json = buffer.tostring(DecompressedBuffer)
+  return HttpService:JSONDecode(Json)
 end
-
-
 
 
 
