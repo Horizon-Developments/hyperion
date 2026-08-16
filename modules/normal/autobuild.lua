@@ -225,7 +225,7 @@ SaveBox:AddButton("SaveButton@autobuild", {
       RefreshFileList()
     end)
 
-    Options["SaveButton@autobuild"]:SetDisabled(false)
+    Buttons["SaveButton@autobuild"]:SetDisabled(false)
     Options["SaveFilename@autobuild"]:SetDisabled(false)
     Options["SavePlayers@autobuild"]:SetDisabled(false)
   end,
