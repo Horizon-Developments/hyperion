@@ -276,6 +276,7 @@ local StatsLabels = {
     ping     = StatsBox:AddLabel("Ping:", true),
 }
 
+
 game:GetService("RunService").RenderStepped:Connect(function()
     if Instance == nil then return end
 
