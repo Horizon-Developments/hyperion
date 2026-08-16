@@ -81,7 +81,7 @@ local function RefreshFileList()
   FileList = {}
 
   for _, FilePath in ipairs(listfiles(Path)) do
-    if FilePath:match("%.([^%.\\/]+)$") ~= "zst" then continue end
+    if FilePath:match("%.([^%.\\/]+)$") ~= nil then continue end
     table.insert(FileList, FilePath)
   end
 
@@ -99,8 +99,9 @@ Main:AddDropdown("FileName@autobuild", {
   Values = {},
   Text   = "File",
   FormatDisplayValue = function(Value)
-    return Value:match("([^\\/]+)$"):match("^(.*)%.[^%.]+$")
-  end,
+    local name = Value:match("([^\\/]+)$")
+    return name:match("^(.*)%.[^%.]+$") or name
+  end
   Callback = function(Value)
     if Value then
       Selected = {
@@ -220,7 +221,7 @@ SaveBox:AddButton("SaveButton@autobuild", {
         if plr then table.insert(Players, plr) end
       end
 
-      local blockCount = AutoBuildLib.save(Assets("BuildsV2", SaveFilename .. ".zst"), Players)
+      local blockCount = AutoBuildLib.save(Assets("BuildsV2", SaveFilename), Players)
       Obsidian:Notify({ Title = "Created successfully", Description = string.format("Saved %d block(s)", blockCount), Time = 3 })
       RefreshFileList()
     end))
