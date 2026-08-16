@@ -13,7 +13,7 @@ local Window   = args.Window
 local Obsidian = args.Obsidian
 local Assets   = args.Assets
 local Helpers  = args.Helpers
-
+print(obsidian, window, tabs, assets, helpers)
 Tabs.autobuild = Window:AddTab("Autobuild", "blocks")
 
 local Options = Obsidian.Options
