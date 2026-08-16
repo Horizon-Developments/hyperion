@@ -223,7 +223,7 @@ SaveBox:AddButton("SaveButton@autobuild", {
       local blockCount = AutoBuildLib.save(Path .. "/" .. SaveFilename .. ".zst", Players)
       Obsidian:Notify({ Title = "Created successfully", Description = string.format("Saved %d block(s)", blockCount), Time = 3 })
       RefreshFileList()
-    end)
+    end))
 
     Buttons["SaveButton@autobuild"]:SetDisabled(false)
     Options["SaveFilename@autobuild"]:SetDisabled(false)
