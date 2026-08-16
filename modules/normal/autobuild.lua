@@ -13,7 +13,7 @@ local Window   = args.Window
 local Obsidian = args.Obsidian
 local Assets   = args.Assets
 local Helpers  = args.Helpers
-print(obsidian, window, tabs, assets, helpers)
+print("j", Obsidian, Window, Tabs, Assets, Helpers)
 Tabs.autobuild = Window:AddTab("Autobuild", "blocks")
 
 local Options = Obsidian.Options
@@ -200,7 +200,7 @@ SaveBox:AddButton("SaveButton@autobuild", {
     Options["SaveFilename@autobuild"]:SetDisabled(true)
     Buttons["SaveButton@autobuild"]:SetDisabled(true)
 
-    pcall(function()
+    print(pcall(function()
       if not SaveFilename or SaveFilename == "" then
         Obsidian:Notify({ Title = "Invalid filename", Description = "Set your filename", Time = 3 })
         return
@@ -225,7 +225,7 @@ SaveBox:AddButton("SaveButton@autobuild", {
       RefreshFileList()
     end)
 
-    Buttons["SaveButton@autobuild"]:SetDisabled(false)
+    Options["SaveButton@autobuild"]:SetDisabled(false)
     Options["SaveFilename@autobuild"]:SetDisabled(false)
     Options["SavePlayers@autobuild"]:SetDisabled(false)
   end,
