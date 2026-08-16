@@ -20,7 +20,7 @@ Tabs.autobuild = Window:AddTab("Autobuild", "blocks")
 local Options = Library.Options
 local Main = Tabs.autobuild:AddLeftGroupbox("File")
 local Stats = Tabs.autobuild:AddLeftGroupbox("Stats")
-local Instance = Tabs.autobuild:AddRightGroupbox("Instance")
+local InstanceBox = Tabs.autobuild:AddRightGroupbox("Instance")
 
 local AutoBuildLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/shared/autobuildv2.lua"))(...)
 local Path = Assets("BuildsV2")
@@ -31,36 +31,60 @@ if not isfile(Path .. "/readme.txt") then
   writefile(Path .. "/readme.txt", [[Files are compressed using Zstandard (Zstd) at compression level 22. To access the JSON data parsed by the auto-build script, decompress the files first.]])
 end
 
+InstanceBox:Show(false)
 
 
 local FileList = {}
-local Selcted = nil;
+local Selected = nil
+
 local function RefreshFileList()
-  for _, FilePath in ipairs(listfiles(Path)) do
-    if Path:match("%.([^%.\\/]+)$") ~= "zst" then continue end
-    FileList[FilePath:match("([^\\/]+)$")] = FilePath:match("^(.*)%.[^%.]+$")
-  end
-	
-  Options["FileName@autobuild"]:SetValue()
+    FileList = {}
+    for _, FilePath in ipairs(listfiles(Path)) do
+        if FilePath:match("%.([^%.\\/]+)$") ~= "zst" then continue end
+        table.insert(FileList, FilePath)
+    end
+    if Selected ~= nil and not table.find(FileList, Selected) then
+        Selected = nil
+    end
+    Options["FileName@autobuild"]:SetValues(FileList)
+    Options["FileName@autobuild"]:SetValue(Selected)
 end
 
+RefreshFileList()
 
-Main:AddDropdown("FileName@autobuild", {
-  Text = "Select Filename",
-  Values = {},
-  Default = {},
-  Multi = false,
-  Callback = function(v)
-    Selcted = v
-  end
+DropdownGroupBox:AddDropdown("FileName@autobuild", {
+    Values = {},
+    Text = "File",
+    FormatDisplayValue = function(Value)
+        return Value:match("([^\\/]+)$"):match("^(.*)%.[^%.]+$")
+    end,
+    Callback = function(Value)
+        Selected = {
+            Path = Value,
+            Name = Value:match("([^\\/]+)$"):match("^(.*)%.[^%.]+$")
+        }
+    end,
 })
-
-
 
 Main:AddButton({
   Text = "Load",
   Func = function()
-    
+    if Selected == nil then
+      Obsidian:Notify({
+        Title = "No file selected",
+        Description = "Please select a file to load.",
+        Time = 3
+      })
+      return
+    end
+
+    Instance = AutoBuildLib:build(Selected.Path)
+    InstanceBox:Show(true)
+    Obsidian:Notify({
+      Title = "Instance loaded",
+      Description = "You can now run the instance.",
+      Time = 3
+    })
   end
 })
 
@@ -72,12 +96,118 @@ Main:AddButton({
   end
 })
 
-RefreshFileList()
+InstanceBox:AddButton({
+  Text = "Run instance",
+  Func = function()
+    if Instance == nil then
+      Obsidian:Notify({
+        Title = "No instance loaded",
+        Description = "Please load an instance first.",
+        Time = 3
+      })
+      return
+    end
 
+    local ok, res = pcall(function()
+      Instance:start()
+    end)
 
+    if not ok then
+      Obsidian:Notify({
+        Title = "Failed to run instance",
+        Description = tostring(res),
+        Time = 8
+      })
+    else
+      Obsidian:Notify({
+        Title = "Instance started",
+        Description = "The build is now running.",
+        Time = 3
+      })
+    end
+  end
+})
 
+InstanceBox:AddButton({
+  Text = "Stop instance",
+  Func = function()
+    if Instance == nil then
+      Obsidian:Notify({
+        Title = "No instance loaded",
+        Description = "Please load an instance first.",
+        Time = 3
+      })
+      return
+    end
 
+    Instance:stop()
+    
+    Obsidian:Notify({
+      Title = "Instance stopped",
+      Description = "The build has been stopped.",
+      Time = 3
+    })
+  end
+})
 
+InstanceBox:AddLabel("Fires the place remote before setting block properties.", true)
+InstanceBox:AddToggle("WaitBeforeSet@autobuild", {
+    Text    = "Wait before set",
+    Default = false,
+    Callback = function(v)
+        Instance.wbs(v)
+        Library:Notify({ Title = "Autobuild", Description = "Wait before set: " .. tostring(v), Time = 1.5 })
+    end,
+})
+
+InstanceBox:AddLabel("How long to wait (seconds) after resizing a block before continuing.", true)
+InstanceBox:AddSlider("ResizeWait@autobuild", {
+    Text     = "Resize wait",
+    Default  = 0.2,
+    Min      = 0,
+    Max      = 1,
+    Rounding = 2,
+    Callback = function(v)
+        Instance.resizewait(v)
+        Library:Notify({ Title = "Autobuild", Description = "Resize wait: " .. v, Time = 1.5 })
+    end,
+})
+
+InstanceBox:AddLabel("Maximum number of placement attempts per block before giving up.", true)
+InstanceBox:AddSlider("MaxTries@autobuild", {
+    Text     = "Max tries",
+    Default  = 150,
+    Min      = 1,
+    Max      = 500,
+    Rounding = 0,
+    Callback = function(v)
+        Instance.try(nil, v)
+        Library:Notify({ Title = "Autobuild", Description = "Max tries: " .. v, Time = 1.5 })
+    end,
+})
+
+InstanceBox:AddLabel("Delay between each placement attempt. Set to 0 to let autobuild decide based on ping.", true)
+InstanceBox:AddSlider("TryDelay@autobuild", {
+    Text     = "Try delay (0 = auto)",
+    Default  = 0,
+    Min      = 0,
+    Max      = 1,
+    Rounding = 3,
+    Callback = function(v)
+        local delay = v == 0 and nil or v
+        Instance.try(delay, nil)
+        Library:Notify({ Title = "Autobuild", Description = "Try delay: " .. (delay and tostring(v) or "auto"), Time = 1.5 })
+    end,
+})
+
+InstanceBox:AddLabel("Skips the block currently being attempted and moves to the next one.", true)
+InstanceBox:AddButton({
+    Text = "Skip block",
+    Func = function()
+        Instance.skip()
+        Library:Notify({ Title = "Autobuild", Description = "Skipped current block.", Time = 1.5 })
+    end,
+})
 
 
 
