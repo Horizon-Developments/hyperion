@@ -17,6 +17,7 @@ print(obsidian, window, tabs, assets, helpers)
 Tabs.autobuild = Window:AddTab("Autobuild", "blocks")
 
 local Options = Obsidian.Options
+local Buttons = Obsidian.Buttons
 local Main        = Tabs.autobuild:AddLeftGroupbox("File")
 local SaveBox     = Tabs.autobuild:AddLeftGroupbox("Save")
 local StatsBox    = Tabs.autobuild:AddLeftGroupbox("Stats")
