@@ -33,8 +33,21 @@ if not getgenv().cloneref then
 end
 
 local Api              = loadstring(game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/shared/api.lua"))()
-local ModulesInstaller = loadstring(game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/shared/modules_manger.lua"))()
+local ModulesInstaller;
+
+do
+	local ModulesInstallerOk;
+	ModulesInstallerOk, ModulesInstaller = pcall(loadstring, ModulesInstaller)
+
+	if not ModulesInstallerOk then
+		error("Install manager loadstring failed: " .. tostring(ModulesInstaller))
+	end
+
+	ModulesInstaller = ModulesInstaller()
+end
 print("Shared modules loaded")
+
+
 
 local HttpService = CloneRef(game:GetService("HttpService"))
 local TextChat    = CloneRef(game:GetService("TextChatService"))
