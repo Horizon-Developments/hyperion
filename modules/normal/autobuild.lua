@@ -220,7 +220,7 @@ SaveBox:AddButton("SaveButton@autobuild", {
         if plr then table.insert(Players, plr) end
       end
 
-      local blockCount = AutoBuildLib.save(Path .. "/" .. SaveFilename .. ".zst", Players)
+      local blockCount = AutoBuildLib.save(Assets("BuildsV2", SaveFilename .. ".zst"), Players)
       Obsidian:Notify({ Title = "Created successfully", Description = string.format("Saved %d block(s)", blockCount), Time = 3 })
       RefreshFileList()
     end))
