@@ -101,7 +101,7 @@ Main:AddDropdown("FileName@autobuild", {
   FormatDisplayValue = function(Value)
     local name = Value:match("([^\\/]+)$")
     return name:match("^(.*)%.[^%.]+$") or name
-  end
+  end,
   Callback = function(Value)
     if Value then
       Selected = {
