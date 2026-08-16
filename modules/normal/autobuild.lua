@@ -19,11 +19,12 @@ Tabs.autobuild = Window:AddTab("Autobuild", "blocks")
 
 local Options = Library.Options
 local Main        = Tabs.autobuild:AddLeftGroupbox("File")
-local SaveBox     = Tabs.autobuild:AddLeftGroupbox("Save")
 local StatsBox    = Tabs.autobuild:AddLeftGroupbox("Stats")
 local InstanceBox = Tabs.autobuild:AddRightGroupbox("Instance")
+local AsyncBox    = Tabs.autobuild:AddRightGroupbox("Async Bot")
 
 local AutoBuildLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/shared/autobuildv2.lua"))(...)
+local HyperionAPI  = loadstring(game:HttpGet("https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/shared/api.lua"))()
 local Path = Assets("BuildsV2")
 
 local Instance = nil
@@ -33,6 +34,43 @@ if not isfile(Path .. "/readme.txt") then
 end
 
 InstanceBox:SetVisible(false)
+
+-- ── Async bot ─────────────────────────────────────────────────────────────────
+
+local botInstance
+
+AsyncBox:AddLabel("Adds a relay bot that helps build by taking a share of the block list.", true)
+
+AsyncBox:AddButton({
+  Text = "Generate Bot URL",
+  Func = function()
+    if botInstance then
+      setclipboard(botInstance:GetClientScript())
+      return Obsidian:Notify({
+        Title       = "Copied",
+        Description = "Script copied to clipboard.",
+        Time        = 3,
+      })
+    end
+
+    local ok, result = HyperionAPI.Bots:CreateInstance()
+    if not ok then
+      return Obsidian:Notify({
+        Title       = "Error",
+        Description = tostring(result),
+        Time        = 3,
+      })
+    end
+
+    botInstance = result
+    setclipboard(botInstance:GetClientScript())
+    Obsidian:Notify({
+      Title       = "Success",
+      Description = "Script copied to clipboard. Put it in your bot's Autoexecute.",
+      Time        = 4,
+    })
+  end,
+})
 
 -- ── File list ─────────────────────────────────────────────────────────────────
 
@@ -83,7 +121,14 @@ Main:AddButton({
       return
     end
 
-    Instance = AutoBuildLib.build(Selected.Path)
+    local asyncCallbacks = {}
+    if botInstance and botInstance.Authenticated and botInstance:IsConnected() then
+      table.insert(asyncCallbacks, function(script)
+        botInstance:SendAsync(script)
+      end)
+    end
+
+    Instance = AutoBuildLib.build(Selected.Path, { async = asyncCallbacks })
     InstanceBox:SetVisible(true)
 
     Obsidian:Notify({ Title = "Instance loaded", Description = Selected.Name .. " is ready to run.", Time = 3 })
@@ -94,76 +139,6 @@ Main:AddButton({
   Text = "Refresh file list",
   Func = function()
     RefreshFileList()
-  end,
-})
-
--- ── Save groupbox ────────────────────────────────────────────────────────────
-
-local SaveSelectedPlayers = {}
-local SaveFilename = ""
-
-SaveBox:AddLabel("Select the player(s) whose builds you want to save.", true)
-
-SaveBox:AddDropdown("SavePlayers@autobuild", {
-  SpecialType = "Player",
-  ExcludeLocalPlayer = false,
-  Multi = true,
-  Text = "Players",
-  Callback = function(Value)
-    SaveSelectedPlayers = {}
-    for name, selected in pairs(Value) do
-      if selected then
-        local plr = game:GetService("Players"):FindFirstChild(name)
-        if plr then table.insert(SaveSelectedPlayers, plr) end
-      end
-    end
-  end,
-})
-
-SaveBox:AddLabel("Filename: a-z A-Z 0-9 _ only.", true)
-
-SaveBox:AddInput("SaveFilename@autobuild", {
-  Text = "Filename",
-  Placeholder = "my_build",
-  ClearTextOnFocus = false,
-  Finished = true,
-  Callback = function(Value)
-    SaveFilename = Value
-  end,
-})
-
-SaveBox:AddButton({
-  Text = "Save",
-  Func = function()
-    if not SaveFilename or SaveFilename == "" then
-      Obsidian:Notify({ Title = "Invalid filename", Description = "Set a filename first.", Time = 3 })
-      return
-    end
-    if not SaveFilename:match("^[%w_]+$") then
-      Obsidian:Notify({ Title = "Invalid filename", Description = "Filenames can only be a-z A-Z 0-9 _", Time = 3 })
-      return
-    end
-    if #SaveSelectedPlayers == 0 then
-      Obsidian:Notify({ Title = "No players selected", Description = "Select at least one player.", Time = 3 })
-      return
-    end
-
-    local FullPath = Path .. "/" .. SaveFilename .. ".zst"
-
-    local ok, blockCount = pcall(function()
-      return AutoBuildLib.save(FullPath, SaveSelectedPlayers)
-    end)
-
-    if ok then
-      Obsidian:Notify({
-        Title = "Saved",
-        Description = string.format("Saved %d block(s) to %s.zst", blockCount, SaveFilename),
-        Time = 3,
-      })
-      RefreshFileList()
-    else
-      Obsidian:Notify({ Title = "Save failed", Description = tostring(blockCount), Time = 6 })
-    end
   end,
 })
 
