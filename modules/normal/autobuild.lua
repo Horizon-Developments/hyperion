@@ -192,12 +192,13 @@ SaveBox:AddInput("SaveFilename@autobuild", {
   end,
 })
 
-local SaveButtonRef = SaveBox:AddButton("SaveButton@autobuild", {
+local IsSaving = false
+
+SaveBox:AddButton("SaveButton@autobuild", {
   Text = "Save",
   Func = function()
-    Options["SavePlayers@autobuild"]:SetDisabled(true)
-    Options["SaveFilename@autobuild"]:SetDisabled(true)
-    SaveButtonRef:SetDisabled(true)
+    if IsSaving then return end
+    IsSaving = true
 
     print(pcall(function()
       if not SaveFilename or SaveFilename == "" then
@@ -225,9 +226,7 @@ local SaveButtonRef = SaveBox:AddButton("SaveButton@autobuild", {
     end))
 
     task.wait(0.5)
-    SaveButtonRef:SetDisabled(false)
-    Options["SaveFilename@autobuild"]:SetDisabled(false)
-    Options["SavePlayers@autobuild"]:SetDisabled(false)
+    IsSaving = false
   end,
 })
 
