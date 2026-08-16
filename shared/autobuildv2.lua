@@ -522,19 +522,6 @@ local function CreateSession(filePath, settingsTable, fetchFn, isPreDecoded, fet
     local searchPos   = pos - faceDir * 4
 
     local ref, refNormal = workspace.Terrain, Enum.NormalId.Top
-    if BlockFolder then
-      for _, plrFolder in pairs(BlockFolder:GetChildren()) do
-        for _, brick in pairs(plrFolder:GetChildren()) do
-          local s = brick.Size
-          if brick:IsA("BasePart") and s.X == 0.5 and s.Y == 2 and s.Z == 0.5
-            and not brick:FindFirstChild("Input")
-            and (brick.Position - searchPos).Magnitude < 4 then
-            ref = brick; refNormal = normalId; break
-          end
-        end
-        if ref ~= workspace.Terrain then break end
-      end
-    end
 
     built = false; recentBlock = nil
     local tries = 0
@@ -589,9 +576,11 @@ local function CreateSession(filePath, settingsTable, fetchFn, isPreDecoded, fet
         for idx, hb in pairs(history) do
           if hb == nil or hb.Parent == nil then history[idx] = nil; continue end
           if previewPart.Size ~= hb.Size then continue end
+          local minDim = math.min(hb.Size.X, hb.Size.Y, hb.Size.Z)
+          local tol = hb.Anchored and 0.01 or math.min(0.75, minDim * 0.25)
           for nid, ax in pairs(AxisMap) do
             local adjPos = hb.Position + ax[1] * hb.Size[ax[2]]
-            if adjPos == previewPart.Position then
+            if (adjPos - previewPart.Position).Magnitude <= tol then
               local entry = { nid, hb, hb.Position + ax[1] * hb.Size[ax[2]] / 2 }
               table.insert(candidates, entry)
               adjFound = entry
@@ -635,12 +624,14 @@ local function CreateSession(filePath, settingsTable, fetchFn, isPreDecoded, fet
         for idx, hb in pairs(history) do
           if hb == nil or hb.Parent == nil then history[idx] = nil; continue end
           if previewPart.Size ~= hb.Size then continue end
+          local minDim = math.min(hb.Size.X, hb.Size.Y, hb.Size.Z)
+          local tol = hb.Anchored and 0.01 or math.min(0.75, minDim * 0.25)
           local d = previewPart.Position - hb.Position
-          local off = (math.abs(d.X)>0.01 and 1 or 0) + (math.abs(d.Y)>0.01 and 1 or 0) + (math.abs(d.Z)>0.01 and 1 or 0)
+          local off = (math.abs(d.X)>tol and 1 or 0) + (math.abs(d.Y)>tol and 1 or 0) + (math.abs(d.Z)>tol and 1 or 0)
           if off == 2 then
             for nid, ax in pairs(AxisMap) do
               local td = previewPart.Position - (hb.Position + ax[1] * hb.Size[ax[2]])
-              local toff = (math.abs(td.X)>0.01 and 1 or 0) + (math.abs(td.Y)>0.01 and 1 or 0) + (math.abs(td.Z)>0.01 and 1 or 0)
+              local toff = (math.abs(td.X)>tol and 1 or 0) + (math.abs(td.Y)>tol and 1 or 0) + (math.abs(td.Z)>tol and 1 or 0)
               if toff == 1 then
                 diagNeighbour = hb; bridgeNid = nid; bridgeBlock = hb; break
               end
@@ -955,8 +946,12 @@ local function CreateSession(filePath, settingsTable, fetchFn, isPreDecoded, fet
     return blockVerified(r.center, r.size, r.color, r.expectMat, r.anchored, r.collide)
   end
 
-  -- ── Sort by distance from spawn ────────────────────────────────────────────
-  local function sortByDist(blocks)
+  -- ── Sort by spatial adjacency (flood-fill from spawn) ──────────────────────
+  -- Orders blocks so that, as much as possible, each block in the queue is
+  -- physically touching a block already placed before it. This lets the
+  -- face-adjacency and diagonal-bridge fast paths in placeBlock actually
+  -- fire, instead of falling through to slow fresh-placement on every block.
+  local function sortByAdjacency(blocks)
     local ref
     local spawn = workspace:FindFirstChild("SpawnLocation") or workspace:FindFirstChild("Spawn")
     if spawn then
@@ -976,20 +971,135 @@ local function CreateSession(filePath, settingsTable, fetchFn, isPreDecoded, fet
       end
     end
     ref = ref or Vector3.new(0, 100, 0)
-    for _, b in ipairs(blocks) do
+
+    local n = #blocks
+    if n <= 1 then return blocks end
+
+    -- Precompute each block's center position + size
+    local centers, sizes = {}, {}
+    for i, b in ipairs(blocks) do
       local pa = b.p or b.pos
+      local bp
       if pa then
-        local bp = Vector3.new(pa[1], pa[2], pa[3])
+        bp = Vector3.new(pa[1], pa[2], pa[3])
         local sa = b.s or b.size
         if sa then bp = Vector3.new(bp.X+sa[1]/2-0.5, bp.Y+sa[2]/2-0.5, bp.Z+sa[3]/2-0.5) end
-        b.dist = (bp - ref).Magnitude
+        sizes[i] = sa and Vector3.new(sa[1], sa[2], sa[3]) or Vector3.new(GridUnitSize, GridUnitSize, GridUnitSize)
       else
-        b.dist = math.huge
+        bp = Vector3.new(math.huge, math.huge, math.huge)
+        sizes[i] = Vector3.new(GridUnitSize, GridUnitSize, GridUnitSize)
+      end
+      centers[i] = bp
+    end
+
+    -- Spatial hash so neighbor lookups stay roughly O(1) instead of O(n^2).
+    -- Blocks much larger than the grid cell go in a separate small "big"
+    -- list instead of inflating everyone's search radius — a single huge
+    -- block shouldn't force every other block to scan a massive cell range.
+    local cellSize   = GridUnitSize
+    local bigThresh  = cellSize * 4  -- anything larger than this in any axis is "big"
+    local cellRadius = 2             -- fixed, cheap radius for normal-size blocks
+    local function cellKey(pos)
+      return math.floor(pos.X / cellSize) .. ":" .. math.floor(pos.Y / cellSize) .. ":" .. math.floor(pos.Z / cellSize)
+    end
+    local buckets, bigList, isBig = {}, {}, {}
+    for i = 1, n do
+      local maxDim = math.max(sizes[i].X, sizes[i].Y, sizes[i].Z)
+      if maxDim > bigThresh then
+        bigList[#bigList+1] = i
+        isBig[i] = true
+      else
+        local key = cellKey(centers[i])
+        if not buckets[key] then buckets[key] = {} end
+        table.insert(buckets[key], i)
       end
     end
-    table.sort(blocks, function(a, b) return a.dist < b.dist end)
-    for _, b in ipairs(blocks) do b.dist = nil end
-    return blocks
+
+    -- True if blocks i and j are close enough to be face/edge/diagonal touching
+    local function isAdjacent(i, j)
+      local d = centers[i] - centers[j]
+      local halfSum = (sizes[i] + sizes[j]) / 2
+      return math.abs(d.X) <= halfSum.X + 0.6
+         and math.abs(d.Y) <= halfSum.Y + 0.6
+         and math.abs(d.Z) <= halfSum.Z + 0.6
+    end
+
+    -- Candidate neighbor indices for block i. Normal-size blocks: nearby
+    -- grid cells plus every "big" block (rare, cheap to check in full).
+    -- Big blocks: every other block, since their own surface can be far
+    -- from their center and a small local search would miss real neighbors.
+    local function candidates(i)
+      local out = {}
+      if isBig[i] then
+        for j = 1, n do
+          if j ~= i then out[#out+1] = j end
+        end
+        return out
+      end
+      local base = centers[i]
+      local bx, by, bz = math.floor(base.X/cellSize), math.floor(base.Y/cellSize), math.floor(base.Z/cellSize)
+      for dx = -cellRadius, cellRadius do
+        for dy = -cellRadius, cellRadius do
+          for dz = -cellRadius, cellRadius do
+            local bucket = buckets[(bx+dx) .. ":" .. (by+dy) .. ":" .. (bz+dz)]
+            if bucket then
+              for _, j in ipairs(bucket) do
+                if j ~= i then out[#out+1] = j end
+              end
+            end
+          end
+        end
+      end
+      for _, j in ipairs(bigList) do
+        if j ~= i then out[#out+1] = j end
+      end
+      return out
+    end
+
+    local visited = {}
+    local order = {}
+
+    local function nearestUnvisitedTo(pos)
+      local bestI, bestD
+      for i = 1, n do
+        if not visited[i] then
+          local d = (centers[i] - pos).Magnitude
+          if not bestD or d < bestD then bestD = d; bestI = i end
+        end
+      end
+      return bestI
+    end
+
+    -- Flood-fill outward from the block nearest spawn; when a connected
+    -- cluster runs out of neighbors, start a new cluster at the nearest
+    -- remaining block so ordering still radiates outward overall.
+    while #order < n do
+      local seed = nearestUnvisitedTo(ref)
+      if not seed then break end
+
+      local queue = { seed }
+      visited[seed] = true
+      local qi = 1
+      while qi <= #queue do
+        local cur = queue[qi]; qi = qi + 1
+        order[#order+1] = cur
+
+        local nbrs = candidates(cur)
+        table.sort(nbrs, function(a, b)
+          return (centers[a] - ref).Magnitude < (centers[b] - ref).Magnitude
+        end)
+        for _, j in ipairs(nbrs) do
+          if not visited[j] and isAdjacent(cur, j) then
+            visited[j] = true
+            queue[#queue+1] = j
+          end
+        end
+      end
+    end
+
+    local result = {}
+    for _, i in ipairs(order) do result[#result+1] = blocks[i] end
+    return result
   end
 
   -- ── Core build loop ────────────────────────────────────────────────────────
@@ -1002,7 +1112,7 @@ local function CreateSession(filePath, settingsTable, fetchFn, isPreDecoded, fet
     lastState = { blocks = data, transform = xform }
 
     stopped = false; skip = false
-    local sorted = sortByDist(data)
+    local sorted = sortByAdjacency(data)
     totalBlocks   = #sorted
     verifiedBlocks = 0
     buildStart    = tick()
@@ -1131,7 +1241,7 @@ lib.build(d, s, nil, true).start()
   session.stats = stats
 
   function session.settings() return cfg, DEFAULTS end
-  function session.stop()        stopped = true; skip = true end
+  function session.stop()        stopped = true; skip = true; tpTarget = nil end
   function session.skip()        skip = true end
   function session.wbs(v)        cfg.wbs = v end
   function session.resizewait(v) cfg.resizewait = v end
@@ -1153,7 +1263,7 @@ lib.build(d, s, nil, true).start()
       return buildLoop(data, makeXform())
     end
 
-    local allBlocks   = sortByDist(data)
+    local allBlocks   = sortByAdjacency(data)
     local total       = #allBlocks
     local workers     = #asyncClients + 1
     local base        = math.floor(total / workers)
