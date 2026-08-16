@@ -1,4 +1,4 @@
--- autobuildv3.lua
+-- autobuildv2.lua
 
 -- ── Services ─────────────────────────────────────────────────────────────────
 local PlayersService      = game:GetService("Players")
@@ -9,8 +9,6 @@ local CoreGui             = game:GetService("CoreGui")
 
 local LocalPlayer = PlayersService.LocalPlayer
 
-
-local Sera = loadstring(game:HttpGet("https://raw.githubusercontent.com/MadStudioRoblox/Sera/refs/heads/main/Sera.luau"))()
 local EncodingService = game:GetService("EncodingService")
 
 local function Compress(Data)
@@ -34,16 +32,13 @@ local function Decompress(CompressedData)
   return HttpService:JSONDecode(Json)
 end
 
-
-
-local IsOldGameVariant  = workspace:FindFirstChild("Cubes") ~= nil
+local IsOldGameVariant     = workspace:FindFirstChild("Cubes") ~= nil
 local BlockContainerFolder = IsOldGameVariant
     and workspace:WaitForChild("Cubes")
     or  workspace:WaitForChild("Bricks")
-local BlockInstanceName = IsOldGameVariant and "Cube" or "Brick"
+local BlockInstanceName    = IsOldGameVariant and "Cube" or "Brick"
 
-local GridUnitSize = 4
-
+local GridUnitSize      = 4
 local DefaultBlockColor = Color3.fromRGB(192, 192, 192)
 
 local NormalIdToAxisMap = {}
@@ -80,37 +75,46 @@ MaterialEnumToNameMap[Enum.Material.Neon]          = "neon"
 local MaterialNameToEnumMap = {}
 for MaterialEnum, MaterialName in pairs(MaterialEnumToNameMap) do MaterialNameToEnumMap[MaterialName] = MaterialEnum end
 
--- ── Ping tracker (shared across all sessions) ─────────────────────────────────
--- autoPingOptimize and ping tier thresholds are NOT runtime-configurable.
-local _buildDelay          = 0.235
-local _autoPingOptimizeEnabled = true
-local _currentPingMilliseconds = 0
-local _pingExponentialMovingAverage = 0
-local _pingHasBeenSampled  = false
+local buildDelay                   = 0.235
+local autoPingOptimizeEnabled      = true
+local currentPingMilliseconds      = 0
+local pingExponentialMovingAverage = 0
+local pingHasBeenSampled           = false
+
+local GENKEY  = "HyperionAutobuildGen"
+local CONNKEY = "HyperionAutoBuildCon"
+
+if getgenv()[CONNKEY] then
+  pcall(function() getgenv()[CONNKEY]:Disconnect() end)
+  getgenv()[CONNKEY] = nil
+end
+
+local moduleGen = (getgenv()[GENKEY] or 0) + 1
+getgenv()[GENKEY] = moduleGen
 
 task.spawn(function()
-  while true do
-    pcall(function() _currentPingMilliseconds = LocalPlayer:GetNetworkPing() * 1000 end)
-    if not _pingHasBeenSampled then
-      _pingExponentialMovingAverage = _currentPingMilliseconds
-      _pingHasBeenSampled = true
+  while getgenv()[GENKEY] == moduleGen do
+    pcall(function() currentPingMilliseconds = LocalPlayer:GetNetworkPing() * 1000 end)
+    if not pingHasBeenSampled then
+      pingExponentialMovingAverage = currentPingMilliseconds
+      pingHasBeenSampled = true
     else
-      _pingExponentialMovingAverage = _pingExponentialMovingAverage * 0.7 + _currentPingMilliseconds * 0.3
+      pingExponentialMovingAverage = pingExponentialMovingAverage * 0.7 + currentPingMilliseconds * 0.3
     end
-    if _autoPingOptimizeEnabled then
-      local CurrentPing = _pingExponentialMovingAverage
-      if     CurrentPing > 400 then _buildDelay = 0.50
-      elseif CurrentPing > 280 then _buildDelay = 0.35
-      elseif CurrentPing > 180 then _buildDelay = 0.22
-      elseif CurrentPing > 100 then _buildDelay = 0.12
-      else                          _buildDelay = math.max(CurrentPing / 1000 + 0.007, 0.051)
+    if autoPingOptimizeEnabled then
+      local CurrentPing = pingExponentialMovingAverage
+      if     CurrentPing > 400 then buildDelay = 0.50
+      elseif CurrentPing > 280 then buildDelay = 0.35
+      elseif CurrentPing > 180 then buildDelay = 0.22
+      elseif CurrentPing > 100 then buildDelay = 0.12
+      else                          buildDelay = math.max(CurrentPing / 1000 + 0.007, 0.051)
       end
     end
     task.wait(1)
   end
 end)
 
--- ── JSON helpers (module-level) ───────────────────────────────────────────────
+-- ── JSON helpers ──────────────────────────────────────────────────────────────
 local function SanitizeJsonString(RawJsonString)
   if not RawJsonString or RawJsonString == "" then return RawJsonString end
   RawJsonString = RawJsonString:gsub("^\xEF\xBB\xBF", "")
@@ -130,25 +134,19 @@ local function SanitizeJsonString(RawJsonString)
   return RawJsonString
 end
 
--- ─────────────────────────────────────────────────────────────────────────────
--- DEFAULTS table (the reference for session.settings())
--- ─────────────────────────────────────────────────────────────────────────────
+-- ── DEFAULTS ──────────────────────────────────────────────────────────────────
 local DEFAULTS = {
-  offset      = Vector3.zero, -- applied to every block position
-  mult        = 1,            -- position scale multiplier
-  historymax  = 400,          -- ring-buffer size for placed block history
-  resizewait  = 0.2,          -- seconds between each Shape-tool resize step
-  wbs         = false,        -- wait-between-sets: yield after each repair pass
-  maxtry      = 150,          -- max fire-attempts per block placement
-  maxtrydelay = nil,          -- override per-loop delay (nil = use ping-managed _buildDelay)
+  offset      = Vector3.zero,
+  mult        = 1,
+  historymax  = 400,
+  resizewait  = 0.2,
+  wbs         = false,
+  maxtry      = 150,
+  maxtrydelay = nil,
 }
 
--- ─────────────────────────────────────────────────────────────────────────────
--- lib.save
--- Serialises bricks owned by each player in `players` to a JSON file.
--- ─────────────────────────────────────────────────────────────────────────────
+-- ── lib.save ──────────────────────────────────────────────────────────────────
 local function SaveBlocksToFile(FilePath, PlayerList)
-  -- Build a set of accepted names for O(1) lookup
   local AcceptedPlayerNameSet = {}
   for _, PlayerInstance in ipairs(PlayerList) do
     if typeof(PlayerInstance) == "Instance" and PlayerInstance:IsA("Player") then
@@ -159,42 +157,31 @@ local function SaveBlocksToFile(FilePath, PlayerList)
   local SerializedBlockList = {}
   for _, BlockPart in ipairs(BlockContainerFolder:GetDescendants()) do
     if not BlockPart:IsA("BasePart") then continue end
-    -- ownership heuristic: parent folder name matches player
     local OwnerFolder = BlockPart.Parent
     if OwnerFolder and AcceptedPlayerNameSet[OwnerFolder.Name] then
       local BlockColor    = BlockPart.Color
       local BlockSize     = BlockPart.Size
       local BlockPosition = BlockPart.Position - BlockSize / 2 + Vector3.new(0.5, 0.5, 0.5)
       local MaterialName  = MaterialEnumToNameMap[BlockPart.Material] or "smooth"
-      local BlockEntry = {
+      table.insert(SerializedBlockList, {
         p  = { BlockPosition.X, BlockPosition.Y, BlockPosition.Z },
-        s  = { BlockSize.X,     BlockSize.Y,     BlockSize.Z     },
-        c  = {
-          math.round(BlockColor.R * 255),
-          math.round(BlockColor.G * 255),
-          math.round(BlockColor.B * 255),
-        },
+        s  = { BlockSize.X, BlockSize.Y, BlockSize.Z },
+        c  = { math.round(BlockColor.R * 255), math.round(BlockColor.G * 255), math.round(BlockColor.B * 255) },
         m  = MaterialName,
-        a = BlockPart.Anchored,
+        a  = BlockPart.Anchored,
         cc = BlockPart.CanCollide,
-      }
-      table.insert(SerializedBlockList, BlockEntry)
+      })
     end
   end
 
-  local Compressed = Compress(SerializedBlockList)
-  
-  writefile(FilePath, Compressed)
+  writefile(FilePath, Compress(SerializedBlockList))
   return #SerializedBlockList
 end
 
--- ─────────────────────────────────────────────────────────────────────────────
--- lib.build
--- ─────────────────────────────────────────────────────────────────────────────
+-- ── lib.build ─────────────────────────────────────────────────────────────────
 local function CreateBuildSession(FilePath, SessionSettingsTable, FetchToolsFunction, IsPreDecodedData)
   SessionSettingsTable = SessionSettingsTable or {}
 
-  -- ── Per-session settings (all mutable via session methods) ───────────────
   local SessionSettings = {
     offset      = SessionSettingsTable.offset      or DEFAULTS.offset,
     mult        = SessionSettingsTable.mult        or DEFAULTS.mult,
@@ -205,44 +192,48 @@ local function CreateBuildSession(FilePath, SessionSettingsTable, FetchToolsFunc
     maxtrydelay = SessionSettingsTable.maxtrydelay or DEFAULTS.maxtrydelay,
   }
 
-  -- ── Async config (extracted separately — contains functions, not serializable) ──
-  -- async.RunOnClient(script: string) -> nil   fires the script on one remote client
-  -- async.Clients()                  -> number returns how many remote clients are available
-  -- async.source                     -> string URL to loadstring autobuildv3 on remote clients
-  --
-  -- The remote client is on a completely different device with its own Lua VM.
-  -- It has NO access to _G, getgenv, shared(), or any state from this client.
-  -- Every script sent via RunOnClient must be 100% self-contained.
+  -- async: array of functions, each fires a script to one remote client
+  -- e.g. { client1.exec, client2.exec }
   local AsyncConfiguration = (type(SessionSettingsTable.async) == "table") and SessionSettingsTable.async or nil
 
-  -- ── Per-session mutable state ─────────────────────────────────────────────
-  -- The settings below are internal and NOT exposed through the public API.
-  -- They correspond to hardcoded values in v2.
-  local TeleportPlayerToBlock = true   -- teleport player to each block
-  local PaintEvenWhenDefaultColor = false  -- paint even when color == defaultcolor
+  local TeleportPlayerToBlock     = true
+  local PaintEvenWhenDefaultColor = false
 
-  local IsBuildStopped    = false
+  local IsBuildStopped         = false
   local ShouldSkipCurrentBlock = false
-  local BlockHasBeenBuilt = false
-  local MostRecentlyBuiltBlock = nil
-  local PreviousPreviewPart = nil
-  local BuiltBlockHistoryRingBuffer = {}
-  local BuiltBlockHistoryWriteIndex = 0
+  local BlockHasBeenBuilt      = false
+  local MostRecentlyBuiltBlock  = nil
+  local PreviousPreviewPart     = nil
+  local BuiltBlockHistoryRingBuffer  = {}
+  local BuiltBlockHistoryWriteIndex  = 0
 
-  local CurrentRunGenerationId = 0
-  local LastBuildState         = nil
+  local CurrentRunGenerationId         = 0
+  local LastBuildState                 = nil
   local LastBuildToolMissingNotifyTime = 0
-  local BuildToolNamesList = { "Build", "Paint", "Shape", "Delete" }
+  local BuildToolNamesList             = { "Build", "Paint", "Shape", "Delete" }
 
-  -- Verification tolerances (NOT exposed; see hardcoded-settings note at top)
   local PositionVerificationTolerance = 0.75
   local SizeVerificationTolerance     = 0.75
   local ColorVerificationTolerance    = 0.02
 
-  -- Progress state
   local TotalBlocksInCurrentBuild = 0
   local NumberOfBlocksVerified    = 0
   local BuildStartTimestamp       = 0
+
+  -- ── Stats ─────────────────────────────────────────────────────────────────
+  local Stats = { total = 0, done = 0, elapsed = 0, eta = nil, ping = 0 }
+
+  local function UpdateStats()
+    Stats.total = TotalBlocksInCurrentBuild
+    Stats.done  = NumberOfBlocksVerified
+    Stats.ping  = math.floor(pingExponentialMovingAverage)
+    if BuildStartTimestamp > 0 then
+      Stats.elapsed = tick() - BuildStartTimestamp
+      if Stats.done > 2 and Stats.total > 0 then
+        Stats.eta = Stats.elapsed / Stats.done * (Stats.total - Stats.done)
+      end
+    end
+  end
 
   -- ── Highlight ─────────────────────────────────────────────────────────────
   local BlockHighlight = Instance.new("Highlight")
@@ -251,54 +242,6 @@ local function CreateBuildSession(FilePath, SessionSettingsTable, FetchToolsFunc
   BlockHighlight.FillTransparency    = 0.5
   BlockHighlight.OutlineColor        = Color3.fromRGB(0, 200, 255)
   BlockHighlight.OutlineTransparency = 0
-
-  -- ── Progress HUD ──────────────────────────────────────────────────────────
-  local ProgressHudScreenGui = nil
-
-  local function CreateProgressHudGui()
-    local ScreenGuiInstance = Instance.new("ScreenGui")
-    ScreenGuiInstance.Name           = "ABProgress"
-    ScreenGuiInstance.ResetOnSpawn   = false
-    ScreenGuiInstance.IgnoreGuiInset = true
-    ScreenGuiInstance.Parent         = CoreGui
-
-    local BackgroundFrame = Instance.new("Frame", ScreenGuiInstance)
-    BackgroundFrame.Name                   = "F"
-    BackgroundFrame.Size                   = UDim2.new(0, 260, 0, 40)
-    BackgroundFrame.Position               = UDim2.new(0.5, -130, 1, -64)
-    BackgroundFrame.BackgroundColor3       = Color3.fromRGB(14, 14, 18)
-    BackgroundFrame.BackgroundTransparency = 0.1
-    BackgroundFrame.BorderSizePixel        = 0
-    Instance.new("UICorner", BackgroundFrame).CornerRadius = UDim.new(0, 7)
-
-    local ProgressTextLabel = Instance.new("TextLabel", BackgroundFrame)
-    ProgressTextLabel.Name                  = "L"
-    ProgressTextLabel.Size                  = UDim2.new(1, 0, 1, 0)
-    ProgressTextLabel.BackgroundTransparency = 1
-    ProgressTextLabel.TextColor3            = Color3.fromRGB(215, 215, 215)
-    ProgressTextLabel.TextSize              = 13
-    ProgressTextLabel.Font                  = Enum.Font.GothamMedium
-
-    return ScreenGuiInstance
-  end
-
-  local function UpdateProgressHudDisplay()
-    if TotalBlocksInCurrentBuild == 0 then
-      if ProgressHudScreenGui then ProgressHudScreenGui:Destroy(); ProgressHudScreenGui = nil end
-      return
-    end
-    if not ProgressHudScreenGui or not ProgressHudScreenGui.Parent then ProgressHudScreenGui = CreateProgressHudGui() end
-    local BlocksDone, BlocksTotal = NumberOfBlocksVerified, TotalBlocksInCurrentBuild
-    local PercentComplete = math.floor(BlocksDone / BlocksTotal * 100)
-    local EstimatedTimeRemainingText = ""
-    if BlocksDone > 2 and BuildStartTimestamp > 0 then
-      local SecondsRemaining = (tick() - BuildStartTimestamp) / BlocksDone * (BlocksTotal - BlocksDone)
-      EstimatedTimeRemainingText = SecondsRemaining < 60
-          and ("  ~" .. math.ceil(SecondsRemaining) .. "s")
-          or  string.format("  ~%dm%ds", math.floor(SecondsRemaining/60), math.ceil(SecondsRemaining%60))
-    end
-    ProgressHudScreenGui.F.L.Text = string.format("%d / %d  (%d%%)%s", BlocksDone, BlocksTotal, PercentComplete, EstimatedTimeRemainingText)
-  end
 
   -- ── Block listener ────────────────────────────────────────────────────────
   local BlockAddedListenerConnection
@@ -316,9 +259,10 @@ local function CreateBuildSession(FilePath, SessionSettingsTable, FetchToolsFunc
   else
     BlockAddedListenerConnection = BlockContainerFolder.DescendantAdded:Connect(OnNewBlockAddedToContainer)
   end
+  getgenv()[CONNKEY] = BlockAddedListenerConnection
 
   -- ── Helpers ───────────────────────────────────────────────────────────────
-  local function NotifyUser(MessageText, _DisplayDuration)
+  local function NotifyUser(MessageText)
     warn("[AutoBuild] " .. tostring(MessageText))
   end
 
@@ -332,7 +276,7 @@ local function CreateBuildSession(FilePath, SessionSettingsTable, FetchToolsFunc
   end
   local SnapToGrid = SnapPositionToGrid
 
-  local function GetCurrentBuildDelay() return SessionSettings.maxtrydelay or _buildDelay end
+  local function GetCurrentBuildDelay() return SessionSettings.maxtrydelay or buildDelay end
 
   -- ── Tool management ───────────────────────────────────────────────────────
   local function EquipToolFromBackpackByName(ToolName)
@@ -375,7 +319,7 @@ local function CreateBuildSession(FilePath, SessionSettingsTable, FetchToolsFunc
       local CurrentTime = os.clock()
       if CurrentTime - LastBuildToolMissingNotifyTime > 6 then
         LastBuildToolMissingNotifyTime = CurrentTime
-        NotifyUser("Build tool missing. Grant yourself bkit, then retry.", 5)
+        NotifyUser("Build tool missing. Grant yourself bkit, then retry.")
       end
     end
     return HasBuildTool
@@ -383,7 +327,9 @@ local function CreateBuildSession(FilePath, SessionSettingsTable, FetchToolsFunc
 
   -- ── Verification helpers ──────────────────────────────────────────────────
   local function AreVectorsWithinTolerance(VectorA, VectorB, Tolerance)
-    return math.abs(VectorA.X-VectorB.X) <= Tolerance and math.abs(VectorA.Y-VectorB.Y) <= Tolerance and math.abs(VectorA.Z-VectorB.Z) <= Tolerance
+    return math.abs(VectorA.X-VectorB.X) <= Tolerance
+        and math.abs(VectorA.Y-VectorB.Y) <= Tolerance
+        and math.abs(VectorA.Z-VectorB.Z) <= Tolerance
   end
   local function AreColorsWithinTolerance(ColorA, ColorB)
     return math.abs(ColorA.R-ColorB.R) <= ColorVerificationTolerance
@@ -439,14 +385,14 @@ local function CreateBuildSession(FilePath, SessionSettingsTable, FetchToolsFunc
   local function CreatePreviewReplacementPart(PlacementPosition, BlockSize, BlockColor, BlockMaterial, Transparency, IsAnchored, CanCollide, SpraysData)
     if typeof(PlacementPosition) == "CFrame" then PlacementPosition = PlacementPosition.Position end
     local PreviewPart = Instance.new("Part")
-    PreviousPreviewPart     = PreviewPart
-    PreviewPart.Anchored    = IsAnchored ~= false
-    PreviewPart.CanCollide  = CanCollide or false
-    PreviewPart.CastShadow  = false
-    PreviewPart.CanQuery    = false
-    PreviewPart.Color       = BlockColor
+    PreviousPreviewPart      = PreviewPart
+    PreviewPart.Anchored     = IsAnchored ~= false
+    PreviewPart.CanCollide   = CanCollide or false
+    PreviewPart.CastShadow   = false
+    PreviewPart.CanQuery     = false
+    PreviewPart.Color        = BlockColor
     PreviewPart.Transparency = Transparency or 0.5
-    PreviewPart.Material    = BlockMaterial or Enum.Material.SmoothPlastic
+    PreviewPart.Material     = BlockMaterial or Enum.Material.SmoothPlastic
     if BlockSize then
       PlacementPosition = Vector3.new(
         (PlacementPosition.X + BlockSize.X/2) - 0.5,
@@ -484,8 +430,8 @@ local function CreateBuildSession(FilePath, SessionSettingsTable, FetchToolsFunc
 
   -- ── Main block placer ─────────────────────────────────────────────────────
   local function PlaceAndConfigureBlock(PlacementPosition, TextureMaterialName, DesiredColor, BlockSizeMode, BlockSizeVector, IsPremadeBlock, OriginalMaterialName, SpraysData, ShouldBeAnchored, ShouldHaveCollision)
-    if ShouldBeAnchored == nil then ShouldBeAnchored = true end
-    if ShouldHaveCollision  == nil then ShouldHaveCollision  = true end
+    if ShouldBeAnchored    == nil then ShouldBeAnchored    = true end
+    if ShouldHaveCollision == nil then ShouldHaveCollision = true end
     local NeedsResizeAfterPlacement = false
     pcall(function()
       pcall(function() LocalPlayer.Backpack.Build.Parent = LocalPlayer.Character end)
@@ -543,12 +489,128 @@ local function CreateBuildSession(FilePath, SessionSettingsTable, FetchToolsFunc
         end
       end
 
+      -- Diagonal-bridge path
+      if AdjacentBlockFound == false and #BuiltBlockHistoryRingBuffer > 0 and PreviousPreviewPart then
+        local DiagonalNeighbour  = nil
+        local BridgeNormalId     = nil
+        local BridgeHistoryBlock = nil
+
+        for HistoryIndex, HistoryBlock in pairs(BuiltBlockHistoryRingBuffer) do
+          if HistoryBlock == nil or HistoryBlock.Parent == nil then BuiltBlockHistoryRingBuffer[HistoryIndex] = nil; continue end
+          if PreviousPreviewPart.Size ~= HistoryBlock.Size then continue end
+          local Delta = PreviousPreviewPart.Position - HistoryBlock.Position
+          local AxesOff = 0
+          if math.abs(Delta.X) > 0.01 then AxesOff = AxesOff + 1 end
+          if math.abs(Delta.Y) > 0.01 then AxesOff = AxesOff + 1 end
+          if math.abs(Delta.Z) > 0.01 then AxesOff = AxesOff + 1 end
+          if AxesOff == 2 then
+            for NormalId, AxisData in pairs(NormalIdToAxisMap) do
+              local TPos   = HistoryBlock.Position + (AxisData[1] * HistoryBlock.Size[AxisData[2]])
+              local TDelta = PreviousPreviewPart.Position - TPos
+              local TAxesOff = 0
+              if math.abs(TDelta.X) > 0.01 then TAxesOff = TAxesOff + 1 end
+              if math.abs(TDelta.Y) > 0.01 then TAxesOff = TAxesOff + 1 end
+              if math.abs(TDelta.Z) > 0.01 then TAxesOff = TAxesOff + 1 end
+              if TAxesOff == 1 then
+                DiagonalNeighbour = HistoryBlock; BridgeNormalId = NormalId; BridgeHistoryBlock = HistoryBlock; break
+              end
+            end
+          end
+          if DiagonalNeighbour then break end
+        end
+
+        if DiagonalNeighbour and BridgeNormalId and BridgeHistoryBlock and BridgeHistoryBlock.Parent then
+          local AxisData        = NormalIdToAxisMap[BridgeNormalId]
+          local BridgeFaceCenter = BridgeHistoryBlock.Position + (AxisData[1] * BridgeHistoryBlock.Size[AxisData[2]] / 2)
+          local TempBlock        = nil
+          local TPlacementArgs   = { BridgeHistoryBlock, BridgeNormalId, BridgeFaceCenter, "normal" }
+          BlockHasBeenBuilt = false; MostRecentlyBuiltBlock = nil; RetryCount = 0
+          repeat
+            RetryCount = RetryCount + 1
+            if LocalPlayer.Character:FindFirstChild("Build") then
+              pcall(function()
+                local OriginalEventBinding = LocalPlayer.Character.Build:FindFirstChild("origevent")
+                if OriginalEventBinding then OriginalEventBinding:Invoke(table.unpack(TPlacementArgs))
+                else LocalPlayer.Character.Build.Script.Event:FireServer(table.unpack(TPlacementArgs)) end
+              end)
+            else
+              pcall(function() LocalPlayer.Backpack.Build.Parent = LocalPlayer.Character end)
+            end
+            pcall(function()
+              if TeleportPlayerToBlock then LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(BridgeFaceCenter) end
+            end)
+            RunService.Heartbeat:Wait()
+          until (BlockHasBeenBuilt and MostRecentlyBuiltBlock) or BridgeHistoryBlock.Parent == nil
+              or IsBuildStopped or ShouldSkipCurrentBlock or RetryCount > SessionSettings.maxtry
+
+          if BlockHasBeenBuilt and MostRecentlyBuiltBlock and BridgeHistoryBlock.Parent ~= nil
+              and not IsBuildStopped and not ShouldSkipCurrentBlock then
+            TempBlock = MostRecentlyBuiltBlock
+            local RealNormalId, RealFaceCenter
+            for NId, AData in pairs(NormalIdToAxisMap) do
+              local CandPos = TempBlock.Position + (AData[1] * TempBlock.Size[AData[2]])
+              if math.abs((CandPos - PreviousPreviewPart.Position).Magnitude) < 0.15 then
+                RealNormalId   = NId
+                RealFaceCenter = TempBlock.Position + (AData[1] * TempBlock.Size[AData[2]] / 2)
+                break
+              end
+            end
+            if RealNormalId then
+              local RealPlacementArgs = { TempBlock, RealNormalId, RealFaceCenter, "normal" }
+              BlockHasBeenBuilt = false; MostRecentlyBuiltBlock = nil; RetryCount = 0
+              repeat
+                RetryCount = RetryCount + 1
+                if LocalPlayer.Character:FindFirstChild("Build") then
+                  pcall(function()
+                    local OriginalEventBinding = LocalPlayer.Character.Build:FindFirstChild("origevent")
+                    if OriginalEventBinding then OriginalEventBinding:Invoke(table.unpack(RealPlacementArgs))
+                    else LocalPlayer.Character.Build.Script.Event:FireServer(table.unpack(RealPlacementArgs)) end
+                  end)
+                else
+                  pcall(function() LocalPlayer.Backpack.Build.Parent = LocalPlayer.Character end)
+                end
+                pcall(function()
+                  if TeleportPlayerToBlock then LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(RealFaceCenter) end
+                end)
+                RunService.Heartbeat:Wait()
+              until (BlockHasBeenBuilt and MostRecentlyBuiltBlock) or TempBlock.Parent == nil
+                  or IsBuildStopped or ShouldSkipCurrentBlock or RetryCount > SessionSettings.maxtry
+              if BlockHasBeenBuilt and MostRecentlyBuiltBlock and not IsBuildStopped and not ShouldSkipCurrentBlock
+                  and RetryCount <= SessionSettings.maxtry then
+                local RealBlock = MostRecentlyBuiltBlock
+                pcall(function()
+                  local DeleteTool = LocalPlayer.Character:FindFirstChild("Delete") or LocalPlayer.Backpack:FindFirstChild("Delete")
+                  if DeleteTool then
+                    local DelEventBind = DeleteTool:FindFirstChild("origevent")
+                    if DelEventBind then DelEventBind:Invoke(TempBlock, Enum.NormalId.Top, TempBlock.Position, "")
+                    elseif DeleteTool:FindFirstChild("Script") then DeleteTool.Script.Event:FireServer(TempBlock, Enum.NormalId.Top, TempBlock.Position, "")
+                    else TempBlock:Destroy() end
+                  else
+                    TempBlock:Destroy()
+                  end
+                end)
+                AdjacentBlockFound = { RealNormalId, TempBlock, RealFaceCenter }
+                MostRecentlyBuiltBlock = RealBlock
+                if PreviousPreviewPart then PreviousPreviewPart:Destroy() end
+              else
+                pcall(function() TempBlock:Destroy() end)
+                AdjacentBlockFound = false; MostRecentlyBuiltBlock = nil
+              end
+            else
+              pcall(function() TempBlock:Destroy() end)
+              AdjacentBlockFound = false; MostRecentlyBuiltBlock = nil
+            end
+          else
+            AdjacentBlockFound = false; MostRecentlyBuiltBlock = nil
+          end
+        end
+      end
+
       -- Fresh-place fallback
       if AdjacentBlockFound == false then
         if BlockSizeMode == nil then
           BlockSizeMode = "normal"
-          if LocalPlayer.PlayerGui:FindFirstChild("Build")
-            and LocalPlayer.PlayerGui.Build:FindFirstChild("Button") then
+          if LocalPlayer.PlayerGui:FindFirstChild("Build") and LocalPlayer.PlayerGui.Build:FindFirstChild("Button") then
             BlockSizeMode = LocalPlayer.PlayerGui.Build.Button.Text
           end
           if BlockSizeVector and (BlockSizeVector.X ~= GridUnitSize or BlockSizeVector.Y ~= GridUnitSize or BlockSizeVector.Z ~= GridUnitSize) then
@@ -577,8 +639,7 @@ local function CreateBuildSession(FilePath, SessionSettingsTable, FetchToolsFunc
         RetryCount = 0
         repeat
           RetryCount = RetryCount + 1
-          if LocalPlayer.Character and not LocalPlayer.Character:FindFirstChild("Build")
-            and LocalPlayer.Backpack:FindFirstChild("Build") then
+          if LocalPlayer.Character and not LocalPlayer.Character:FindFirstChild("Build") and LocalPlayer.Backpack:FindFirstChild("Build") then
             LocalPlayer.Backpack.Build.Parent = LocalPlayer.Character
           end
           if LocalPlayer.Character:FindFirstChild("Build") then
@@ -616,8 +677,7 @@ local function CreateBuildSession(FilePath, SessionSettingsTable, FetchToolsFunc
         pcall(function()
           repeat
             RetryCount = RetryCount + 1
-            if LocalPlayer.Character and not LocalPlayer.Character:FindFirstChild("Paint")
-              and LocalPlayer.Backpack:FindFirstChild("Paint") then
+            if LocalPlayer.Character and not LocalPlayer.Character:FindFirstChild("Paint") and LocalPlayer.Backpack:FindFirstChild("Paint") then
               LocalPlayer.Backpack.Paint.Parent = LocalPlayer.Character
             end
             if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Paint") then
@@ -648,8 +708,7 @@ local function CreateBuildSession(FilePath, SessionSettingsTable, FetchToolsFunc
         RetryCount = 0
         repeat
           RetryCount = RetryCount + 1
-          if LocalPlayer.Character and not LocalPlayer.Character:FindFirstChild("Paint")
-            and LocalPlayer.Backpack:FindFirstChild("Paint") then
+          if LocalPlayer.Character and not LocalPlayer.Character:FindFirstChild("Paint") and LocalPlayer.Backpack:FindFirstChild("Paint") then
             LocalPlayer.Backpack.Paint.Parent = LocalPlayer.Character
           end
           if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Paint")
@@ -678,8 +737,7 @@ local function CreateBuildSession(FilePath, SessionSettingsTable, FetchToolsFunc
         RetryCount = 0
         repeat
           RetryCount = RetryCount + 1
-          if LocalPlayer.Character and not LocalPlayer.Character:FindFirstChild("Paint")
-            and LocalPlayer.Backpack:FindFirstChild("Paint") then
+          if LocalPlayer.Character and not LocalPlayer.Character:FindFirstChild("Paint") and LocalPlayer.Backpack:FindFirstChild("Paint") then
             LocalPlayer.Backpack.Paint.Parent = LocalPlayer.Character
           end
           if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Paint")
@@ -782,7 +840,7 @@ local function CreateBuildSession(FilePath, SessionSettingsTable, FetchToolsFunc
   -- ── Transform / resolve helpers ───────────────────────────────────────────
   local function ApplyTransformToBlockPosition(RawBlockPosition, BlockSize, TransformConfig)
     if not TransformConfig or not TransformConfig.enabled then return RawBlockPosition end
-    local HalfSizeOffset = Vector3.new(BlockSize.X/2-0.5, BlockSize.Y/2-0.5, BlockSize.Z/2-0.5)
+    local HalfSizeOffset    = Vector3.new(BlockSize.X/2-0.5, BlockSize.Y/2-0.5, BlockSize.Z/2-0.5)
     local TransformCenter   = TransformConfig.center   or Vector3.zero
     local TransformRotation = TransformConfig.rotation or CFrame.identity
     local TransformOffset   = TransformConfig.offset   or Vector3.zero
@@ -795,21 +853,18 @@ local function CreateBuildSession(FilePath, SessionSettingsTable, FetchToolsFunc
     local PositionArray = BlockDataEntry and (BlockDataEntry.p or BlockDataEntry.pos); if not PositionArray then return nil end
     local SizeArray     = BlockDataEntry.s or BlockDataEntry.size
     local ResolvedSize  = SizeArray and Vector3.new(table.unpack(SizeArray)) or Vector3.new(GridUnitSize, GridUnitSize, GridUnitSize)
-
-    -- Apply mult scale to position
-    local RawPosition       = Vector3.new(PositionArray[1], PositionArray[2], PositionArray[3]) * SessionSettings.mult
+    local RawPosition         = Vector3.new(PositionArray[1], PositionArray[2], PositionArray[3]) * SessionSettings.mult
     local TransformedPosition = ApplyTransformToBlockPosition(RawPosition, ResolvedSize, TransformConfig)
-
-    local ResolvedColor         = (BlockDataEntry.c or BlockDataEntry.color) and Color3.fromRGB(table.unpack(BlockDataEntry.c or BlockDataEntry.color)) or DefaultBlockColor
-    local ResolvedMaterialName  = BlockDataEntry.m or BlockDataEntry.mat
-    local OriginalMaterialName  = BlockDataEntry.o or BlockDataEntry.origmat
-    local ResolvedMaterialEnum  = MaterialNameToEnumMap[ResolvedMaterialName] or Enum.Material.SmoothPlastic
+    local ResolvedColor        = (BlockDataEntry.c or BlockDataEntry.color) and Color3.fromRGB(table.unpack(BlockDataEntry.c or BlockDataEntry.color)) or DefaultBlockColor
+    local ResolvedMaterialName = BlockDataEntry.m or BlockDataEntry.mat
+    local OriginalMaterialName = BlockDataEntry.o or BlockDataEntry.origmat
+    local ResolvedMaterialEnum = MaterialNameToEnumMap[ResolvedMaterialName] or Enum.Material.SmoothPlastic
     if not MaterialNameToEnumMap[ResolvedMaterialName] and OriginalMaterialName then
       pcall(function() ResolvedMaterialEnum = Enum.Material[OriginalMaterialName] or ResolvedMaterialEnum end)
     end
-    local ResolvedAnchored = BlockDataEntry.a
+    local ResolvedAnchored   = BlockDataEntry.a
     local ResolvedCanCollide = BlockDataEntry.cc
-    local ResolvedCenter      = SizeArray and ComputeBlockCenterPosition(TransformedPosition, ResolvedSize) or TransformedPosition
+    local ResolvedCenter     = SizeArray and ComputeBlockCenterPosition(TransformedPosition, ResolvedSize) or TransformedPosition
     return { pos=TransformedPosition, size=ResolvedSize, color=ResolvedColor, matName=ResolvedMaterialName, expectMat=ResolvedMaterialEnum,
              center=ResolvedCenter, anchored=ResolvedAnchored, collide=ResolvedCanCollide }
   end
@@ -852,46 +907,48 @@ local function CreateBuildSession(FilePath, SessionSettingsTable, FetchToolsFunc
         local BlockWorldPosition = Vector3.new(PositionArray[1], PositionArray[2], PositionArray[3])
         local SizeArray = BlockEntry.s or BlockEntry.size
         if SizeArray then BlockWorldPosition = Vector3.new(BlockWorldPosition.X+SizeArray[1]/2-0.5, BlockWorldPosition.Y+SizeArray[2]/2-0.5, BlockWorldPosition.Z+SizeArray[3]/2-0.5) end
-        BlockEntry._dist = (BlockWorldPosition - SpawnReferencePosition).Magnitude
+        BlockEntry.dist = (BlockWorldPosition - SpawnReferencePosition).Magnitude
       else
-        BlockEntry._dist = math.huge
+        BlockEntry.dist = math.huge
       end
     end
-    table.sort(BlockList, function(BlockA, BlockB) return BlockA._dist < BlockB._dist end)
-    for _, BlockEntry in ipairs(BlockList) do BlockEntry._dist = nil end
+    table.sort(BlockList, function(BlockA, BlockB) return BlockA.dist < BlockB.dist end)
+    for _, BlockEntry in ipairs(BlockList) do BlockEntry.dist = nil end
     return BlockList
   end
 
   -- ── Core build loop ───────────────────────────────────────────────────────
   local function ExecuteBuildLoop(BuildBlockData, TransformConfig)
     if type(BuildBlockData) ~= "table" or #BuildBlockData == 0 then
-      NotifyUser("Build data invalid or empty.", 5); return false
+      NotifyUser("Build data invalid or empty."); return false
     end
     if not EnsureAllBuildToolsAreEquipped(true) then return false end
 
     CurrentRunGenerationId = CurrentRunGenerationId + 1
     local ThisRunGenerationId = CurrentRunGenerationId
-    LastBuildState  = { blocks = BuildBlockData, transform = TransformConfig }
+    LastBuildState = { blocks = BuildBlockData, transform = TransformConfig }
 
     IsBuildStopped = false; ShouldSkipCurrentBlock = false
     local SortedBlockList = SortBlockListByDistanceFromSpawn(BuildBlockData)
     TotalBlocksInCurrentBuild = #SortedBlockList
     NumberOfBlocksVerified    = 0
     BuildStartTimestamp       = tick()
-    UpdateProgressHudDisplay()
+    UpdateStats()
 
     task.spawn(function()
       local VerifiedBlockIndexSet = {}; local VerifiedCount = 0
 
-      local function IsBuildAborted() return IsBuildStopped or CurrentRunGenerationId ~= ThisRunGenerationId end
+      local function IsBuildAborted()
+        if getgenv()[GENKEY] ~= moduleGen then IsBuildStopped = true end
+        return IsBuildStopped or CurrentRunGenerationId ~= ThisRunGenerationId
+      end
       local function MarkBlockAsVerified(BlockIndex)
         if not VerifiedBlockIndexSet[BlockIndex] then
           VerifiedBlockIndexSet[BlockIndex] = true; VerifiedCount = VerifiedCount + 1
-          NumberOfBlocksVerified = VerifiedCount; UpdateProgressHudDisplay()
+          NumberOfBlocksVerified = VerifiedCount; UpdateStats()
         end
       end
 
-      -- Main pass
       for BlockIndex, BlockEntry in ipairs(SortedBlockList) do
         if IsBuildAborted() then break end
         if BlockIndex % 25 == 0 then EnsureAllBuildToolsAreEquipped(false) end
@@ -899,12 +956,11 @@ local function CreateBuildSession(FilePath, SessionSettingsTable, FetchToolsFunc
         task.wait(math.max(0.03, GetCurrentBuildDelay()))
       end
 
-      -- Repair passes
       local RepairPassNumber = 0
       while not IsBuildAborted() and VerifiedCount < #SortedBlockList and RepairPassNumber < 4 do
         RepairPassNumber = RepairPassNumber + 1
         local BlocksRepairedThisPass = 0
-        if SessionSettings.wbs then task.wait(1) end  -- wait-between-sets pause
+        if SessionSettings.wbs then task.wait(1) end
         for BlockIndex, BlockEntry in ipairs(SortedBlockList) do
           if IsBuildAborted() then break end
           if not VerifiedBlockIndexSet[BlockIndex] then
@@ -915,147 +971,79 @@ local function CreateBuildSession(FilePath, SessionSettingsTable, FetchToolsFunc
         if BlocksRepairedThisPass == 0 then break end
       end
 
-      local BuildWasAborted = IsBuildAborted()
+      local BuildWasAborted       = IsBuildAborted()
       local NumberOfMissingBlocks = #SortedBlockList - VerifiedCount
       if CurrentRunGenerationId == ThisRunGenerationId then IsBuildStopped = false; ShouldSkipCurrentBlock = false end
-      TotalBlocksInCurrentBuild = 0; NumberOfBlocksVerified = 0; UpdateProgressHudDisplay()
+      TotalBlocksInCurrentBuild = 0; NumberOfBlocksVerified = 0; UpdateStats()
 
       if BuildWasAborted then
-        NotifyUser("Build stopped.", 3)
+        NotifyUser("Build stopped.")
       elseif NumberOfMissingBlocks > 0 then
-        NotifyUser(string.format("Build finished: %d/%d verified (%d need manual attention).", VerifiedCount, #SortedBlockList, NumberOfMissingBlocks), 7)
+        NotifyUser(string.format("Build finished: %d/%d verified (%d need manual attention).", VerifiedCount, #SortedBlockList, NumberOfMissingBlocks))
       else
-        NotifyUser(string.format("Build complete: %d/%d blocks.", VerifiedCount, #SortedBlockList), 5)
+        NotifyUser(string.format("Build complete: %d/%d blocks.", VerifiedCount, #SortedBlockList))
       end
     end)
 
     return true
   end
 
-    -- ── Data loading ──────────────────────────────────────────────────────────
+  -- ── Data loading ──────────────────────────────────────────────────────────
   local function LoadBuildDataFromSource()
     if IsPreDecodedData then
-      if type(FilePath) == "table" then
-        return FilePath, nil
-      end
-  
-      return nil, "isData=true but file_path is not a table"
+      if type(FilePath) == "table" then return FilePath, nil end
+      return nil, "isData=true but filepath is not a table"
     end
-  
     local RawData
-  
     if type(FetchToolsFunction) == "function" then
       RawData = FetchToolsFunction(FilePath)
     elseif type(FilePath) == "string" and FilePath:match("^https?://") then
-      local FetchSucceeded, FetchResult = pcall(function()
-        return game:HttpGet(FilePath)
-      end)
-  
-      if FetchSucceeded then
-        RawData = FetchResult
-      end
+      local FetchSucceeded, FetchResult = pcall(function() return game:HttpGet(FilePath) end)
+      if FetchSucceeded then RawData = FetchResult end
     elseif type(FilePath) == "string" then
-      local ReadSucceeded, ReadResult = pcall(function()
-        return readfile(FilePath)
-      end)
-  
-      if ReadSucceeded and ReadResult and ReadResult ~= "" then
-        RawData = ReadResult
-      else
-        RawData = FilePath
-      end
+      local ReadSucceeded, ReadResult = pcall(function() return readfile(FilePath) end)
+      if ReadSucceeded and ReadResult and ReadResult ~= "" then RawData = ReadResult else RawData = FilePath end
     end
-  
-    if not RawData or RawData == "" then
-      return nil, "Could not load data from: " .. tostring(FilePath)
-    end
-  
-    if type(RawData) ~= "string" then
-      return nil, "Expected string data, got " .. type(RawData)
-    end
-  
+    if not RawData or RawData == "" then return nil, "Could not load data from: " .. tostring(FilePath) end
+    if type(RawData) ~= "string" then return nil, "Expected string data, got " .. type(RawData) end
     if RawData:sub(1, 1) == "{" then
-      local JsonSucceeded, JsonResult = pcall(function()
-        return HttpService:JSONDecode(RawData)
-      end)
-  
-      if not JsonSucceeded then
-        return nil, "Could not decode JSON: " .. tostring(JsonResult)
-      end
-  
-      if type(JsonResult) ~= "table" then
-        return nil, "Decoded JSON is not a table"
-      end
-  
+      local JsonSucceeded, JsonResult = pcall(function() return HttpService:JSONDecode(RawData) end)
+      if not JsonSucceeded then return nil, "Could not decode JSON: " .. tostring(JsonResult) end
+      if type(JsonResult) ~= "table" then return nil, "Decoded JSON is not a table" end
       return JsonResult, nil
     end
-  
     local DecompressSucceeded, DecompressedData = pcall(Decompress, RawData)
-  
-    if not DecompressSucceeded then
-      return nil, "Could not decompress data: " .. tostring(DecompressedData)
-    end
-  
-    if type(DecompressedData) ~= "table" then
-      return nil, "Decompressed data is not a table"
-    end
-  
+    if not DecompressSucceeded then return nil, "Could not decompress data: " .. tostring(DecompressedData) end
+    if type(DecompressedData) ~= "table" then return nil, "Decompressed data is not a table" end
     return DecompressedData, nil
   end
+
   -- ── Build transform from session settings ─────────────────────────────────
   local function BuildTransformFromSessionSettings()
-    local HasPositionOffset = SessionSettings.offset ~= Vector3.zero
-    local HasScaleMultiplier = SessionSettings.mult   ~= 1
-    if not HasPositionOffset and not HasScaleMultiplier then return nil end
-    return {
-      enabled  = true,
-      center   = Vector3.zero,
-      rotation = CFrame.identity,
-      offset   = SessionSettings.offset,
-    }
-    -- Note: S.mult is applied per-block in resolveBlock, not here
+    if SessionSettings.offset == Vector3.zero and SessionSettings.mult == 1 then return nil end
+    return { enabled = true, center = Vector3.zero, rotation = CFrame.identity, offset = SessionSettings.offset }
   end
 
-  -- ── Async: generate a fully self-contained script for one remote client ──────
-  --
-  -- The remote client is on a completely different device. It has no access to:
-  --   - _G, getgenv(), shared(), or any table from this VM
-  --   - any module, library, or variable that exists on the host
-  --   - the build loop or state running here
-  --
-  -- So the generated script must:
-  --   1. loadstring autobuildv3 itself from async.source (a URL)
-  --   2. carry its block chunk as an embedded JSON literal
-  --   3. carry all relevant settings as serializable primitives
-  --   4. be completely runnable in a blank exploit environment
-  --
-  -- Vector3 is NOT JSON-serializable, so offset is split into _ox/_oy/_oz.
-  -- Functions (fetch_tools, async itself) are NOT sent — the remote doesn't need them.
-  -- async is NOT forwarded: the remote client runs its chunk solo, no further splitting.
-
+  -- ── Async: generate a fully self-contained script for one remote client ───
   local RemoteClientScriptTemplate = [[
-local _hs  = game:GetService("HttpService")
-local _lib = loadstring(game:HttpGet(%s, true))()
-local _d   = _hs:JSONDecode(%s)
-local _s   = _hs:JSONDecode(%s)
-_s.offset  = Vector3.new(_s._ox or 0, _s._oy or 0, _s._oz or 0)
-_s._ox, _s._oy, _s._oz = nil, nil, nil
-_lib.build(_d, _s, nil, true).start()
+local hs  = game:GetService("HttpService")
+local lib = loadstring(game:HttpGet(%s, true))()
+local d   = hs:JSONDecode(%s)
+local s   = hs:JSONDecode(%s)
+s.offset  = Vector3.new(s.ox or 0, s.oy or 0, s.oz or 0)
+s.ox, s.oy, s.oz = nil, nil, nil
+lib.build(d, s, nil, true).start()
 ]]
 
   local function BuildRemoteClientScript(ChunkJson, SettingsJson)
-    -- async.source is the only thing that must exist; validated in session.start()
     return string.format(
       RemoteClientScriptTemplate,
-      string.format("%q", AsyncConfiguration.source),
+      string.format("%q", "https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/shared/autobuildv2.lua"),
       string.format("%q", ChunkJson),
       string.format("%q", SettingsJson)
     )
   end
 
-  -- Serialise only the settings that survive JSON round-trip.
-  -- Vector3 offset -> three separate number fields.
-  -- Anything that is a function or userdata is dropped (remote doesn't need it).
   local function SerializeSessionSettingsForRemote()
     return HttpService:JSONEncode({
       mult        = SessionSettings.mult,
@@ -1063,106 +1051,69 @@ _lib.build(_d, _s, nil, true).start()
       resizewait  = SessionSettings.resizewait,
       wbs         = SessionSettings.wbs,
       maxtry      = SessionSettings.maxtry,
-      maxtrydelay = SessionSettings.maxtrydelay,  -- nil becomes JSON null, decoded back as nil
-      _ox         = SessionSettings.offset.X,
-      _oy         = SessionSettings.offset.Y,
-      _oz         = SessionSettings.offset.Z,
+      maxtrydelay = SessionSettings.maxtrydelay,
+      ox          = SessionSettings.offset.X,
+      oy          = SessionSettings.offset.Y,
+      oz          = SessionSettings.offset.Z,
     })
   end
 
-  -- ─────────────────────────────────────────────────────────────────────────
-  -- Session handle
-  -- ─────────────────────────────────────────────────────────────────────────
+  -- ── Session handle ────────────────────────────────────────────────────────
   local BuildSession = {}
 
-  -- Returns (currentSettings, defaults).
-  -- Mutating the returned table does NOT change behaviour; use session methods.
+  BuildSession.stats = Stats
+
   function BuildSession.settings()
     return SessionSettings, DEFAULTS
   end
 
-  -- Hard-stop: marks the build stopped and skips the current block.
   function BuildSession.stop()
-    IsBuildStopped       = true
-    ShouldSkipCurrentBlock = true
+    IsBuildStopped = true; ShouldSkipCurrentBlock = true
   end
 
-  -- Skip the current block and continue building.
   function BuildSession.skip()
     ShouldSkipCurrentBlock = true
   end
 
-  -- Toggle wait-between-sets: when true a 1-second yield is inserted between repair passes.
   function BuildSession.wbs(NewValue)
     SessionSettings.wbs = NewValue
   end
 
-  -- Set the per-step delay (seconds) used by the Shape-tool resize loop.
   function BuildSession.resizewait(NewValue)
     SessionSettings.resizewait = NewValue
   end
 
-  -- Override the per-loop retry delay and max attempt count.
-  -- Pass nil for delay to revert to ping-managed delay.
-  function BuildSession.try(NewDelay, NewMaxAttempts)
-    SessionSettings.maxtrydelay = NewDelay
-    SessionSettings.maxtry      = NewMaxAttempts
+  function BuildSession.try(NewDelay, NewMax)
+    if NewDelay then SessionSettings.maxtrydelay = NewDelay end
+    if NewMax   then SessionSettings.maxtry      = NewMax   end
   end
 
-  -- Load data, then either:
-  --   • split work across remote clients + self  (when settings.async is set)
-  --   • run the full build locally               (normal mode)
-  --
-  -- In async mode:
-  --   1. Data is loaded and sorted HERE on the host — remotes get a slice, not the URL.
-  --   2. Each remote receives a fully self-contained script string. It loads autobuildv3
-  --      from async.source, decodes its chunk from the embedded JSON literal, and runs.
-  --   3. The host runs the last slice normally. All workers run in parallel.
-  --   4. async is NOT forwarded to remotes — each runs its chunk solo.
   function BuildSession.start()
-    IsBuildStopped       = false
-    ShouldSkipCurrentBlock = false
+    IsBuildStopped = false; ShouldSkipCurrentBlock = false
 
     local LoadedData, LoadError = LoadBuildDataFromSource()
     if not LoadedData then
-      warn("[AutoBuild] Load failed: " .. tostring(LoadError))
-      return nil
+      warn("[AutoBuild] Load failed: " .. tostring(LoadError)); return nil
     end
 
     if not AsyncConfiguration then
-      -- ── Single-client mode ───────────────────────────────────────────
       ExecuteBuildLoop(LoadedData, BuildTransformFromSessionSettings())
       return nil
     end
 
-    -- ── Async split mode ─────────────────────────────────────────────────
-    if not AsyncConfiguration.source or AsyncConfiguration.source == "" then
-      warn("[AutoBuild] async.source is required for remote execution (URL to autobuildv3)")
-      ExecuteBuildLoop(LoadedData, BuildTransformFromSessionSettings())
-      return nil
-    end
-
-    local NumberOfRemoteClients = AsyncConfiguration.Clients()
-    if NumberOfRemoteClients <= 0 then
-      -- No remote clients available; fall back to local-only.
+    if #AsyncConfiguration <= 0 then
       warn("[AutoBuild] async: no remote clients, running locally")
       ExecuteBuildLoop(LoadedData, BuildTransformFromSessionSettings())
       return nil
     end
 
-    -- Sort once here. Remotes receive a pre-sorted slice, so they don't
-    -- need the full set to determine order — they just place in order received.
-    local AllSortedBlocks = SortBlockListByDistanceFromSpawn(LoadedData)
-    local TotalBlockCount = #AllSortedBlocks
-    local TotalWorkerCount = NumberOfRemoteClients + 1  -- remotes + self
-
-    -- Distribute as evenly as possible.
-    -- Workers 1..remainder get (base+1) blocks; the rest get base.
-    local BaseBlocksPerWorker      = math.floor(TotalBlockCount / TotalWorkerCount)
-    local ExtraBlocksRemainder     = TotalBlockCount % TotalWorkerCount
-
-    local SerializedSettings = SerializeSessionSettingsForRemote()
-    local BlockCursor        = 1
+    local AllSortedBlocks      = SortBlockListByDistanceFromSpawn(LoadedData)
+    local TotalBlockCount      = #AllSortedBlocks
+    local TotalWorkerCount     = #AsyncConfiguration + 1
+    local BaseBlocksPerWorker  = math.floor(TotalBlockCount / TotalWorkerCount)
+    local ExtraBlocksRemainder = TotalBlockCount % TotalWorkerCount
+    local SerializedSettings   = SerializeSessionSettingsForRemote()
+    local BlockCursor          = 1
 
     for WorkerIndex = 1, TotalWorkerCount do
       local WorkerBlockCount = BaseBlocksPerWorker + (WorkerIndex <= ExtraBlocksRemainder and 1 or 0)
@@ -1175,22 +1126,11 @@ _lib.build(_d, _s, nil, true).start()
       BlockCursor = BlockCursor + WorkerBlockCount
 
       if WorkerIndex < TotalWorkerCount then
-        -- Remote client: build a self-contained script and fire it.
-        -- The remote has NO state from this VM. chunkJson is the only
-        -- data it gets; it will loadstring autobuildv3 from async.source.
-        local WorkerChunkJson    = HttpService:JSONEncode(WorkerBlockChunk)
-        local RemoteScript       = BuildRemoteClientScript(WorkerChunkJson, SerializedSettings)
-        AsyncConfiguration.RunOnClient(RemoteScript)
-        NotifyUser(string.format(
-          "async: sent %d blocks to remote %d/%d",
-          WorkerBlockCount, WorkerIndex, NumberOfRemoteClients
-        ), 3)
+        local WorkerChunkJson = HttpService:JSONEncode(WorkerBlockChunk)
+        AsyncConfiguration[WorkerIndex](BuildRemoteClientScript(WorkerChunkJson, SerializedSettings))
+        NotifyUser(string.format("async: sent %d blocks to remote %d/%d", WorkerBlockCount, WorkerIndex, #AsyncConfiguration))
       else
-        -- Self: run our slice through the normal build pipeline.
-        NotifyUser(string.format(
-          "async: running %d blocks locally (worker %d/%d)",
-          WorkerBlockCount, TotalWorkerCount, TotalWorkerCount
-        ), 3)
+        NotifyUser(string.format("async: running %d blocks locally (worker %d/%d)", WorkerBlockCount, TotalWorkerCount, TotalWorkerCount))
         ExecuteBuildLoop(WorkerBlockChunk, BuildTransformFromSessionSettings())
       end
     end
@@ -1198,137 +1138,39 @@ _lib.build(_d, _s, nil, true).start()
     return nil
   end
 
-  -- Show or hide the progress HUD. Returns the ScreenGui instance.
-  -- Call show(true) after start() to get the gui reference once it exists.
-  function BuildSession.show(ShouldBeVisible)
-    if ProgressHudScreenGui then
-      ProgressHudScreenGui.Enabled = ShouldBeVisible ~= false
-    elseif ShouldBeVisible ~= false then
-      -- gui hasn't been created yet (build not started); create a shell
-      ProgressHudScreenGui = CreateProgressHudGui()
-      ProgressHudScreenGui.F.L.Text = "Waiting…"
-    end
-    return ProgressHudScreenGui
-  end
-
-  -- ── Extra (future / advanced) ─────────────────────────────────────────────
-  -- session.tp(bool)         — toggle player teleportation during build
-  -- session.colorbool(bool)  — paint even when block already has defaultcolor
-  -- session.tolerances(pos, size, color) — override verification thresholds
-  -- session.repair()         — re-run last build (repair missing blocks)
-  -- session.decode(str)      — expose _decodeJson for manual use
-
   return BuildSession
 end
 
--- ─────────────────────────────────────────────────────────────────────────────
--- Public lib
--- ─────────────────────────────────────────────────────────────────────────────
+-- ── Public lib ────────────────────────────────────────────────────────────────
 local lib = {}
 
---[[
-    lib.save(file_path, players)
-
-    Serialises the bricks in cfolder that are owned by each player in `players`
-    (matched by parent-folder name) and writes them to `file_path` as JSON.
-
-    Returns the number of blocks saved.
-]]
-function lib.save(file_path, players)
-  return SaveBlocksToFile(file_path, players)
+function lib.save(filepath, players)
+  return SaveBlocksToFile(filepath, players)
 end
 
---[[
-    lib.build(file_path, settings?, fetch_tools?, isData?) -> session
-
-    Creates and returns a build session. Does NOT start the build automatically;
-    call session.start() when ready.
-
-    file_path   : string | table
-        Path to a local file, an HTTP URL, a raw JSON string, or a decoded table
-        (set isData=true when passing a table directly).
-
-    settings    : table?
-        offset      Vector3?   — position offset applied to every block
-        mult        number?    — position scale multiplier (default 1)
-        historymax  number?    — ring-buffer capacity for built-block history (default 400)
-        resizewait  number?    — seconds between Shape-tool resize steps (default 0.2)
-        wbs         boolean?   — wait-between-sets: yield 1s between repair passes (default false)
-        maxtry      number?    — max fire-attempts per block (default 150)
-        maxtrydelay number?    — per-loop delay override; nil = use ping-managed delay
-
-        async       table?     — when present, splits blocks across remote clients + self
-            .RunOnClient(script: string) -> nil
-                Fires `script` at one remote client. The remote is a completely separate
-                device and Lua VM — no shared _G, getgenv(), shared(), or any host state.
-                The script must be (and is) fully self-contained.
-            .Clients() -> number
-                Returns how many remote clients are currently available to receive scripts.
-            .source: string
-                URL that the remote client will game:HttpGet() to loadstring autobuildv3.
-                Required when async is used. The remote loads the lib fresh from this URL
-                because it has no copy of it — nothing from the host VM is accessible.
-
-    fetch_tools : any?
-        When a function, called as fetch_tools(file_path) → string (raw JSON).
-        When nil, falls back to game:HttpGet or readfile based on the path format.
-
-    isData      : boolean?
-        When true, treats file_path as an already-decoded block table.
-
-    Returned session methods:
-        settings()              -> (currentSettings, defaults)
-        stop()                  -> ()
-        skip()                  -> ()
-        wbs(v: boolean)         -> ()
-        resizewait(v: number)   -> ()
-        try(delay, max)         -> ()
-        start()                 -> nil   (build runs; async splits across clients)
-        show(bool)              -> ScreenGui
-]]
-function lib.build(file_path, settings, fetch_tools, isData)
-  return CreateBuildSession(file_path, settings, fetch_tools, isData)
+function lib.build(filepath, settings, fetchtools, isData)
+  return CreateBuildSession(filepath, settings, fetchtools, isData)
 end
 
 return lib
 
+
 --[[
   Quick-start:
 
-    local lib  = loadstring(...)()\n
-    -- Single-client build
-    local sess = lib.build("https://example.com/mymap.json")
-    sess.try(nil, 200)        -- more retries per block
-    sess.resizewait(0.1)      -- faster resizing
-    sess.wbs(true)            -- pause between repair passes
+    local lib  = loadstring(...)()
+    local sess = lib.build("https://example.com/mymap.zstd")
+    sess.try(nil, 200)
     sess.start()
-    sess.show(true)           -- pull up the progress HUD
+    -- poll: sess.stats.total, .done, .elapsed, .eta, .ping
 
-    -- Async multi-client build
-    -- Assumes `myAsync` is a table provided by your exploit/hub with:
-    --   myAsync.RunOnClient(script)  — sends script string to one other device
-    --   myAsync.Clients()            — returns number of available remote clients
-    --   myAsync.source               — URL where autobuildv3.lua is hosted (raw)
-    --
-    -- IMPORTANT: each remote client is a completely separate device.
-    -- They have no access to _G, getgenv(), or anything running on this machine.
-    -- The generated script loads autobuildv3 fresh from myAsync.source and
-    -- decodes its block slice from an embedded JSON literal inside the script string.
-    local sess2 = lib.build("https://example.com/mymap.json", {
-        async = {
-            RunOnClient = myAsync.RunOnClient,
-            Clients     = myAsync.Clients,
-            source      = "https://raw.githubusercontent.com/you/repo/main/autobuildv3.lua",
-        }
+    local sess2 = lib.build("https://example.com/mymap.zstd", {
+      async = {
+        myAsync.clients[1].exec,
+        myAsync.clients[2].exec,
+      }
     })
     sess2.start()
-    -- With 3 remote clients + self = 4 workers, 400 blocks → each does ~100.
-    -- Remotes run independently and in parallel on their own machines.
 
-    -- Save your own bricks:
-    lib.save("mymap.json", { game.Players.LocalPlayer })
-
-    -- Build from an already-decoded table:
-    local sess3 = lib.build(decodedTable, nil, nil, true)
-    sess3.start()
+    lib.save("mymap.zstd", { game.Players.LocalPlayer })
 --]]
