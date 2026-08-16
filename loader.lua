@@ -33,7 +33,7 @@ local mainok, mainres = pcall(task.spawn,function()
   do
     local pending = 3
     task.spawn(function()
-      Obsidian = loadstring(game:HttpGet("cache", "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/Library.lua"))()
+      Obsidian = loadstring(game:HttpGet("https://raw.githubusercontent.com/deividcomsono/Obsidian/main/Library.lua"))()
       pending -= 1
     end)
     task.spawn(function()
