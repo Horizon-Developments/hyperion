@@ -935,57 +935,55 @@ local function CreateBuildSession(FilePath, SessionSettingsTable, FetchToolsFunc
     BuildStartTimestamp       = tick()
     UpdateStats()
 
-    task.spawn(function()
-      local VerifiedBlockIndexSet = {}; local VerifiedCount = 0
+    local VerifiedBlockIndexSet = {}; local VerifiedCount = 0
 
-      local function IsBuildAborted()
-        if getgenv()[GENKEY] ~= moduleGen then IsBuildStopped = true end
-        return IsBuildStopped or CurrentRunGenerationId ~= ThisRunGenerationId
+    local function IsBuildAborted()
+      if getgenv()[GENKEY] ~= moduleGen then IsBuildStopped = true end
+      return IsBuildStopped or CurrentRunGenerationId ~= ThisRunGenerationId
+    end
+    local function MarkBlockAsVerified(BlockIndex)
+      if not VerifiedBlockIndexSet[BlockIndex] then
+        VerifiedBlockIndexSet[BlockIndex] = true; VerifiedCount = VerifiedCount + 1
+        NumberOfBlocksVerified = VerifiedCount; UpdateStats()
       end
-      local function MarkBlockAsVerified(BlockIndex)
-        if not VerifiedBlockIndexSet[BlockIndex] then
-          VerifiedBlockIndexSet[BlockIndex] = true; VerifiedCount = VerifiedCount + 1
-          NumberOfBlocksVerified = VerifiedCount; UpdateStats()
-        end
-      end
+    end
 
+    for BlockIndex, BlockEntry in ipairs(SortedBlockList) do
+      if IsBuildAborted() then break end
+      if BlockIndex % 25 == 0 then EnsureAllBuildToolsAreEquipped(false) end
+      if PlaceBlockAndVerifySuccess(BlockEntry, TransformConfig) then MarkBlockAsVerified(BlockIndex) end
+      task.wait(math.max(0.03, GetCurrentBuildDelay()))
+    end
+
+    local RepairPassNumber = 0
+    while not IsBuildAborted() and VerifiedCount < #SortedBlockList and RepairPassNumber < 4 do
+      RepairPassNumber = RepairPassNumber + 1
+      local BlocksRepairedThisPass = 0
+      if SessionSettings.wbs then task.wait(1) end
       for BlockIndex, BlockEntry in ipairs(SortedBlockList) do
         if IsBuildAborted() then break end
-        if BlockIndex % 25 == 0 then EnsureAllBuildToolsAreEquipped(false) end
-        if PlaceBlockAndVerifySuccess(BlockEntry, TransformConfig) then MarkBlockAsVerified(BlockIndex) end
-        task.wait(math.max(0.03, GetCurrentBuildDelay()))
-      end
-
-      local RepairPassNumber = 0
-      while not IsBuildAborted() and VerifiedCount < #SortedBlockList and RepairPassNumber < 4 do
-        RepairPassNumber = RepairPassNumber + 1
-        local BlocksRepairedThisPass = 0
-        if SessionSettings.wbs then task.wait(1) end
-        for BlockIndex, BlockEntry in ipairs(SortedBlockList) do
-          if IsBuildAborted() then break end
-          if not VerifiedBlockIndexSet[BlockIndex] then
-            if PlaceBlockAndVerifySuccess(BlockEntry, TransformConfig) then MarkBlockAsVerified(BlockIndex); BlocksRepairedThisPass = BlocksRepairedThisPass + 1 end
-            task.wait(math.max(0.03, GetCurrentBuildDelay()))
-          end
+        if not VerifiedBlockIndexSet[BlockIndex] then
+          if PlaceBlockAndVerifySuccess(BlockEntry, TransformConfig) then MarkBlockAsVerified(BlockIndex); BlocksRepairedThisPass = BlocksRepairedThisPass + 1 end
+          task.wait(math.max(0.03, GetCurrentBuildDelay()))
         end
-        if BlocksRepairedThisPass == 0 then break end
       end
+      if BlocksRepairedThisPass == 0 then break end
+    end
 
-      local BuildWasAborted       = IsBuildAborted()
-      local NumberOfMissingBlocks = #SortedBlockList - VerifiedCount
-      if CurrentRunGenerationId == ThisRunGenerationId then IsBuildStopped = false; ShouldSkipCurrentBlock = false end
-      TotalBlocksInCurrentBuild = 0; NumberOfBlocksVerified = 0; UpdateStats()
+    local BuildWasAborted       = IsBuildAborted()
+    local NumberOfMissingBlocks = #SortedBlockList - VerifiedCount
+    if CurrentRunGenerationId == ThisRunGenerationId then IsBuildStopped = false; ShouldSkipCurrentBlock = false end
+    TotalBlocksInCurrentBuild = 0; NumberOfBlocksVerified = 0; UpdateStats()
 
-      if BuildWasAborted then
-        NotifyUser("Build stopped.")
-      elseif NumberOfMissingBlocks > 0 then
-        NotifyUser(string.format("Build finished: %d/%d verified (%d need manual attention).", VerifiedCount, #SortedBlockList, NumberOfMissingBlocks))
-      else
-        NotifyUser(string.format("Build complete: %d/%d blocks.", VerifiedCount, #SortedBlockList))
-      end
-    end)
+    if BuildWasAborted then
+      NotifyUser("Build stopped.")
+    elseif NumberOfMissingBlocks > 0 then
+      NotifyUser(string.format("Build finished: %d/%d verified (%d need manual attention).", VerifiedCount, #SortedBlockList, NumberOfMissingBlocks))
+    else
+      NotifyUser(string.format("Build complete: %d/%d blocks.", VerifiedCount, #SortedBlockList))
+    end
 
-    return true
+    return not BuildWasAborted
   end
 
   -- ── Data loading ──────────────────────────────────────────────────────────
@@ -1093,18 +1091,17 @@ lib.build(d, s, nil, true).start()
 
     local LoadedData, LoadError = LoadBuildDataFromSource()
     if not LoadedData then
-      warn("[AutoBuild] Load failed: " .. tostring(LoadError)); return nil
+      warn("[AutoBuild] Load failed: " .. tostring(LoadError)); return false
     end
 
     if not AsyncConfiguration then
-      ExecuteBuildLoop(LoadedData, BuildTransformFromSessionSettings())
-      return nil
+      -- Synchronous: blocks until the build finishes, returns true/false
+      return ExecuteBuildLoop(LoadedData, BuildTransformFromSessionSettings())
     end
 
     if #AsyncConfiguration <= 0 then
       warn("[AutoBuild] async: no remote clients, running locally")
-      ExecuteBuildLoop(LoadedData, BuildTransformFromSessionSettings())
-      return nil
+      return ExecuteBuildLoop(LoadedData, BuildTransformFromSessionSettings())
     end
 
     local AllSortedBlocks      = SortBlockListByDistanceFromSpawn(LoadedData)
@@ -1126,16 +1123,18 @@ lib.build(d, s, nil, true).start()
       BlockCursor = BlockCursor + WorkerBlockCount
 
       if WorkerIndex < TotalWorkerCount then
+        -- Remote workers are inherently fire-and-forget
         local WorkerChunkJson = HttpService:JSONEncode(WorkerBlockChunk)
         AsyncConfiguration[WorkerIndex](BuildRemoteClientScript(WorkerChunkJson, SerializedSettings))
         NotifyUser(string.format("async: sent %d blocks to remote %d/%d", WorkerBlockCount, WorkerIndex, #AsyncConfiguration))
       else
+        -- Local worker runs synchronously like the non-async path
         NotifyUser(string.format("async: running %d blocks locally (worker %d/%d)", WorkerBlockCount, TotalWorkerCount, TotalWorkerCount))
-        ExecuteBuildLoop(WorkerBlockChunk, BuildTransformFromSessionSettings())
+        return ExecuteBuildLoop(WorkerBlockChunk, BuildTransformFromSessionSettings())
       end
     end
 
-    return nil
+    return true
   end
 
   return BuildSession
