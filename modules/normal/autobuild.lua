@@ -19,6 +19,7 @@ Tabs.autobuild = Window:AddTab("Autobuild", "blocks")
 
 local Options = Library.Options
 local Main        = Tabs.autobuild:AddLeftGroupbox("File")
+local SaveBox     = Tabs.autobuild:AddLeftGroupbox("Save")
 local StatsBox    = Tabs.autobuild:AddLeftGroupbox("Stats")
 local InstanceBox = Tabs.autobuild:AddRightGroupbox("Instance")
 
@@ -93,6 +94,76 @@ Main:AddButton({
   Text = "Refresh file list",
   Func = function()
     RefreshFileList()
+  end,
+})
+
+-- ── Save groupbox ────────────────────────────────────────────────────────────
+
+local SaveSelectedPlayers = {}
+local SaveFilename = ""
+
+SaveBox:AddLabel("Select the player(s) whose builds you want to save.", true)
+
+SaveBox:AddDropdown("SavePlayers@autobuild", {
+  SpecialType = "Player",
+  ExcludeLocalPlayer = false,
+  Multi = true,
+  Text = "Players",
+  Callback = function(Value)
+    SaveSelectedPlayers = {}
+    for name, selected in pairs(Value) do
+      if selected then
+        local plr = game:GetService("Players"):FindFirstChild(name)
+        if plr then table.insert(SaveSelectedPlayers, plr) end
+      end
+    end
+  end,
+})
+
+SaveBox:AddLabel("Filename: a-z A-Z 0-9 _ only.", true)
+
+SaveBox:AddInput("SaveFilename@autobuild", {
+  Text = "Filename",
+  Placeholder = "my_build",
+  ClearTextOnFocus = false,
+  Finished = true,
+  Callback = function(Value)
+    SaveFilename = Value
+  end,
+})
+
+SaveBox:AddButton({
+  Text = "Save",
+  Func = function()
+    if not SaveFilename or SaveFilename == "" then
+      Obsidian:Notify({ Title = "Invalid filename", Description = "Set a filename first.", Time = 3 })
+      return
+    end
+    if not SaveFilename:match("^[%w_]+$") then
+      Obsidian:Notify({ Title = "Invalid filename", Description = "Filenames can only be a-z A-Z 0-9 _", Time = 3 })
+      return
+    end
+    if #SaveSelectedPlayers == 0 then
+      Obsidian:Notify({ Title = "No players selected", Description = "Select at least one player.", Time = 3 })
+      return
+    end
+
+    local FullPath = Path .. "/" .. SaveFilename .. ".zst"
+
+    local ok, blockCount = pcall(function()
+      return AutoBuildLib.save(FullPath, SaveSelectedPlayers)
+    end)
+
+    if ok then
+      Obsidian:Notify({
+        Title = "Saved",
+        Description = string.format("Saved %d block(s) to %s.zst", blockCount, SaveFilename),
+        Time = 3,
+      })
+      RefreshFileList()
+    else
+      Obsidian:Notify({ Title = "Save failed", Description = tostring(blockCount), Time = 6 })
+    end
   end,
 })
 
