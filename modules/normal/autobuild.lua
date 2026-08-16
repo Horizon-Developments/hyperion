@@ -18,6 +18,7 @@ Tabs.autobuild = Window:AddTab("Autobuild", "blocks")
 
 local Options = Library.Options
 local Main        = Tabs.autobuild:AddLeftGroupbox("File")
+local SaveBox     = Tabs.autobuild:AddLeftGroupbox("Save")
 local StatsBox    = Tabs.autobuild:AddLeftGroupbox("Stats")
 local InstanceBox = Tabs.autobuild:AddRightGroupbox("Instance")
 local AsyncBox    = Tabs.autobuild:AddRightGroupbox("Async Bot")
@@ -156,9 +157,7 @@ local function RefreshSaveDropdown()
   Options["SavePlayers@autobuild"]:SetValues(Names)
 end
 
-Main:AddDivider()
-
-Main:AddDropdown("SavePlayers@autobuild", {
+SaveBox:AddDropdown("SavePlayers@autobuild", {
   Text     = "Builds (select players to save)",
   Values   = {},
   Default  = {},
@@ -171,8 +170,8 @@ Main:AddDropdown("SavePlayers@autobuild", {
   end,
 })
 
-Main:AddLabel("Refreshes the player list dropdown.", true)
-Main:AddButton("RefreshSave@autobuild", {
+SaveBox:AddLabel("Refreshes the player list dropdown.", true)
+SaveBox:AddButton("RefreshSave@autobuild", {
   Text = "Refresh",
   Func = function()
     RefreshSaveDropdown()
@@ -181,9 +180,9 @@ Main:AddButton("RefreshSave@autobuild", {
 
 RefreshSaveDropdown()
 
-Main:AddLabel("Filename: a-z A-Z 0-9 _ only.", true)
+SaveBox:AddLabel("Filename: a-z A-Z 0-9 _ only.", true)
 
-Main:AddInput("SaveFilename@autobuild", {
+SaveBox:AddInput("SaveFilename@autobuild", {
   Text = "Filename",
   Placeholder = "my_build",
   ClearTextOnFocus = false,
@@ -193,7 +192,7 @@ Main:AddInput("SaveFilename@autobuild", {
   end,
 })
 
-Main:AddButton("SaveButton@autobuild", {
+SaveBox:AddButton("SaveButton@autobuild", {
   Text = "Save",
   Func = function()
     Options["SavePlayers@autobuild"]:SetDisabled(true)
