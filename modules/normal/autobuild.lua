@@ -1,7 +1,6 @@
 --[[
   Hyperion Project
   Copyright (c) 2026 Horizon-Developments
-  All rights reserved.
   Repository:
   https://github.com/Horizon-Developments/hyperion
   License:
@@ -41,7 +40,7 @@ local botInstance
 
 AsyncBox:AddLabel("Adds a relay bot that helps build by taking a share of the block list.", true)
 
-AsyncBox:AddButton({
+AsyncBox:AddButton("GenerateBotURL@autobuild", {
   Text = "Generate Bot URL",
   Func = function()
     if botInstance then
@@ -113,7 +112,7 @@ Main:AddDropdown("FileName@autobuild", {
   end,
 })
 
-Main:AddButton({
+Main:AddButton("Load@autobuild", {
   Text = "Load",
   Func = function()
     if Selected == nil then
@@ -135,7 +134,7 @@ Main:AddButton({
   end,
 })
 
-Main:AddButton({
+Main:AddButton("RefreshFileList@autobuild", {
   Text = "Refresh file list",
   Func = function()
     RefreshFileList()
@@ -144,9 +143,97 @@ Main:AddButton({
 
 RefreshFileList()
 
+-- ── Save groupbox ────────────────────────────────────────────────────────────
+
+local SaveSelectedNames = {}
+local SaveFilename = ""
+
+local function RefreshSaveDropdown()
+  local Names = {}
+  for _, Player in ipairs(game:GetService("Players"):GetPlayers()) do
+    table.insert(Names, Player.Name)
+  end
+  Options["SavePlayers@autobuild"]:SetValues(Names)
+end
+
+Main:AddDivider()
+
+Main:AddDropdown("SavePlayers@autobuild", {
+  Text     = "Builds (select players to save)",
+  Values   = {},
+  Default  = {},
+  Multi    = true,
+  Callback = function(Value)
+    SaveSelectedNames = {}
+    for name, selected in pairs(Value) do
+      if selected then table.insert(SaveSelectedNames, name) end
+    end
+  end,
+})
+
+Main:AddLabel("Refreshes the player list dropdown.", true)
+Main:AddButton("RefreshSave@autobuild", {
+  Text = "Refresh",
+  Func = function()
+    RefreshSaveDropdown()
+  end,
+})
+
+RefreshSaveDropdown()
+
+Main:AddLabel("Filename: a-z A-Z 0-9 _ only.", true)
+
+Main:AddInput("SaveFilename@autobuild", {
+  Text = "Filename",
+  Placeholder = "my_build",
+  ClearTextOnFocus = false,
+  Finished = true,
+  Callback = function(Value)
+    SaveFilename = Value
+  end,
+})
+
+Main:AddButton("SaveButton@autobuild", {
+  Text = "Save",
+  Func = function()
+    Options["SavePlayers@autobuild"]:SetDisabled(true)
+    Options["SaveFilename@autobuild"]:SetDisabled(true)
+    Options["SaveButton@autobuild"]:SetDisabled(true)
+
+    pcall(function()
+      if not SaveFilename or SaveFilename == "" then
+        Obsidian:Notify({ Title = "Invalid filename", Description = "Set your filename", Time = 3 })
+        return
+      end
+      if not SaveFilename:match("^[%w_]+$") then
+        Obsidian:Notify({ Title = "Invalid filename", Description = "Filenames can only be a-z A-Z 0-9 _", Time = 3 })
+        return
+      end
+      if #SaveSelectedNames == 0 then
+        Obsidian:Notify({ Title = "No selected players", Description = "Select players", Time = 3 })
+        return
+      end
+
+      local Players = {}
+      for _, name in ipairs(SaveSelectedNames) do
+        local plr = game:GetService("Players"):FindFirstChild(name)
+        if plr then table.insert(Players, plr) end
+      end
+
+      local blockCount = AutoBuildLib.save(Path .. "/" .. SaveFilename .. ".zst", Players)
+      Obsidian:Notify({ Title = "Created successfully", Description = string.format("Saved %d block(s)", blockCount), Time = 3 })
+      RefreshFileList()
+    end)
+
+    Options["SaveButton@autobuild"]:SetDisabled(false)
+    Options["SaveFilename@autobuild"]:SetDisabled(false)
+    Options["SavePlayers@autobuild"]:SetDisabled(false)
+  end,
+})
+
 -- ── Instance groupbox ─────────────────────────────────────────────────────────
 
-InstanceBox:AddButton({
+InstanceBox:AddButton("RunInstance@autobuild", {
   Text = "Run instance",
   Func = function()
     if Instance == nil then
@@ -169,7 +256,7 @@ InstanceBox:AddButton({
 
     Helpers.log(ok, res)
   end,
-}):AddButton({
+}):AddButton("Stop@autobuild", {
   Text = "Stop",
   Func = function()
     if Instance == nil then return end
@@ -179,7 +266,7 @@ InstanceBox:AddButton({
 })
 
 InstanceBox:AddLabel("Skips the block currently being attempted and moves to the next one.", true)
-InstanceBox:AddButton({
+InstanceBox:AddButton("SkipBlock@autobuild", {
   Text = "Skip block",
   Func = function()
     if Instance == nil then return end
@@ -250,7 +337,6 @@ local StatsLabels = {
     eta      = StatsBox:AddLabel("ETA:", true),
     ping     = StatsBox:AddLabel("Ping:", true),
 }
-
 
 game:GetService("RunService").RenderStepped:Connect(function()
     if Instance == nil then return end
