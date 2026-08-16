@@ -737,8 +737,6 @@ local function CreateSession(filePath, settingsTable, fetchFn, isPreDecoded, fet
             )
           end
         end
-        local snapMult = sizeVec and sizeVec.X or GridUnitSize
-        pos = snapToGrid(pos, snapMult)
         local args = { workspace.Terrain, Enum.NormalId.Top, pos, sizeMode or "normal" }
         built = false
         fireBuild(args)
