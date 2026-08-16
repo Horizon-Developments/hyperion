@@ -17,7 +17,6 @@ print("j", Obsidian, Window, Tabs, Assets, Helpers)
 Tabs.autobuild = Window:AddTab("Autobuild", "blocks")
 
 local Options = Obsidian.Options
-local Buttons = Obsidian.Buttons
 local Main        = Tabs.autobuild:AddLeftGroupbox("File")
 local SaveBox     = Tabs.autobuild:AddLeftGroupbox("Save")
 local StatsBox    = Tabs.autobuild:AddLeftGroupbox("Stats")
@@ -193,12 +192,12 @@ SaveBox:AddInput("SaveFilename@autobuild", {
   end,
 })
 
-SaveBox:AddButton("SaveButton@autobuild", {
+local SaveButtonRef = SaveBox:AddButton("SaveButton@autobuild", {
   Text = "Save",
   Func = function()
     Options["SavePlayers@autobuild"]:SetDisabled(true)
     Options["SaveFilename@autobuild"]:SetDisabled(true)
-    Buttons["SaveButton@autobuild"]:SetDisabled(true)
+    SaveButtonRef:SetDisabled(true)
 
     print(pcall(function()
       if not SaveFilename or SaveFilename == "" then
@@ -225,7 +224,8 @@ SaveBox:AddButton("SaveButton@autobuild", {
       RefreshFileList()
     end))
 
-    Buttons["SaveButton@autobuild"]:SetDisabled(false)
+    task.wait(0.5)
+    SaveButtonRef:SetDisabled(false)
     Options["SaveFilename@autobuild"]:SetDisabled(false)
     Options["SavePlayers@autobuild"]:SetDisabled(false)
   end,
