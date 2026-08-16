@@ -197,7 +197,7 @@ SaveBox:AddButton("SaveButton@autobuild", {
   Func = function()
     Options["SavePlayers@autobuild"]:SetDisabled(true)
     Options["SaveFilename@autobuild"]:SetDisabled(true)
-    Options["SaveButton@autobuild"]:SetDisabled(true)
+    Buttons["SaveButton@autobuild"]:SetDisabled(true)
 
     pcall(function()
       if not SaveFilename or SaveFilename == "" then
@@ -224,7 +224,7 @@ SaveBox:AddButton("SaveButton@autobuild", {
       RefreshFileList()
     end)
 
-    Options["SaveButton@autobuild"]:SetDisabled(false)
+    Buttons["SaveButton@autobuild"]:SetDisabled(false)
     Options["SaveFilename@autobuild"]:SetDisabled(false)
     Options["SavePlayers@autobuild"]:SetDisabled(false)
   end,
