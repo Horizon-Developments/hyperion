@@ -199,7 +199,7 @@ SaveBox:AddButton("SaveButton@autobuild", {
     Options["SaveFilename@autobuild"]:SetDisabled(true)
     Options["SaveButton@autobuild"]:SetDisabled(true)
 
-    pcall(function()
+    print(pcall(function()
       if not SaveFilename or SaveFilename == "" then
         Obsidian:Notify({ Title = "Invalid filename", Description = "Set your filename", Time = 3 })
         return
@@ -222,8 +222,8 @@ SaveBox:AddButton("SaveButton@autobuild", {
       local blockCount = AutoBuildLib.save(Path .. "/" .. SaveFilename .. ".zst", Players)
       Obsidian:Notify({ Title = "Created successfully", Description = string.format("Saved %d block(s)", blockCount), Time = 3 })
       RefreshFileList()
-    end)
-
+    end))
+		task.wait(0.5)
     Options["SaveButton@autobuild"]:SetDisabled(false)
     Options["SaveFilename@autobuild"]:SetDisabled(false)
     Options["SavePlayers@autobuild"]:SetDisabled(false)
