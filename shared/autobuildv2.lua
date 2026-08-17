@@ -603,9 +603,9 @@ local function CreateSession(filePath, settingsTable, fetchFn, isPreDecoded, fet
               and target and target.Parent and target.CanCollide ~= value then
               firePaint(args)
             end
-            task.wait(0.05)
+            task.wait(math.max(0.03, delay()))
           until not target or not target.Parent or target.CanCollide == value
-              or stopped or skip or r > 12
+              or stopped or skip or r > cfg.maxtry
         end
         setCollide(obstruct, false)
         local ok, result = pcall(fn)
@@ -636,17 +636,38 @@ local function CreateSession(filePath, settingsTable, fetchFn, isPreDecoded, fet
         return attempt()
       end
 
-      -- Delete a temp block via the Delete tool (with :Destroy() fallback).
+      -- Delete a temp block via the Delete tool, retrying until the SERVER
+      -- confirms removal (temp.Parent == nil). This never calls :Destroy()
+      -- locally — a client-side destroy only removes the instance from our
+      -- own view; the server still thinks the block exists, so it would
+      -- still be solid/visible to everyone else and still poison future
+      -- adjacency scans on the server's copy of the world. If the Delete
+      -- tool round-trip genuinely can't get a confirmation, the block is
+      -- left in place and logged rather than faked away.
       local function deleteTemp(temp)
-        pcall(function()
-          local del = LocalPlayer.Character:FindFirstChild("Delete") or LocalPlayer.Backpack:FindFirstChild("Delete")
-          if del then
-            local bind = del:FindFirstChild("origevent")
-            if bind then bind:Invoke(temp, Enum.NormalId.Top, temp.Position, "")
-            elseif del:FindFirstChild("Script") then del.Script.Event:FireServer(temp, Enum.NormalId.Top, temp.Position, "")
-            else temp:Destroy() end
-          else temp:Destroy() end
-        end)
+        if not temp then return end
+        local r = 0
+        repeat
+          r = r + 1
+          pcall(function()
+            if not temp or not temp.Parent then return end
+            if LocalPlayer.Character and not LocalPlayer.Character:FindFirstChild("Delete")
+              and LocalPlayer.Backpack:FindFirstChild("Delete") then
+              LocalPlayer.Backpack.Delete.Parent = LocalPlayer.Character
+            end
+            local del = LocalPlayer.Character:FindFirstChild("Delete") or LocalPlayer.Backpack:FindFirstChild("Delete")
+            if del then
+              local bind = del:FindFirstChild("origevent")
+              if bind then bind:Invoke(temp, Enum.NormalId.Top, temp.Position, "")
+              elseif del:FindFirstChild("Script") then del.Script.Event:FireServer(temp, Enum.NormalId.Top, temp.Position, "")
+              end
+            end
+          end)
+          task.wait(math.max(0.03, delay()))
+        until not temp or not temp.Parent or stopped or skip or r > cfg.maxtry
+        if temp and temp.Parent then
+          log("WARNING: temp block at " .. tostring(temp.Position) .. " could not be confirmed deleted after " .. cfg.maxtry .. " tries; left in place.")
+        end
       end
 
       if adjFound == false and #history > 0 and previewPart then
