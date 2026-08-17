@@ -657,9 +657,10 @@ local function CreateSession(filePath, settingsTable, fetchFn, isPreDecoded, fet
             end
             local del = LocalPlayer.Character:FindFirstChild("Delete") or LocalPlayer.Backpack:FindFirstChild("Delete")
             if del then
-              local bind = del:FindFirstChild("origevent")
-              if bind then bind:Invoke(temp, Enum.NormalId.Top, temp.Position, "")
-              elseif del:FindFirstChild("Script") then del.Script.Event:FireServer(temp, Enum.NormalId.Top, temp.Position, "")
+              local script = del:FindFirstChild("Script")
+              local event  = script and script:FindFirstChild("Event")
+              if event then
+                event:FireServer(temp, temp.Position)
               end
             end
           end)
