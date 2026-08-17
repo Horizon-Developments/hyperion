@@ -1,6 +1,4 @@
--- autobuildv2.lua
 
--- ── Services ──────────────────────────────────────────────────────────────────
 local Players         = game:GetService("Players")
 local RunService      = game:GetService("RunService")
 local HttpService     = game:GetService("HttpService")
@@ -9,13 +7,11 @@ local EncodingService = game:GetService("EncodingService")
 
 local LocalPlayer = Players.LocalPlayer
 
--- ── Game variant ──────────────────────────────────────────────────────────────
 local IsOldVariant   = workspace:FindFirstChild("Cubes") ~= nil
 local BlockFolder    = IsOldVariant and workspace:WaitForChild("Cubes") or workspace:WaitForChild("Bricks")
 local GridUnitSize   = 4
 local DefaultColor   = Color3.fromRGB(192, 192, 192)
 
--- ── Compression ───────────────────────────────────────────────────────────────
 local function Compress(data)
   local json = HttpService:JSONEncode(data)
   local compressed = EncodingService:CompressBuffer(buffer.fromstring(json), Enum.CompressionAlgorithm.Zstd, 22)
@@ -27,7 +23,6 @@ local function Decompress(raw)
   return HttpService:JSONDecode(buffer.tostring(decompressed))
 end
 
--- ── Axis map ──────────────────────────────────────────────────────────────────
 local AxisMap = {
   [Enum.NormalId.Right]  = { Vector3.new( 1, 0, 0), "X" },
   [Enum.NormalId.Top]    = { Vector3.new( 0, 1, 0), "Y" },
@@ -46,7 +41,6 @@ local NormalIdFromName = {
   Front  = Enum.NormalId.Front,
 }
 
--- ── Material maps ─────────────────────────────────────────────────────────────
 local MatToName = {
   [Enum.Material.SmoothPlastic] = "smooth",   [Enum.Material.Plastic]      = "plastic",
   [Enum.Material.CeramicTiles]  = "tiles",    [Enum.Material.Brick]        = "bricks",
@@ -63,9 +57,9 @@ local MatToName = {
 local NameToMat = {}
 for mat, name in pairs(MatToName) do NameToMat[name] = mat end
 
--- ── Ping-adaptive delay ───────────────────────────────────────────────────────
 local buildDelay   = 0.235
-local pingEMA      = 0
+local pingSRTT     = 0
+local pingRTTVAR   = 0
 local pingSeeded   = false
 local GENKEY       = "HyperionAutobuildGen"
 local CONNKEY      = "HyperionAutoBuildCon"
@@ -80,22 +74,23 @@ getgenv()[GENKEY] = moduleGen
 
 task.spawn(function()
   while getgenv()[GENKEY] == moduleGen do
-    local ok, ping = pcall(function() return LocalPlayer:GetNetworkPing() * 1000 end)
+    local ok, sample = pcall(function() return LocalPlayer:GetNetworkPing() * 1000 end)
     if ok then
-      pingEMA   = pingSeeded and (pingEMA * 0.7 + ping * 0.3) or ping
-      pingSeeded = true
-      if     pingEMA > 400 then buildDelay = 0.50
-      elseif pingEMA > 280 then buildDelay = 0.35
-      elseif pingEMA > 180 then buildDelay = 0.22
-      elseif pingEMA > 100 then buildDelay = 0.12
-      else                       buildDelay = math.max(pingEMA / 1000 + 0.007, 0.051)
+      if not pingSeeded then
+        pingSRTT   = sample
+        pingRTTVAR = sample / 2
+        pingSeeded = true
+      else
+        pingRTTVAR = 0.75 * pingRTTVAR + 0.25 * math.abs(pingSRTT - sample)
+        pingSRTT   = 0.875 * pingSRTT  + 0.125 * sample
       end
+      local rto  = pingSRTT + 3.9 * pingRTTVAR
+      buildDelay = math.max(0.051, math.min(0.55, rto / 1000))
     end
     task.wait(1)
   end
 end)
 
--- ── JSON sanitiser ────────────────────────────────────────────────────────────
 local function SanitizeJson(s)
   if not s or s == "" then return s end
   s = s:gsub("^\xEF\xBB\xBF", "")
@@ -113,7 +108,6 @@ local function SanitizeJson(s)
   return s
 end
 
--- ── Defaults ──────────────────────────────────────────────────────────────────
 local DEFAULTS = {
   offset      = Vector3.zero,
   mult        = 1,
@@ -124,7 +118,6 @@ local DEFAULTS = {
   maxtrydelay = nil,
 }
 
--- ── lib.save ──────────────────────────────────────────────────────────────────
 local function SaveBlocks(filePath, playerList)
   local accepted = {}
   for _, p in ipairs(playerList) do
@@ -139,8 +132,6 @@ local function SaveBlocks(filePath, playerList)
     local sz = part.Size
     local c  = part.Color
     local bd
-
-    -- Sign block
     if part:FindFirstChild("Input") then
       local txt   = ""
       local label = part:FindFirstChildWhichIsA("GuiObject", true) -- fallback
@@ -157,11 +148,8 @@ local function SaveBlocks(filePath, playerList)
         c    = { math.round(c.R*255), math.round(c.G*255), math.round(c.B*255) },
         id   = part.Name,
       }
-
-    -- Regular block
     else
       bd = {}
-      -- Save full CFrame if block is rotated
       if (part.CFrame - part.Position) ~= CFrame.new() then
         bd.p = { part.CFrame:GetComponents() }
       else
@@ -172,7 +160,6 @@ local function SaveBlocks(filePath, playerList)
       bd.a  = part.Anchored
       bd.cc = part.CanCollide
       if sz.X ~= GridUnitSize or sz.Y ~= GridUnitSize or sz.Z ~= GridUnitSize then
-        -- adjust corner position for non-default sizes (only for non-rotated; rotated uses CFrame)
         if #bd.p == 3 then
           bd.p[1] = (bd.p[1] - sz.X/2) + 0.5
           bd.p[2] = (bd.p[2] - sz.Y/2) + 0.5
@@ -201,7 +188,6 @@ local function SaveBlocks(filePath, playerList)
   return #blocks
 end
 
--- ── lib.build ─────────────────────────────────────────────────────────────────
 local function CreateSession(filePath, settingsTable, fetchFn, isPreDecoded, fetchTools)
   settingsTable = settingsTable or {}
 
@@ -216,15 +202,11 @@ local function CreateSession(filePath, settingsTable, fetchFn, isPreDecoded, fet
   }
 
   local asyncClients = (type(settingsTable.async) == "table") and settingsTable.async or nil
-
-  -- State
   local stopped, skip, built, recentBlock, previewPart = false, false, false, nil, nil
   local history, historyIdx = {}, 0
   local runGen, lastState, lastToolWarnTime = 0, nil, 0
   local toolNames = { "Build", "Paint", "Shape", "Delete" }
-
-  -- WBS ping reader: scrapes CoreGui PerformanceStats for accurate resize delay
-  local wbsPingHistory, wbsPingIdx, wbsResizewait = {}, 0, cfg.resizewait
+  local wbsPingHistory, wbsPingIdx, wbsResizewait, wbsSum, wbsCount = {}, 0, cfg.resizewait, 0, 0
   task.spawn(function()
     while getgenv()[GENKEY] == moduleGen do
       task.wait(1)
@@ -247,10 +229,12 @@ local function CreateSession(filePath, settingsTable, fetchFn, isPreDecoded, fet
       if newPing and newPing > 0 then
         wbsPingIdx = (wbsPingIdx % 5) + 1
         local multi = newPing > 500 and 2.2 or newPing > 250 and 2.5 or 2.7
-        wbsPingHistory[wbsPingIdx] = newPing * multi
-        local sum = 0
-        for _, v in pairs(wbsPingHistory) do sum = sum + v end
-        wbsResizewait  = (sum / #wbsPingHistory) / 1000
+        local old = wbsPingHistory[wbsPingIdx]
+        if old then wbsSum = wbsSum - old else wbsCount = wbsCount + 1 end
+        local new = newPing * multi
+        wbsPingHistory[wbsPingIdx] = new
+        wbsSum = wbsSum + new
+        wbsResizewait  = (wbsSum / wbsCount) / 1000
         cfg.resizewait = wbsResizewait
       end
     end
@@ -261,14 +245,12 @@ local function CreateSession(filePath, settingsTable, fetchFn, isPreDecoded, fet
   local COLOR_TOL = 0.02
 
   local totalBlocks, verifiedBlocks, buildStart = 0, 0, 0
-
-  -- ── Stats ──────────────────────────────────────────────────────────────────
   local stats = { total = 0, done = 0, elapsed = 0, eta = nil, ping = 0 }
 
   local function updateStats()
     stats.total = totalBlocks
     stats.done  = verifiedBlocks
-    stats.ping  = math.floor(pingEMA)
+    stats.ping  = math.floor(pingSRTT)
     if buildStart > 0 then
       stats.elapsed = tick() - buildStart
       if stats.done > 2 and stats.total > 0 then
@@ -276,33 +258,12 @@ local function CreateSession(filePath, settingsTable, fetchFn, isPreDecoded, fet
       end
     end
   end
-
-  -- ── Highlight ─────────────────────────────────────────────────────────────
   local highlight = Instance.new("Highlight")
   highlight.Parent              = CoreGui
   highlight.FillColor           = Color3.fromRGB(0, 200, 255)
   highlight.FillTransparency    = 0.5
   highlight.OutlineColor        = Color3.fromRGB(0, 200, 255)
   highlight.OutlineTransparency = 0
-
-  -- ── Block listener ─────────────────────────────────────────────────────────
-  local function onBlockAdded(child)
-    if not child:IsA("BasePart") then return end
-    recentBlock = child
-    historyIdx  = (historyIdx % cfg.historymax) + 1
-    history[historyIdx] = child
-    built = true
-  end
-
-  local conn
-  if BlockFolder:FindFirstChild(LocalPlayer.Name) then
-    conn = BlockFolder[LocalPlayer.Name].ChildAdded:Connect(onBlockAdded)
-  else
-    conn = BlockFolder.DescendantAdded:Connect(onBlockAdded)
-  end
-  getgenv()[CONNKEY] = conn
-
-  -- ── Helpers ────────────────────────────────────────────────────────────────
   local function log(msg) warn("[AutoBuild] " .. tostring(msg)) end
   local function delay() return cfg.maxtrydelay or buildDelay end
 
@@ -325,8 +286,6 @@ local function CreateSession(filePath, settingsTable, fetchFn, isPreDecoded, fet
     if not sz then return corner end
     return Vector3.new(corner.X + sz.X/2 - 0.5, corner.Y + sz.Y/2 - 0.5, corner.Z + sz.Z/2 - 0.5)
   end
-
-  -- ── Tool management ────────────────────────────────────────────────────────
   local function equipTool(name)
     local char = LocalPlayer.Character
     if not char then return nil end
@@ -370,8 +329,6 @@ local function CreateSession(filePath, settingsTable, fetchFn, isPreDecoded, fet
     end
     return hasBuild
   end
-
-  -- ── Block verification ─────────────────────────────────────────────────────
   local function partMatches(part, center, sz)
     return part and part:IsA("BasePart")
         and vecClose(part.Position, center, POS_TOL)
@@ -386,12 +343,13 @@ local function CreateSession(filePath, settingsTable, fetchFn, isPreDecoded, fet
       p.FilterType = Enum.RaycastFilterType.Include
       p.FilterDescendantsInstances = { BlockFolder }
       p.MaxParts = 30
-      return workspace:GetPartBoundsInBox(CFrame.new(center), Vector3.new(1,1,1), p)
+      return workspace:GetPartBoundsInBox(CFrame.new(center), searchSz + Vector3.new(1,1,1), p)
     end)
     if ok and hits then
       for _, part in ipairs(hits) do
         if partMatches(part, center, searchSz) then return part end
       end
+      return nil
     end
     for _, part in ipairs(BlockFolder:GetDescendants()) do
       if partMatches(part, center, searchSz) then return part end
@@ -408,8 +366,6 @@ local function CreateSession(filePath, settingsTable, fetchFn, isPreDecoded, fet
     if collide  ~= nil and part.CanCollide ~= collide     then return false end
     return true
   end
-
-  -- ── Preview part ───────────────────────────────────────────────────────────
   local function makePreview(pos, sz, color, mat, transp, anchored, collide, sprays)
     if typeof(pos) == "CFrame" then pos = pos.Position end
     local p = Instance.new("Part")
@@ -449,12 +405,8 @@ local function CreateSession(filePath, settingsTable, fetchFn, isPreDecoded, fet
     p.Parent = workspace
     return p
   end
-
-  -- ── Fire tool event ────────────────────────────────────────────────────────
-  -- Supports fetch_tools (custom event resolver), origevent binding, or Script.Event fallback.
   local function fireEvent(toolName, args)
     pcall(function()
-      -- fetch_tools path (stable-compatible custom resolver)
       if fetchTools then
         local event = fetchTools(toolName)
         if event == nil then return end
@@ -465,7 +417,6 @@ local function CreateSession(filePath, settingsTable, fetchFn, isPreDecoded, fet
         end
         return
       end
-      -- standard path: equip tool then fire via origevent or Script.Event
       local char = LocalPlayer.Character
       if not char then return end
       local tool = char:FindFirstChild(toolName)
@@ -484,8 +435,26 @@ local function CreateSession(filePath, settingsTable, fetchFn, isPreDecoded, fet
 
   local function fireBuild(args) fireEvent("Build", args) end
   local function firePaint(args) fireEvent("Paint", args) end
+  local function onBlockAdded(child)
+    if not child:IsA("BasePart") then return end
+    recentBlock = child
+    historyIdx  = (historyIdx % cfg.historymax) + 1
+    history[historyIdx] = child
+    built = true
+  end
 
-  -- Continuous teleport loop (matches stable's tp_to_pos reliability)
+  do
+    if not BlockFolder:FindFirstChild(LocalPlayer.Name) then
+      ensureTools(true)
+      local probe = Vector3.new(6777, 6969, 6777)
+      repeat
+        fireBuild({ workspace.Terrain, Enum.NormalId.Top, probe, "normal" })
+        task.wait(0.2)
+      until BlockFolder:FindFirstChild(LocalPlayer.Name) or getgenv()[GENKEY] ~= moduleGen
+    end
+    local conn = BlockFolder[LocalPlayer.Name].ChildAdded:Connect(onBlockAdded)
+    getgenv()[CONNKEY] = conn
+  end
   local tpTarget = nil
   task.spawn(function()
     while not stopped or tpTarget do
@@ -508,8 +477,6 @@ local function CreateSession(filePath, settingsTable, fetchFn, isPreDecoded, fet
   local function stopTeleport()
     tpTarget = nil
   end
-
-  -- ── Sign placer ────────────────────────────────────────────────────────────
   local function buildSign(signData, xform)
     local cf  = CFrame.new(table.unpack(signData.p))
     local pos = cf.Position + (xform and xform.offset or Vector3.zero)
@@ -558,8 +525,6 @@ local function CreateSession(filePath, settingsTable, fetchFn, isPreDecoded, fet
 
     built = false; recentBlock = nil; skip = false
   end
-
-  -- ── Main block placer ──────────────────────────────────────────────────────
   local function placeBlock(pos, matName, color, sizeMode, sizeVec, isPremade, origMat, sprays, anchored, collide)
     if anchored == nil then anchored = true end
     if collide  == nil then collide  = true end
@@ -569,25 +534,24 @@ local function CreateSession(filePath, settingsTable, fetchFn, isPreDecoded, fet
       pcall(function() LocalPlayer.Backpack.Build.Parent = LocalPlayer.Character end)
       local adjFound, retries = false, 0
       recentBlock = nil
-
-      -- ── Adjacency ──────────────────────────────────────────────────────────
       if #history > 0 and previewPart then
         local candidates = {}
-        for idx, hb in pairs(history) do
+        for idx = 1, cfg.historymax do
+          local hb = history[idx]
           if hb == nil or hb.Parent == nil then history[idx] = nil; continue end
           if previewPart.Size ~= hb.Size then continue end
           local minDim = math.min(hb.Size.X, hb.Size.Y, hb.Size.Z)
           local tol = hb.Anchored and 0.01 or math.min(0.75, minDim * 0.25)
           for nid, ax in pairs(AxisMap) do
             local adjPos = hb.Position + ax[1] * hb.Size[ax[2]]
-            if (adjPos - previewPart.Position).Magnitude <= tol then
+            local diff = adjPos - previewPart.Position
+            if diff.X*diff.X + diff.Y*diff.Y + diff.Z*diff.Z <= tol*tol then
               local entry = { nid, hb, hb.Position + ax[1] * hb.Size[ax[2]] / 2 }
               table.insert(candidates, entry)
               adjFound = entry
             end
           end
         end
-        -- prefer matching color
         if #candidates > 1 and color and adjFound and adjFound[2].Color ~= color then
           for _, c in pairs(candidates) do
             if c[2].Color == color then adjFound = c end
@@ -617,85 +581,70 @@ local function CreateSession(filePath, settingsTable, fetchFn, isPreDecoded, fet
           pos = origPos
         end
       end
-
-      -- ── Diagonal bridge ────────────────────────────────────────────────────
       if adjFound == false and #history > 0 and previewPart then
-        local diagNeighbour, bridgeNid, bridgeBlock = nil, nil, nil
-        for idx, hb in pairs(history) do
+        local nb, stepNid, finalNid = nil, nil, nil
+        local tgt = previewPart.Position
+
+        for idx = 1, cfg.historymax do
+          local hb = history[idx]
           if hb == nil or hb.Parent == nil then history[idx] = nil; continue end
           if previewPart.Size ~= hb.Size then continue end
           local minDim = math.min(hb.Size.X, hb.Size.Y, hb.Size.Z)
           local tol = hb.Anchored and 0.01 or math.min(0.75, minDim * 0.25)
-          local d = previewPart.Position - hb.Position
-          local off = (math.abs(d.X)>tol and 1 or 0) + (math.abs(d.Y)>tol and 1 or 0) + (math.abs(d.Z)>tol and 1 or 0)
-          if off == 2 then
-            for nid, ax in pairs(AxisMap) do
-              local td = previewPart.Position - (hb.Position + ax[1] * hb.Size[ax[2]])
-              local toff = (math.abs(td.X)>tol and 1 or 0) + (math.abs(td.Y)>tol and 1 or 0) + (math.abs(td.Z)>tol and 1 or 0)
-              if toff == 1 then
-                diagNeighbour = hb; bridgeNid = nid; bridgeBlock = hb; break
+          local d = tgt - hb.Position
+          local off = (math.abs(d.X)>tol and 1 or 0)+(math.abs(d.Y)>tol and 1 or 0)+(math.abs(d.Z)>tol and 1 or 0)
+          if off ~= 2 then continue end
+          for nid1, ax1 in pairs(AxisMap) do
+            local mid = hb.Position + ax1[1] * hb.Size[ax1[2]]
+            for nid2, ax2 in pairs(AxisMap) do
+              local diff = mid + ax2[1] * hb.Size[ax2[2]] - tgt
+              if diff.X*diff.X + diff.Y*diff.Y + diff.Z*diff.Z < 0.0225 then
+                nb = hb; stepNid = nid1; finalNid = nid2; break
               end
             end
+            if nb then break end
           end
-          if diagNeighbour then break end
+          if nb then break end
         end
 
-        if diagNeighbour and bridgeNid and bridgeBlock and bridgeBlock.Parent then
-          local ax          = AxisMap[bridgeNid]
-          local bridgeFace  = bridgeBlock.Position + ax[1] * bridgeBlock.Size[ax[2]] / 2
-          local tempBlock   = nil
+        if nb and nb.Parent then
+          local stepFace  = nb.Position + AxisMap[stepNid][1]  * nb.Size[AxisMap[stepNid][2]]  / 2
+          local temp
           built = false; recentBlock = nil; retries = 0
           repeat
             retries = retries + 1
-            fireBuild({ bridgeBlock, bridgeNid, bridgeFace, "normal" })
-            pcall(function() teleportTo(bridgeFace) end)
+            fireBuild({ nb, stepNid, stepFace, "normal" })
+            pcall(function() teleportTo(stepFace) end)
             RunService.Heartbeat:Wait()
-          until (built and recentBlock) or bridgeBlock.Parent == nil
-              or stopped or skip or retries > cfg.maxtry
+          until (built and recentBlock) or nb.Parent == nil or stopped or skip or retries > cfg.maxtry
 
-          if built and recentBlock and bridgeBlock.Parent and not stopped and not skip then
-            tempBlock = recentBlock
-            local realNid, realFace
-            for nid, ax2 in pairs(AxisMap) do
-              local cand = tempBlock.Position + ax2[1] * tempBlock.Size[ax2[2]]
-              if (cand - previewPart.Position).Magnitude < 0.15 then
-                realNid  = nid
-                realFace = tempBlock.Position + ax2[1] * tempBlock.Size[ax2[2]] / 2
-                break
-              end
-            end
-            if realNid then
-              built = false; recentBlock = nil; retries = 0
-              repeat
-                retries = retries + 1
-                fireBuild({ tempBlock, realNid, realFace, "normal" })
-                pcall(function() teleportTo(realFace) end)
-                RunService.Heartbeat:Wait()
-              until (built and recentBlock) or tempBlock.Parent == nil
-                  or stopped or skip or retries > cfg.maxtry
+          if built and recentBlock and not stopped and not skip then
+            temp = recentBlock
+            local finalFace = temp.Position + AxisMap[finalNid][1] * temp.Size[AxisMap[finalNid][2]] / 2
+            built = false; recentBlock = nil; retries = 0
+            repeat
+              retries = retries + 1
+              fireBuild({ temp, finalNid, finalFace, "normal" })
+              pcall(function() teleportTo(finalFace) end)
+              RunService.Heartbeat:Wait()
+            until (built and recentBlock) or temp.Parent == nil or stopped or skip or retries > cfg.maxtry
 
-              if built and recentBlock and not stopped and not skip and retries <= cfg.maxtry then
-                local realBlock = recentBlock
-                pcall(function()
-                  local del = LocalPlayer.Character:FindFirstChild("Delete") or LocalPlayer.Backpack:FindFirstChild("Delete")
-                  if del then
-                    local bind = del:FindFirstChild("origevent")
-                    if bind then bind:Invoke(tempBlock, Enum.NormalId.Top, tempBlock.Position, "")
-                    elseif del:FindFirstChild("Script") then del.Script.Event:FireServer(tempBlock, Enum.NormalId.Top, tempBlock.Position, "")
-                    else tempBlock:Destroy() end
-                  else
-                    tempBlock:Destroy()
-                  end
-                end)
-                adjFound   = { realNid, tempBlock, realFace }
-                recentBlock = realBlock
-                if previewPart then previewPart:Destroy() end
-              else
-                pcall(function() tempBlock:Destroy() end)
-                adjFound = false; recentBlock = nil
-              end
+            if built and recentBlock and not stopped and not skip then
+              local real = recentBlock
+              pcall(function()
+                local del = LocalPlayer.Character:FindFirstChild("Delete") or LocalPlayer.Backpack:FindFirstChild("Delete")
+                if del then
+                  local bind = del:FindFirstChild("origevent")
+                  if bind then bind:Invoke(temp, Enum.NormalId.Top, temp.Position, "")
+                  elseif del:FindFirstChild("Script") then del.Script.Event:FireServer(temp, Enum.NormalId.Top, temp.Position, "")
+                  else temp:Destroy() end
+                else temp:Destroy() end
+              end)
+              adjFound    = { finalNid, temp, finalFace }
+              recentBlock = real
+              if previewPart then previewPart:Destroy() end
             else
-              pcall(function() tempBlock:Destroy() end)
+              pcall(function() temp:Destroy() end)
               adjFound = false; recentBlock = nil
             end
           else
@@ -703,8 +652,6 @@ local function CreateSession(filePath, settingsTable, fetchFn, isPreDecoded, fet
           end
         end
       end
-
-      -- ── Fresh-place fallback ───────────────────────────────────────────────
       if adjFound == false then
         if sizeMode == nil then
           sizeMode = "normal"
@@ -745,8 +692,6 @@ local function CreateSession(filePath, settingsTable, fetchFn, isPreDecoded, fet
         stopTeleport()
         built = false; retries = 0
       end
-
-      -- ── Paint / material ───────────────────────────────────────────────────
       if recentBlock and typeof(color) == "Color3"
         and (LocalPlayer.Backpack:FindFirstChild("Paint") or LocalPlayer.Character:FindFirstChild("Paint"))
       then
@@ -777,8 +722,6 @@ local function CreateSession(filePath, settingsTable, fetchFn, isPreDecoded, fet
               or stopped or skip or retries > 250
         end)
       end
-
-      -- ── Anchor toggle ──────────────────────────────────────────────────────
       if recentBlock and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Paint")
         and recentBlock.Anchored ~= anchored then
         local ap   = recentBlock.Position + recentBlock.Size / 2
@@ -801,8 +744,6 @@ local function CreateSession(filePath, settingsTable, fetchFn, isPreDecoded, fet
             or (not LocalPlayer.Character:FindFirstChild("Paint") and not LocalPlayer.Backpack:FindFirstChild("Paint"))
             or stopped or skip or retries > 12
       end
-
-      -- ── Collide toggle ─────────────────────────────────────────────────────
       if recentBlock and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Paint")
         and recentBlock.CanCollide ~= collide then
         local cp   = recentBlock.Position + recentBlock.Size / 2
@@ -827,8 +768,6 @@ local function CreateSession(filePath, settingsTable, fetchFn, isPreDecoded, fet
       end
 
       highlight.Adornee = nil
-
-      -- ── Sprays ─────────────────────────────────────────────────────────────
       if recentBlock and (LocalPlayer.Backpack:FindFirstChild("Paint") or LocalPlayer.Character:FindFirstChild("Paint"))
         and sprays then
         local sprayArgs = { recentBlock, Enum.NormalId.Front, recentBlock.Position + Vector3.new(1,0,0), "material", nil, "spray", "ha" }
@@ -847,8 +786,6 @@ local function CreateSession(filePath, settingsTable, fetchFn, isPreDecoded, fet
           end
         end
       end
-
-      -- ── Resize ─────────────────────────────────────────────────────────────
       if recentBlock
         and ((sizeVec and (sizeVec.X ~= GridUnitSize or sizeVec.Y ~= GridUnitSize or sizeVec.Z ~= GridUnitSize)) or needsResize)
         and (LocalPlayer.Character:FindFirstChild("Shape") or LocalPlayer.Backpack:FindFirstChild("Shape"))
@@ -895,8 +832,6 @@ local function CreateSession(filePath, settingsTable, fetchFn, isPreDecoded, fet
     if previewPart then previewPart:Destroy() end
     recentBlock = nil
   end
-
-  -- ── Transform helpers ──────────────────────────────────────────────────────
   local function applyTransform(rawPos, sz, xform)
     if not xform or not xform.enabled then return rawPos end
     local half  = Vector3.new(sz.X/2-0.5, sz.Y/2-0.5, sz.Z/2-0.5)
@@ -929,7 +864,6 @@ local function CreateSession(filePath, settingsTable, fetchFn, isPreDecoded, fet
   end
 
   local function placeAndVerify(entry, xform)
-    -- Sign blocks handled separately
     if entry.type == "sign" then
       ensureTools(true)
       buildSign(entry, xform)
@@ -945,12 +879,6 @@ local function CreateSession(filePath, settingsTable, fetchFn, isPreDecoded, fet
     task.wait(math.max(0.03, delay()))
     return blockVerified(r.center, r.size, r.color, r.expectMat, r.anchored, r.collide)
   end
-
-  -- ── Sort by spatial adjacency (flood-fill from spawn) ──────────────────────
-  -- Orders blocks so that, as much as possible, each block in the queue is
-  -- physically touching a block already placed before it. This lets the
-  -- face-adjacency and diagonal-bridge fast paths in placeBlock actually
-  -- fire, instead of falling through to slow fresh-placement on every block.
   local function sortByAdjacency(blocks)
     local ref
     local spawn = workspace:FindFirstChild("SpawnLocation") or workspace:FindFirstChild("Spawn")
@@ -974,8 +902,6 @@ local function CreateSession(filePath, settingsTable, fetchFn, isPreDecoded, fet
 
     local n = #blocks
     if n <= 1 then return blocks end
-
-    -- Precompute each block's center position + size
     local centers, sizes = {}, {}
     for i, b in ipairs(blocks) do
       local pa = b.p or b.pos
@@ -991,16 +917,14 @@ local function CreateSession(filePath, settingsTable, fetchFn, isPreDecoded, fet
       end
       centers[i] = bp
     end
-
-    -- Spatial hash so neighbor lookups stay roughly O(1) instead of O(n^2).
-    -- Blocks much larger than the grid cell go in a separate small "big"
-    -- list instead of inflating everyone's search radius — a single huge
-    -- block shouldn't force every other block to scan a massive cell range.
     local cellSize   = GridUnitSize
     local bigThresh  = cellSize * 4  -- anything larger than this in any axis is "big"
     local cellRadius = 2             -- fixed, cheap radius for normal-size blocks
     local function cellKey(pos)
-      return math.floor(pos.X / cellSize) .. ":" .. math.floor(pos.Y / cellSize) .. ":" .. math.floor(pos.Z / cellSize)
+      local x = math.floor(pos.X / cellSize)
+      local y = math.floor(pos.Y / cellSize)
+      local z = math.floor(pos.Z / cellSize)
+      return bit32.bxor(bit32.bxor(x * 92837111, y * 689287499), z * 283923481)
     end
     local buckets, bigList, isBig = {}, {}, {}
     for i = 1, n do
@@ -1014,34 +938,27 @@ local function CreateSession(filePath, settingsTable, fetchFn, isPreDecoded, fet
         table.insert(buckets[key], i)
       end
     end
-
-    -- True if blocks i and j are close enough to be face/edge/diagonal touching
+    local abs = math.abs
     local function isAdjacent(i, j)
-      local d = centers[i] - centers[j]
-      local halfSum = (sizes[i] + sizes[j]) / 2
-      return math.abs(d.X) <= halfSum.X + 0.6
-         and math.abs(d.Y) <= halfSum.Y + 0.6
-         and math.abs(d.Z) <= halfSum.Z + 0.6
+      local ci, cj = centers[i], centers[j]
+      local si, sj = sizes[i], sizes[j]
+      return abs(ci.X-cj.X) <= (si.X+sj.X)*0.5 + 0.6
+         and abs(ci.Y-cj.Y) <= (si.Y+sj.Y)*0.5 + 0.6
+         and abs(ci.Z-cj.Z) <= (si.Z+sj.Z)*0.5 + 0.6
     end
-
-    -- Candidate neighbor indices for block i. Normal-size blocks: nearby
-    -- grid cells plus every "big" block (rare, cheap to check in full).
-    -- Big blocks: every other block, since their own surface can be far
-    -- from their center and a small local search would miss real neighbors.
-    local function candidates(i)
-      local out = {}
+    local function candidates(i, out)
       if isBig[i] then
         for j = 1, n do
           if j ~= i then out[#out+1] = j end
         end
-        return out
+        return
       end
       local base = centers[i]
       local bx, by, bz = math.floor(base.X/cellSize), math.floor(base.Y/cellSize), math.floor(base.Z/cellSize)
       for dx = -cellRadius, cellRadius do
         for dy = -cellRadius, cellRadius do
           for dz = -cellRadius, cellRadius do
-            local bucket = buckets[(bx+dx) .. ":" .. (by+dy) .. ":" .. (bz+dz)]
+            local bucket = buckets[bit32.bxor(bit32.bxor((bx+dx)*92837111,(by+dy)*689287499),(bz+dz)*283923481)]
             if bucket then
               for _, j in ipairs(bucket) do
                 if j ~= i then out[#out+1] = j end
@@ -1053,28 +970,28 @@ local function CreateSession(filePath, settingsTable, fetchFn, isPreDecoded, fet
       for _, j in ipairs(bigList) do
         if j ~= i then out[#out+1] = j end
       end
-      return out
     end
 
     local visited = {}
     local order = {}
+    local scratch = {}
+    local distToRef = {}
+    for i = 1, n do distToRef[i] = (centers[i] - ref).Magnitude end
 
-    local function nearestUnvisitedTo(pos)
-      local bestI, bestD
-      for i = 1, n do
-        if not visited[i] then
-          local d = (centers[i] - pos).Magnitude
-          if not bestD or d < bestD then bestD = d; bestI = i end
-        end
+    local byDist = {}
+    for i = 1, n do byDist[i] = i end
+    table.sort(byDist, function(a, b) return distToRef[a] < distToRef[b] end)
+    local byDistCursor = 1
+
+    local function nearestUnvisitedTo()
+      while byDistCursor <= n and visited[byDist[byDistCursor]] do
+        byDistCursor = byDistCursor + 1
       end
-      return bestI
+      if byDistCursor > n then return nil end
+      return byDist[byDistCursor]
     end
-
-    -- Flood-fill outward from the block nearest spawn; when a connected
-    -- cluster runs out of neighbors, start a new cluster at the nearest
-    -- remaining block so ordering still radiates outward overall.
     while #order < n do
-      local seed = nearestUnvisitedTo(ref)
+      local seed = nearestUnvisitedTo()
       if not seed then break end
 
       local queue = { seed }
@@ -1084,11 +1001,10 @@ local function CreateSession(filePath, settingsTable, fetchFn, isPreDecoded, fet
         local cur = queue[qi]; qi = qi + 1
         order[#order+1] = cur
 
-        local nbrs = candidates(cur)
-        table.sort(nbrs, function(a, b)
-          return (centers[a] - ref).Magnitude < (centers[b] - ref).Magnitude
-        end)
-        for _, j in ipairs(nbrs) do
+        for k = #scratch, 1, -1 do scratch[k] = nil end
+        candidates(cur, scratch)
+        table.sort(scratch, function(a, b) return distToRef[a] < distToRef[b] end)
+        for _, j in ipairs(scratch) do
           if not visited[j] and isAdjacent(cur, j) then
             visited[j] = true
             queue[#queue+1] = j
@@ -1101,8 +1017,6 @@ local function CreateSession(filePath, settingsTable, fetchFn, isPreDecoded, fet
     for _, i in ipairs(order) do result[#result+1] = blocks[i] end
     return result
   end
-
-  -- ── Core build loop ────────────────────────────────────────────────────────
   local function buildLoop(data, xform)
     if type(data) ~= "table" or #data == 0 then log("Build data empty."); return false end
     if not ensureTools(true) then return false end
@@ -1167,8 +1081,6 @@ local function CreateSession(filePath, settingsTable, fetchFn, isPreDecoded, fet
     end
     return not wasAborted
   end
-
-  -- ── Data loader ────────────────────────────────────────────────────────────
   local function loadData()
     if isPreDecoded then
       if type(filePath) == "table" then return filePath, nil end
@@ -1202,8 +1114,6 @@ local function CreateSession(filePath, settingsTable, fetchFn, isPreDecoded, fet
     if cfg.offset == Vector3.zero and cfg.mult == 1 then return nil end
     return { enabled = true, center = Vector3.zero, rotation = CFrame.identity, offset = cfg.offset }
   end
-
-  -- ── Async remote script ────────────────────────────────────────────────────
   local remoteTemplate = [[
 local hs  = game:GetService("HttpService")
 local lib = loadstring(game:HttpGet(%s, true))()
@@ -1235,8 +1145,6 @@ lib.build(d, s, nil, true).start()
       oz          = cfg.offset.Z,
     })
   end
-
-  -- ── Session handle ─────────────────────────────────────────────────────────
   local session = {}
   session.stats = stats
 
@@ -1293,27 +1201,9 @@ lib.build(d, s, nil, true).start()
   return session
 end
 
--- ── Public API ─────────────────────────────────────────────────────────────────
 local lib = {}
 
 function lib.save(filepath, players)  return SaveBlocks(filepath, players) end
 function lib.build(filepath, settings, fetchfn, isdata, fetchtools) return CreateSession(filepath, settings, fetchfn, isdata, fetchtools) end
 
 return lib
-
---[[
-  Quick-start:
-
-    local lib  = loadstring(...)()
-    local sess = lib.build("https://example.com/mymap.zstd")
-    sess.try(nil, 200)
-    sess.start()
-    -- poll: sess.stats.total, .done, .elapsed, .eta, .ping
-
-    local sess2 = lib.build("https://example.com/mymap.zstd", {
-      async = { client1.exec, client2.exec }
-    })
-    sess2.start()
-
-    lib.save("mymap.zstd", { game.Players.LocalPlayer })
---]]
