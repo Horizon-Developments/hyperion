@@ -581,8 +581,76 @@ local function CreateSession(filePath, settingsTable, fetchFn, isPreDecoded, fet
           pos = origPos
         end
       end
+      -- Toggle CanCollide on an existing block via the Paint tool's "collide" action,
+      -- run fn(), then restore original collision state. Used to pass a temp block
+      -- through an obstruction at a step position without leaving world state changed.
+      local function withNoCollide(obstruct, fn)
+        if not obstruct or not obstruct.Parent then return fn() end
+        local origCollide = obstruct.CanCollide
+        if origCollide == false then return fn() end
+        local function setCollide(target, value)
+          pcall(function() LocalPlayer.Backpack.Paint.Parent = LocalPlayer.Character end)
+          local cp   = target.Position + target.Size / 2
+          local args = { target, Enum.NormalId.Top, cp, "material", nil, "collide", "" }
+          local r = 0
+          repeat
+            r = r + 1
+            if LocalPlayer.Character and not LocalPlayer.Character:FindFirstChild("Paint")
+              and LocalPlayer.Backpack:FindFirstChild("Paint") then
+              LocalPlayer.Backpack.Paint.Parent = LocalPlayer.Character
+            end
+            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Paint")
+              and target and target.Parent and target.CanCollide ~= value then
+              firePaint(args)
+            end
+            task.wait(0.05)
+          until not target or not target.Parent or target.CanCollide == value
+              or stopped or skip or r > 12
+        end
+        setCollide(obstruct, false)
+        local ok, result = pcall(fn)
+        if obstruct and obstruct.Parent then setCollide(obstruct, true) end
+        if not ok then return nil end
+        return result
+      end
+
+      -- Fire a single build step from `fromPart` toward `facePos`, returning the
+      -- newly built part or nil. If an existing block occupies the target spot,
+      -- temporarily disable its collision so the step can pass through it.
+      local function stepBuild(fromPart, nid, facePos)
+        local obstruct = findBlock(facePos, fromPart.Size)
+        local function attempt()
+          built = false; recentBlock = nil
+          local r = 0
+          repeat
+            r = r + 1
+            fireBuild({ fromPart, nid, facePos, "normal" })
+            pcall(function() teleportTo(facePos) end)
+            RunService.Heartbeat:Wait()
+          until (built and recentBlock) or fromPart.Parent == nil or stopped or skip or r > cfg.maxtry
+          return (built and recentBlock) and recentBlock or nil
+        end
+        if obstruct and obstruct.Parent then
+          return withNoCollide(obstruct, attempt)
+        end
+        return attempt()
+      end
+
+      -- Delete a temp block via the Delete tool (with :Destroy() fallback).
+      local function deleteTemp(temp)
+        pcall(function()
+          local del = LocalPlayer.Character:FindFirstChild("Delete") or LocalPlayer.Backpack:FindFirstChild("Delete")
+          if del then
+            local bind = del:FindFirstChild("origevent")
+            if bind then bind:Invoke(temp, Enum.NormalId.Top, temp.Position, "")
+            elseif del:FindFirstChild("Script") then del.Script.Event:FireServer(temp, Enum.NormalId.Top, temp.Position, "")
+            else temp:Destroy() end
+          else temp:Destroy() end
+        end)
+      end
+
       if adjFound == false and #history > 0 and previewPart then
-        local nb, stepNid, finalNid = nil, nil, nil
+        local nb, hops = nil, nil
         local tgt = previewPart.Position
 
         for idx = 1, cfg.historymax do
@@ -593,61 +661,68 @@ local function CreateSession(filePath, settingsTable, fetchFn, isPreDecoded, fet
           local tol = hb.Anchored and 0.01 or math.min(0.75, minDim * 0.25)
           local d = tgt - hb.Position
           local off = (math.abs(d.X)>tol and 1 or 0)+(math.abs(d.Y)>tol and 1 or 0)+(math.abs(d.Z)>tol and 1 or 0)
-          if off ~= 2 then continue end
-          for nid1, ax1 in pairs(AxisMap) do
-            local mid = hb.Position + ax1[1] * hb.Size[ax1[2]]
-            for nid2, ax2 in pairs(AxisMap) do
-              local diff = mid + ax2[1] * hb.Size[ax2[2]] - tgt
-              if diff.X*diff.X + diff.Y*diff.Y + diff.Z*diff.Z < 0.0225 then
-                nb = hb; stepNid = nid1; finalNid = nid2; break
+          if off ~= 2 and off ~= 3 then continue end
+
+          if off == 2 then
+            -- 2-axis face diagonal: one intermediate hop
+            for nid1, ax1 in pairs(AxisMap) do
+              local mid = hb.Position + ax1[1] * hb.Size[ax1[2]]
+              for nid2, ax2 in pairs(AxisMap) do
+                local diff = mid + ax2[1] * hb.Size[ax2[2]] - tgt
+                if diff.X*diff.X + diff.Y*diff.Y + diff.Z*diff.Z < 0.0225 then
+                  nb = hb; hops = { nid1, nid2 }; break
+                end
               end
-            end
-            if nb then break end
-          end
-          if nb then break end
-        end
-
-        if nb and nb.Parent then
-          local stepFace  = nb.Position + AxisMap[stepNid][1]  * nb.Size[AxisMap[stepNid][2]]  / 2
-          local temp
-          built = false; recentBlock = nil; retries = 0
-          repeat
-            retries = retries + 1
-            fireBuild({ nb, stepNid, stepFace, "normal" })
-            pcall(function() teleportTo(stepFace) end)
-            RunService.Heartbeat:Wait()
-          until (built and recentBlock) or nb.Parent == nil or stopped or skip or retries > cfg.maxtry
-
-          if built and recentBlock and not stopped and not skip then
-            temp = recentBlock
-            local finalFace = temp.Position + AxisMap[finalNid][1] * temp.Size[AxisMap[finalNid][2]] / 2
-            built = false; recentBlock = nil; retries = 0
-            repeat
-              retries = retries + 1
-              fireBuild({ temp, finalNid, finalFace, "normal" })
-              pcall(function() teleportTo(finalFace) end)
-              RunService.Heartbeat:Wait()
-            until (built and recentBlock) or temp.Parent == nil or stopped or skip or retries > cfg.maxtry
-
-            if built and recentBlock and not stopped and not skip then
-              local real = recentBlock
-              pcall(function()
-                local del = LocalPlayer.Character:FindFirstChild("Delete") or LocalPlayer.Backpack:FindFirstChild("Delete")
-                if del then
-                  local bind = del:FindFirstChild("origevent")
-                  if bind then bind:Invoke(temp, Enum.NormalId.Top, temp.Position, "")
-                  elseif del:FindFirstChild("Script") then del.Script.Event:FireServer(temp, Enum.NormalId.Top, temp.Position, "")
-                  else temp:Destroy() end
-                else temp:Destroy() end
-              end)
-              adjFound    = { finalNid, temp, finalFace }
-              recentBlock = real
-              if previewPart then previewPart:Destroy() end
-            else
-              pcall(function() temp:Destroy() end)
-              adjFound = false; recentBlock = nil
+              if hops then break end
             end
           else
+            -- 3-axis corner diagonal: two intermediate hops
+            for nid1, ax1 in pairs(AxisMap) do
+              local mid1 = hb.Position + ax1[1] * hb.Size[ax1[2]]
+              for nid2, ax2 in pairs(AxisMap) do
+                local mid2 = mid1 + ax2[1] * hb.Size[ax2[2]]
+                for nid3, ax3 in pairs(AxisMap) do
+                  local diff = mid2 + ax3[1] * hb.Size[ax3[2]] - tgt
+                  if diff.X*diff.X + diff.Y*diff.Y + diff.Z*diff.Z < 0.0225 then
+                    nb = hb; hops = { nid1, nid2, nid3 }; break
+                  end
+                end
+                if hops then break end
+              end
+              if hops then break end
+            end
+          end
+          if hops then break end
+        end
+
+        if nb and nb.Parent and hops then
+          local temps = {}
+          local cur   = nb
+          local okAll = true
+
+          for i = 1, #hops do
+            local nid  = hops[i]
+            local face = cur.Position + AxisMap[nid][1] * cur.Size[AxisMap[nid][2]] / 2
+            local isLast = (i == #hops)
+            local produced = stepBuild(cur, nid, face)
+            if not produced or stopped or skip then
+              okAll = false
+              break
+            end
+            if not isLast then
+              table.insert(temps, produced)
+            else
+              -- final hop produced the real block
+              for _, t in ipairs(temps) do deleteTemp(t) end
+              adjFound    = { nid, cur, face }
+              recentBlock = produced
+              if previewPart then previewPart:Destroy() end
+            end
+            cur = produced
+          end
+
+          if not okAll then
+            for _, t in ipairs(temps) do deleteTemp(t) end
             adjFound = false; recentBlock = nil
           end
         end
