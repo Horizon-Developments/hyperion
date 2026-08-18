@@ -1,29 +1,52 @@
+--[[
+  Hyperion Project
+  Copyright (c) 2026 Horizon-Developments
+  Repository:
+  https://github.com/Horizon-Developments/hyperion
+  License:
+  https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/LICENSE.md
+]]
 
-local Players         = game:GetService("Players")
-local RunService      = game:GetService("RunService")
-local HttpService     = game:GetService("HttpService")
-local CoreGui         = game:GetService("CoreGui")
-local EncodingService = game:GetService("EncodingService")
+if getgenv()["autobuildv2@hyperion"] then return  getgenv()["autobuildv2@hyperion"] end
+local PlayersService  = game:GetService("Players")
+local RunService       = game:GetService("RunService")
+local HttpService      = game:GetService("HttpService")
+local CoreGuiService    = game:GetService("CoreGui")
+local EncodingService   = game:GetService("EncodingService")
 
-local LocalPlayer = Players.LocalPlayer
+local LocalPlayerInstance = PlayersService.LocalPlayer
 
-local IsOldVariant   = workspace:FindFirstChild("Cubes") ~= nil
-local BlockFolder    = IsOldVariant and workspace:WaitForChild("Cubes") or workspace:WaitForChild("Bricks")
-local GridUnitSize   = 4
-local DefaultColor   = Color3.fromRGB(192, 192, 192)
-
-local function Compress(data)
-  local json = HttpService:JSONEncode(data)
-  local compressed = EncodingService:CompressBuffer(buffer.fromstring(json), Enum.CompressionAlgorithm.Zstd, 22)
-  return buffer.tostring(compressed)
+local function DebugLog(...)
+  if not getgenv().DEBUG then return end
+  print("[AutoBuild][DEBUG] ",...)
 end
 
-local function Decompress(raw)
-  local decompressed = EncodingService:DecompressBuffer(buffer.fromstring(raw), Enum.CompressionAlgorithm.Zstd)
-  return HttpService:JSONDecode(buffer.tostring(decompressed))
+local IsUsingLegacyCubesFolderVariant = workspace:FindFirstChild("Cubes") ~= nil
+local BlockContainerFolder =
+  IsUsingLegacyCubesFolderVariant and workspace:WaitForChild("Cubes") or workspace:WaitForChild("Bricks")
+local DefaultGridUnitSizeInStuds = 4
+local DefaultBlockColor = Color3.fromRGB(192, 192, 192)
+
+DebugLog("Initializing AutoBuild library. LegacyCubesFolderVariant =", IsUsingLegacyCubesFolderVariant,
+  "BlockContainerFolder =", BlockContainerFolder:GetFullName())
+
+local function CompressBlockDataTableToBuffer(blockDataTable)
+  local jsonEncodedString = HttpService:JSONEncode(blockDataTable)
+  local compressedBuffer = EncodingService:CompressBuffer(
+    buffer.fromstring(jsonEncodedString), Enum.CompressionAlgorithm.Zstd, 22)
+  DebugLog("CompressBlockDataTableToBuffer: encoded", #jsonEncodedString, "bytes of JSON")
+  return buffer.tostring(compressedBuffer)
 end
 
-local AxisMap = {
+local function DecompressBufferToBlockDataTable(rawCompressedString)
+  local decompressedBuffer = EncodingService:DecompressBuffer(
+    buffer.fromstring(rawCompressedString), Enum.CompressionAlgorithm.Zstd)
+  return HttpService:JSONDecode(buffer.tostring(decompressedBuffer))
+end
+
+-- Maps each NormalId face to its outward direction vector and the size-component
+-- name ("X"/"Y"/"Z") that axis corresponds to.
+local NormalIdToDirectionAndAxisNameMap = {
   [Enum.NormalId.Right]  = { Vector3.new( 1, 0, 0), "X" },
   [Enum.NormalId.Top]    = { Vector3.new( 0, 1, 0), "Y" },
   [Enum.NormalId.Back]   = { Vector3.new( 0, 0, 1), "Z" },
@@ -32,7 +55,7 @@ local AxisMap = {
   [Enum.NormalId.Front]  = { Vector3.new( 0, 0,-1), "Z" },
 }
 
-local NormalIdFromName = {
+local FaceNameToNormalIdEnumMap = {
   Right  = Enum.NormalId.Right,
   Top    = Enum.NormalId.Top,
   Back   = Enum.NormalId.Back,
@@ -41,7 +64,7 @@ local NormalIdFromName = {
   Front  = Enum.NormalId.Front,
 }
 
-local MatToName = {
+local MaterialEnumToShortNameMap = {
   [Enum.Material.SmoothPlastic] = "smooth",   [Enum.Material.Plastic]      = "plastic",
   [Enum.Material.CeramicTiles]  = "tiles",    [Enum.Material.Brick]        = "bricks",
   [Enum.Material.WoodPlanks]    = "planks",   [Enum.Material.Ice]          = "ice",
@@ -54,61 +77,73 @@ local MatToName = {
   [Enum.Material.Concrete]      = "concrete", [Enum.Material.Pavement]     = "pavement",
   [Enum.Material.Neon]          = "neon",
 }
-local NameToMat = {}
-for mat, name in pairs(MatToName) do NameToMat[name] = mat end
-
-local buildDelay   = 0.235
-local pingSRTT     = 0
-local pingRTTVAR   = 0
-local pingSeeded   = false
-local GENKEY       = "HyperionAutobuildGen"
-local CONNKEY      = "HyperionAutoBuildCon"
-
-if getgenv()[CONNKEY] then
-  pcall(function() getgenv()[CONNKEY]:Disconnect() end)
-  getgenv()[CONNKEY] = nil
+local ShortNameToMaterialEnumMap = {}
+for materialEnumValue, shortMaterialName in pairs(MaterialEnumToShortNameMap) do
+  ShortNameToMaterialEnumMap[shortMaterialName] = materialEnumValue
 end
 
-local moduleGen = (getgenv()[GENKEY] or 0) + 1
-getgenv()[GENKEY] = moduleGen
+local currentBuildStepDelaySeconds = 0.235
+local smoothedRoundTripTimeMs      = 0
+local roundTripTimeVarianceMs      = 0
+local hasSeededPingSample          = false
+local GENERATION_COUNTER_GLOBAL_KEY = "HyperionAutobuildGen"
+local CONNECTION_HANDLE_GLOBAL_KEY  = "HyperionAutoBuildCon"
+
+if getgenv()[CONNECTION_HANDLE_GLOBAL_KEY] then
+  DebugLog("Disconnecting previous ChildAdded connection from a prior script generation")
+  pcall(function() getgenv()[CONNECTION_HANDLE_GLOBAL_KEY]:Disconnect() end)
+  getgenv()[CONNECTION_HANDLE_GLOBAL_KEY] = nil
+end
+
+local currentModuleGenerationNumber = (getgenv()[GENERATION_COUNTER_GLOBAL_KEY] or 0) + 1
+getgenv()[GENERATION_COUNTER_GLOBAL_KEY] = currentModuleGenerationNumber
+DebugLog("This module instance is generation", currentModuleGenerationNumber)
 
 task.spawn(function()
-  while getgenv()[GENKEY] == moduleGen do
-    local ok, sample = pcall(function() return LocalPlayer:GetNetworkPing() * 1000 end)
-    if ok then
-      if not pingSeeded then
-        pingSRTT   = sample
-        pingRTTVAR = sample / 2
-        pingSeeded = true
+  while getgenv()[GENERATION_COUNTER_GLOBAL_KEY] == currentModuleGenerationNumber do
+    local wasPingSampleSuccessful, pingSampleMilliseconds = pcall(function()
+      return LocalPlayerInstance:GetNetworkPing() * 1000
+    end)
+    if wasPingSampleSuccessful then
+      if not hasSeededPingSample then
+        smoothedRoundTripTimeMs = pingSampleMilliseconds
+        roundTripTimeVarianceMs = pingSampleMilliseconds / 2
+        hasSeededPingSample     = true
       else
-        pingRTTVAR = 0.75 * pingRTTVAR + 0.25 * math.abs(pingSRTT - sample)
-        pingSRTT   = 0.875 * pingSRTT  + 0.125 * sample
+        roundTripTimeVarianceMs = 0.75 * roundTripTimeVarianceMs
+          + 0.25 * math.abs(smoothedRoundTripTimeMs - pingSampleMilliseconds)
+        smoothedRoundTripTimeMs = 0.875 * smoothedRoundTripTimeMs + 0.125 * pingSampleMilliseconds
       end
-      local rto  = pingSRTT + 3.9 * pingRTTVAR
-      buildDelay = math.max(0.051, math.min(0.55, rto / 1000))
+      local retransmissionTimeoutMs = smoothedRoundTripTimeMs + 3.9 * roundTripTimeVarianceMs
+      currentBuildStepDelaySeconds = math.max(0.051, math.min(0.55, retransmissionTimeoutMs / 1000))
+      --DebugLog("Ping sample:", pingSampleMilliseconds, "ms | smoothedRTT:", smoothedRoundTripTimeMs,
+       -- "| stepDelay:", currentBuildStepDelaySeconds)
     end
     task.wait(1)
   end
 end)
 
-local function SanitizeJson(s)
-  if not s or s == "" then return s end
-  s = s:gsub("^\xEF\xBB\xBF", "")
-  s = s:gsub("\xC2\xA0", " ")
-  s = s:gsub("\xE2\x80[\x8B\x8C\x8D]", "")
-  s = s:gsub("\xE2\x80[\x9C\x9D]", '"')
-  s = s:gsub("\xE2\x80[\x98\x99]", "'")
-  s = s:gsub("[\r\n]+", " "):match("^%s*(.-)%s*$")
+local function SanitizeRawJsonString(inputString)
+  if not inputString or inputString == "" then return inputString end
+  local sanitizedString = inputString
+  sanitizedString = sanitizedString:gsub("^\xEF\xBB\xBF", "")
+  sanitizedString = sanitizedString:gsub("\xC2\xA0", " ")
+  sanitizedString = sanitizedString:gsub("\xE2\x80[\x8B\x8C\x8D]", "")
+  sanitizedString = sanitizedString:gsub("\xE2\x80[\x9C\x9D]", '"')
+  sanitizedString = sanitizedString:gsub("\xE2\x80[\x98\x99]", "'")
+  sanitizedString = sanitizedString:gsub("[\r\n]+", " "):match("^%s*(.-)%s*$")
   repeat
-    local s2 = s:gsub(",%s*([%]%}])", "%1")
-    if s2 == s then break end
-    s = s2
+    local sanitizedStringWithoutTrailingCommas = sanitizedString:gsub(",%s*([%]%}])", "%1")
+    if sanitizedStringWithoutTrailingCommas == sanitizedString then break end
+    sanitizedString = sanitizedStringWithoutTrailingCommas
   until false
-  if s:sub(1,1) == "{" and s:sub(-1) == "}" then s = "[" .. s .. "]" end
-  return s
+  if sanitizedString:sub(1, 1) == "{" and sanitizedString:sub(-1) == "}" then
+    sanitizedString = "[" .. sanitizedString .. "]"
+  end
+  return sanitizedString
 end
 
-local DEFAULTS = {
+local DefaultSessionSettings = {
   offset      = Vector3.zero,
   mult        = 1,
   historymax  = 400,
@@ -118,522 +153,665 @@ local DEFAULTS = {
   maxtrydelay = nil,
 }
 
-local function SaveBlocks(filePath, playerList)
-  local accepted = {}
-  for _, p in ipairs(playerList) do
-    if typeof(p) == "Instance" and p:IsA("Player") then accepted[p.Name] = true end
-  end
-
-  local blocks = {}
-  for _, part in ipairs(BlockFolder:GetDescendants()) do
-    if not part:IsA("BasePart") then continue end
-    if not (part.Parent and accepted[part.Parent.Name]) then continue end
-
-    local sz = part.Size
-    local c  = part.Color
-    local bd
-    if part:FindFirstChild("Input") then
-      local txt   = ""
-      local label = part:FindFirstChildWhichIsA("GuiObject", true) -- fallback
-      local input = part:FindFirstChild("Input")
-      if input then
-        local lbl = input:FindFirstChild("Label")
-        if lbl then txt = lbl.Text or "" end
+local function SaveOwnedBlocksToFile(outputFilePath, Instances)
+  local sourceFolderList = {}
+  for _, instance in ipairs(Instances) do
+    if typeof(instance) ~= "Instance" then continue end
+    if instance:IsA("Player") then
+      local playerBrickFolder = BlockContainerFolder:FindFirstChild(instance.Name)
+      if playerBrickFolder then
+        table.insert(sourceFolderList, playerBrickFolder)
       end
-      bd = {
-        type = "sign",
-        p    = { part.CFrame:GetComponents() },
-        sid  = input and input.Face and input.Face.Name or "Front",
-        txt  = txt:gsub('"', '\\"'),
-        c    = { math.round(c.R*255), math.round(c.G*255), math.round(c.B*255) },
-        id   = part.Name,
-      }
-    else
-      bd = {}
-      if (part.CFrame - part.Position) ~= CFrame.new() then
-        bd.p = { part.CFrame:GetComponents() }
-      else
-        local pos = part.Position - sz / 2 + Vector3.new(0.5, 0.5, 0.5)
-        bd.p = { pos.X, pos.Y, pos.Z }
-      end
-      bd.c  = { math.round(c.R*255), math.round(c.G*255), math.round(c.B*255) }
-      bd.a  = part.Anchored
-      bd.cc = part.CanCollide
-      if sz.X ~= GridUnitSize or sz.Y ~= GridUnitSize or sz.Z ~= GridUnitSize then
-        if #bd.p == 3 then
-          bd.p[1] = (bd.p[1] - sz.X/2) + 0.5
-          bd.p[2] = (bd.p[2] - sz.Y/2) + 0.5
-          bd.p[3] = (bd.p[3] - sz.Z/2) + 0.5
-        end
-        bd.s = { sz.X, sz.Y, sz.Z }
-      end
-      bd.m  = MatToName[part.Material] or "smooth"
-      bd.o  = part.Material.Name
-      bd.sp = {}
-      for _, child in ipairs(part:GetChildren()) do
-        if child.Name == "Spray" then
-          table.insert(bd.sp, {
-            child.Face.Name,
-            child.Image and child.Image.Image or "",
-            child.Label and child.Label.Text:gsub('"', '\\"') or "",
-          })
-        end
-      end
+    elseif instance:IsA("Folder") or instance:IsA("Model") then
+      table.insert(sourceFolderList, instance)
     end
+  end
+  DebugLog("SaveOwnedBlocksToFile: source folder count =", #sourceFolderList)
 
-    table.insert(blocks, bd)
+  local savedBlockDataList = {}
+  for _, sourceFolderInstance in ipairs(sourceFolderList) do
+    for _, blockPartInstance in ipairs(sourceFolderInstance:GetChildren()) do
+      if not blockPartInstance:IsA("BasePart") then continue end
+
+      local blockSize  = blockPartInstance.Size
+      local blockColor = blockPartInstance.Color
+      local blockDataEntry
+
+      if blockPartInstance:FindFirstChild("Input") then
+        local signLabelText = ""
+        local inputChildInstance = blockPartInstance:FindFirstChild("Input")
+        if inputChildInstance then
+          local labelChildInstance = inputChildInstance:FindFirstChild("Label")
+          if labelChildInstance then signLabelText = labelChildInstance.Text or "" end
+        end
+        blockDataEntry = {
+          type = "sign",
+          p    = { blockPartInstance.CFrame:GetComponents() },
+          sid  = inputChildInstance and inputChildInstance.Face and inputChildInstance.Face.Name or "Front",
+          txt  = signLabelText:gsub('"', '\\"'),
+          c    = { math.round(blockColor.R * 255), math.round(blockColor.G * 255), math.round(blockColor.B * 255) },
+          id   = blockPartInstance.Name,
+        }
+      else
+        blockDataEntry = {}
+        if (blockPartInstance.CFrame - blockPartInstance.Position) ~= CFrame.new() then
+          blockDataEntry.p = { blockPartInstance.CFrame:GetComponents() }
+        else
+          local cornerPosition = blockPartInstance.Position - blockSize / 2 + Vector3.new(0.5, 0.5, 0.5)
+          blockDataEntry.p = { cornerPosition.X, cornerPosition.Y, cornerPosition.Z }
+        end
+        blockDataEntry.c  = { math.round(blockColor.R * 255), math.round(blockColor.G * 255), math.round(blockColor.B * 255) }
+        blockDataEntry.a  = blockPartInstance.Anchored
+        blockDataEntry.cc = blockPartInstance.CanCollide
+        if blockSize.X ~= DefaultGridUnitSizeInStuds or blockSize.Y ~= DefaultGridUnitSizeInStuds
+          or blockSize.Z ~= DefaultGridUnitSizeInStuds then
+          if #blockDataEntry.p == 3 then
+            blockDataEntry.p[1] = (blockDataEntry.p[1] - blockSize.X / 2) + 0.5
+            blockDataEntry.p[2] = (blockDataEntry.p[2] - blockSize.Y / 2) + 0.5
+            blockDataEntry.p[3] = (blockDataEntry.p[3] - blockSize.Z / 2) + 0.5
+          end
+          blockDataEntry.s = { blockSize.X, blockSize.Y, blockSize.Z }
+        end
+        blockDataEntry.m  = MaterialEnumToShortNameMap[blockPartInstance.Material] or "smooth"
+        blockDataEntry.o  = blockPartInstance.Material.Name
+        blockDataEntry.sp = {}
+        for _, childInstance in ipairs(blockPartInstance:GetChildren()) do
+          if childInstance.Name == "Spray" then
+            table.insert(blockDataEntry.sp, {
+              childInstance.Face.Name,
+              childInstance.Image and childInstance.Image.Image or "",
+              childInstance.Label and childInstance.Label.Text:gsub('"', '\\"') or "",
+            })
+          end
+        end
+      end
+
+      table.insert(savedBlockDataList, blockDataEntry)
+    end
   end
 
-  writefile(filePath, Compress(blocks))
-  return #blocks
+  writefile(outputFilePath, CompressBlockDataTableToBuffer(savedBlockDataList))
+  DebugLog("SaveOwnedBlocksToFile: wrote", #savedBlockDataList, "blocks to", outputFilePath)
+  return #savedBlockDataList
 end
+local function CreateAutoBuildSession(dataSourcePathOrTable, userProvidedSettingsTable, customFetchFunction,
+  isDataSourcePreDecoded, customFetchToolsFunction)
+  userProvidedSettingsTable = userProvidedSettingsTable or {}
 
-local function CreateSession(filePath, settingsTable, fetchFn, isPreDecoded, fetchTools)
-  settingsTable = settingsTable or {}
-
-  local cfg = {
-    offset      = settingsTable.offset      or DEFAULTS.offset,
-    mult        = settingsTable.mult        or DEFAULTS.mult,
-    historymax  = settingsTable.historymax  or DEFAULTS.historymax,
-    resizewait  = settingsTable.resizewait  or DEFAULTS.resizewait,
-    wbs         = (settingsTable.wbs ~= nil) and settingsTable.wbs or DEFAULTS.wbs,
-    maxtry      = settingsTable.maxtry      or DEFAULTS.maxtry,
-    maxtrydelay = settingsTable.maxtrydelay or DEFAULTS.maxtrydelay,
+  local sessionConfiguration = {
+    offset      = userProvidedSettingsTable.offset      or DefaultSessionSettings.offset,
+    mult        = userProvidedSettingsTable.mult        or DefaultSessionSettings.mult,
+    historymax  = userProvidedSettingsTable.historymax  or DefaultSessionSettings.historymax,
+    resizewait  = userProvidedSettingsTable.resizewait  or DefaultSessionSettings.resizewait,
+    wbs         = (userProvidedSettingsTable.wbs ~= nil) and userProvidedSettingsTable.wbs or DefaultSessionSettings.wbs,
+    maxtry      = userProvidedSettingsTable.maxtry      or DefaultSessionSettings.maxtry,
+    maxtrydelay = userProvidedSettingsTable.maxtrydelay or DefaultSessionSettings.maxtrydelay,
   }
+  DebugLog("CreateAutoBuildSession: configuration =", HttpService:JSONEncode({
+    mult = sessionConfiguration.mult, historymax = sessionConfiguration.historymax,
+    resizewait = sessionConfiguration.resizewait, wbs = sessionConfiguration.wbs,
+    maxtry = sessionConfiguration.maxtry,
+  }))
 
-  local asyncClients = (type(settingsTable.async) == "table") and settingsTable.async or nil
-  local stopped, skip, built, recentBlock, previewPart = false, false, false, nil, nil
-  local history, historyIdx = {}, 0
-  local runGen, lastState, lastToolWarnTime = 0, nil, 0
-  local toolNames = { "Build", "Paint", "Shape", "Delete" }
-  local wbsPingHistory, wbsPingIdx, wbsResizewait, wbsSum, wbsCount = {}, 0, cfg.resizewait, 0, 0
+  local asynchronousRemoteWorkerClientList =
+    (type(userProvidedSettingsTable.async) == "table") and userProvidedSettingsTable.async or nil
+  local isBuildSessionStopped          = false
+  local isCurrentBlockSkipRequested    = false
+  local wasBlockJustConfirmedBuilt     = false
+  local mostRecentlyBuiltBlockInstance = nil
+  local currentPreviewPartInstance     = nil
+  local recentlyBuiltBlockHistoryList      = {}
+  local recentlyBuiltBlockHistoryWriteIndex = 0
+  local currentBuildRunGenerationNumber = 0
+  local lastKnownBuildStateSnapshot     = nil
+  local lastMissingToolWarningTimestamp = 0
+  local requiredToolNameList = { "Build", "Paint", "Shape", "Delete" }
+  local weightedBuildSpeedPingHistoryList     = {}
+  local weightedBuildSpeedPingHistoryIndex    = 0
+  local weightedBuildSpeedResizeWaitSeconds   = sessionConfiguration.resizewait
+  local weightedBuildSpeedPingSum             = 0
+  local weightedBuildSpeedPingSampleCount     = 0
+
   task.spawn(function()
-    while getgenv()[GENKEY] == moduleGen do
+    while getgenv()[GENERATION_COUNTER_GLOBAL_KEY] == currentModuleGenerationNumber do
       task.wait(1)
-      if not cfg.wbs then continue end
-      local newPing = -199
-      local ok = pcall(function()
-        for _, v in pairs(CoreGui.RobloxGui.PerformanceStats:GetChildren()) do
-          local panel = v:FindFirstChild("StatsMiniTextPanelClass")
-          if panel and panel:FindFirstChild("TitleLabel") and panel:FindFirstChild("ValueLabel")
-            and panel.TitleLabel.Text == "Ping" then
-            local raw = panel.ValueLabel.Text
-            local ms  = string.find(raw, " ms")
-            if ms then newPing = tonumber(string.sub(raw, 1, ms - 1)) end
+      if not sessionConfiguration.wbs then continue end
+      local latestPingMilliseconds = -199
+      local wasPanelScanSuccessful = pcall(function()
+        for _, statsChildInstance in pairs(CoreGuiService.RobloxGui.PerformanceStats:GetChildren()) do
+          local statsPanelInstance = statsChildInstance:FindFirstChild("StatsMiniTextPanelClass")
+          if statsPanelInstance and statsPanelInstance:FindFirstChild("TitleLabel")
+            and statsPanelInstance:FindFirstChild("ValueLabel")
+            and statsPanelInstance.TitleLabel.Text == "Ping" then
+            local rawValueLabelText = statsPanelInstance.ValueLabel.Text
+            local msSuffixIndex = string.find(rawValueLabelText, " ms")
+            if msSuffixIndex then
+              latestPingMilliseconds = tonumber(string.sub(rawValueLabelText, 1, msSuffixIndex - 1))
+            end
           end
         end
       end)
-      if not ok or newPing == -199 then
-        pcall(function() newPing = LocalPlayer:GetNetworkPing() * 1000 end)
+      if not wasPanelScanSuccessful or latestPingMilliseconds == -199 then
+        pcall(function() latestPingMilliseconds = LocalPlayerInstance:GetNetworkPing() * 1000 end)
       end
-      if newPing and newPing > 0 then
-        wbsPingIdx = (wbsPingIdx % 5) + 1
-        local multi = newPing > 500 and 2.2 or newPing > 250 and 2.5 or 2.7
-        local old = wbsPingHistory[wbsPingIdx]
-        if old then wbsSum = wbsSum - old else wbsCount = wbsCount + 1 end
-        local new = newPing * multi
-        wbsPingHistory[wbsPingIdx] = new
-        wbsSum = wbsSum + new
-        wbsResizewait  = (wbsSum / wbsCount) / 1000
-        cfg.resizewait = wbsResizewait
+      if latestPingMilliseconds and latestPingMilliseconds > 0 then
+        weightedBuildSpeedPingHistoryIndex = (weightedBuildSpeedPingHistoryIndex % 5) + 1
+        local pingWeightMultiplier =
+          latestPingMilliseconds > 500 and 2.2 or latestPingMilliseconds > 250 and 2.5 or 2.7
+        local previousHistoryValue = weightedBuildSpeedPingHistoryList[weightedBuildSpeedPingHistoryIndex]
+        if previousHistoryValue then
+          weightedBuildSpeedPingSum = weightedBuildSpeedPingSum - previousHistoryValue
+        else
+          weightedBuildSpeedPingSampleCount = weightedBuildSpeedPingSampleCount + 1
+        end
+        local newWeightedHistoryValue = latestPingMilliseconds * pingWeightMultiplier
+        weightedBuildSpeedPingHistoryList[weightedBuildSpeedPingHistoryIndex] = newWeightedHistoryValue
+        weightedBuildSpeedPingSum = weightedBuildSpeedPingSum + newWeightedHistoryValue
+        weightedBuildSpeedResizeWaitSeconds = (weightedBuildSpeedPingSum / weightedBuildSpeedPingSampleCount) / 1000
+        sessionConfiguration.resizewait = weightedBuildSpeedResizeWaitSeconds
+        DebugLog("WBS ping sample:", latestPingMilliseconds, "ms -> resizewait:", sessionConfiguration.resizewait)
       end
     end
   end)
 
-  local POS_TOL   = 0.75
-  local SIZE_TOL  = 0.75
-  local COLOR_TOL = 0.02
+  local POSITION_TOLERANCE_STUDS  = 0.75
+  local SIZE_TOLERANCE_STUDS      = 0.75
+  local COLOR_TOLERANCE_FRACTION  = 0.02
 
-  local totalBlocks, verifiedBlocks, buildStart = 0, 0, 0
-  local stats = { total = 0, done = 0, elapsed = 0, eta = nil, ping = 0 }
+  local totalBlockCountForCurrentBuild    = 0
+  local verifiedBlockCountForCurrentBuild = 0
+  local buildStartTimestamp               = 0
+  local sessionStatisticsTable = { total = 0, done = 0, elapsed = 0, eta = nil, ping = 0 }
 
-  local function updateStats()
-    stats.total = totalBlocks
-    stats.done  = verifiedBlocks
-    stats.ping  = math.floor(pingSRTT)
-    if buildStart > 0 then
-      stats.elapsed = tick() - buildStart
-      if stats.done > 2 and stats.total > 0 then
-        stats.eta = stats.elapsed / stats.done * (stats.total - stats.done)
+  local function UpdateSessionStatistics()
+    sessionStatisticsTable.total = totalBlockCountForCurrentBuild
+    sessionStatisticsTable.done  = verifiedBlockCountForCurrentBuild
+    sessionStatisticsTable.ping  = math.floor(smoothedRoundTripTimeMs)
+    if buildStartTimestamp > 0 then
+      sessionStatisticsTable.elapsed = tick() - buildStartTimestamp
+      if sessionStatisticsTable.done > 2 and sessionStatisticsTable.total > 0 then
+        sessionStatisticsTable.eta = sessionStatisticsTable.elapsed / sessionStatisticsTable.done
+          * (sessionStatisticsTable.total - sessionStatisticsTable.done)
       end
     end
   end
-  local highlight = Instance.new("Highlight")
-  highlight.Parent              = CoreGui
-  highlight.FillColor           = Color3.fromRGB(0, 200, 255)
-  highlight.FillTransparency    = 0.5
-  highlight.OutlineColor        = Color3.fromRGB(0, 200, 255)
-  highlight.OutlineTransparency = 0
-  local function log(msg) warn("[AutoBuild] " .. tostring(msg)) end
-  local function delay() return cfg.maxtrydelay or buildDelay end
 
-  local function snapToGrid(pos, mult)
-    mult = mult or GridUnitSize
+  local currentBlockHighlightInstance = Instance.new("Highlight")
+  currentBlockHighlightInstance.Parent              = CoreGuiService
+  currentBlockHighlightInstance.FillColor           = Color3.fromRGB(0, 200, 255)
+  currentBlockHighlightInstance.FillTransparency    = 0.5
+  currentBlockHighlightInstance.OutlineColor        = Color3.fromRGB(0, 200, 255)
+  currentBlockHighlightInstance.OutlineTransparency = 0
+
+  local function LogMessage(messageText)
+    warn("[AutoBuild] " .. tostring(messageText))
+  end
+  local function GetCurrentStepDelaySeconds()
+    return sessionConfiguration.maxtrydelay or currentBuildStepDelaySeconds
+  end
+
+  local function SnapPositionToGrid(inputPosition, gridUnitSizeOverride)
+    gridUnitSizeOverride = gridUnitSizeOverride or DefaultGridUnitSizeInStuds
     return Vector3.new(
-      math.round((pos.X - 2) / mult) * mult + 2,
-      math.round((pos.Y - 2) / mult) * mult + 2,
-      math.round((pos.Z - 2) / mult) * mult + 2
+      math.round((inputPosition.X - 2) / gridUnitSizeOverride) * gridUnitSizeOverride + 2,
+      math.round((inputPosition.Y - 2) / gridUnitSizeOverride) * gridUnitSizeOverride + 2,
+      math.round((inputPosition.Z - 2) / gridUnitSizeOverride) * gridUnitSizeOverride + 2
     )
   end
 
-  local function vecClose(a, b, tol)
-    return math.abs(a.X-b.X) <= tol and math.abs(a.Y-b.Y) <= tol and math.abs(a.Z-b.Z) <= tol
+  local function AreVectorsWithinTolerance(vectorA, vectorB, toleranceStuds)
+    return math.abs(vectorA.X - vectorB.X) <= toleranceStuds
+       and math.abs(vectorA.Y - vectorB.Y) <= toleranceStuds
+       and math.abs(vectorA.Z - vectorB.Z) <= toleranceStuds
   end
-  local function colorClose(a, b)
-    return math.abs(a.R-b.R) <= COLOR_TOL and math.abs(a.G-b.G) <= COLOR_TOL and math.abs(a.B-b.B) <= COLOR_TOL
+  local function AreColorsWithinTolerance(colorA, colorB)
+    return math.abs(colorA.R - colorB.R) <= COLOR_TOLERANCE_FRACTION
+       and math.abs(colorA.G - colorB.G) <= COLOR_TOLERANCE_FRACTION
+       and math.abs(colorA.B - colorB.B) <= COLOR_TOLERANCE_FRACTION
   end
-  local function cornerToCenter(corner, sz)
-    if not sz then return corner end
-    return Vector3.new(corner.X + sz.X/2 - 0.5, corner.Y + sz.Y/2 - 0.5, corner.Z + sz.Z/2 - 0.5)
+  local function ConvertCornerPositionToCenterPosition(cornerPosition, blockSize)
+    if not blockSize then return cornerPosition end
+    return Vector3.new(
+      cornerPosition.X + blockSize.X / 2 - 0.5,
+      cornerPosition.Y + blockSize.Y / 2 - 0.5,
+      cornerPosition.Z + blockSize.Z / 2 - 0.5
+    )
   end
-  local function equipTool(name)
-    local char = LocalPlayer.Character
-    if not char then return nil end
-    local inChar = char:FindFirstChild(name)
-    if inChar and inChar:IsA("Tool") then return inChar end
-    local bp   = LocalPlayer:FindFirstChildOfClass("Backpack")
-    local tool = bp and bp:FindFirstChild(name)
-    if tool and tool:IsA("Tool") then
+
+  local function EquipToolByName(toolName)
+    local characterModelInstance = LocalPlayerInstance.Character
+    if not characterModelInstance then return nil end
+    local toolAlreadyInCharacter = characterModelInstance:FindFirstChild(toolName)
+    if toolAlreadyInCharacter and toolAlreadyInCharacter:IsA("Tool") then return toolAlreadyInCharacter end
+    local backpackInstance = LocalPlayerInstance:FindFirstChildOfClass("Backpack")
+    local toolInBackpack = backpackInstance and backpackInstance:FindFirstChild(toolName)
+    if toolInBackpack and toolInBackpack:IsA("Tool") then
       pcall(function()
-        if tool:FindFirstChild("Script") and tool.Script:IsA("LocalScript") then
-          tool.Script.Disabled = false
+        if toolInBackpack:FindFirstChild("Script") and toolInBackpack.Script:IsA("LocalScript") then
+          toolInBackpack.Script.Disabled = false
         end
-        tool.Parent = char
+        toolInBackpack.Parent = characterModelInstance
       end)
-      return char:FindFirstChild(name)
+      return characterModelInstance:FindFirstChild(toolName)
     end
     return nil
   end
 
-  local function grabToolFromWorkspace(name)
-    local bp = LocalPlayer:FindFirstChildOfClass("Backpack")
-    if not bp or bp:FindFirstChild(name) then return end
-    local t = workspace:FindFirstChild(name)
-    if t and t:IsA("Tool") then pcall(function() t:Clone().Parent = bp end) end
+  local function CloneToolFromWorkspaceIntoBackpack(toolName)
+    local backpackInstance = LocalPlayerInstance:FindFirstChildOfClass("Backpack")
+    if not backpackInstance or backpackInstance:FindFirstChild(toolName) then return end
+    local toolInWorkspace = workspace:FindFirstChild(toolName)
+    if toolInWorkspace and toolInWorkspace:IsA("Tool") then
+      pcall(function() toolInWorkspace:Clone().Parent = backpackInstance end)
+    end
   end
 
-  local function ensureTools(warn_missing)
-    local hasBuild = false
-    for _, name in ipairs(toolNames) do
-      if not equipTool(name) then grabToolFromWorkspace(name); equipTool(name) end
-      if name == "Build" and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Build") then
-        hasBuild = true
+  local function EnsureRequiredToolsAreEquipped(shouldWarnIfMissing)
+    local hasBuildToolEquipped = false
+    for _, toolName in ipairs(requiredToolNameList) do
+      if not EquipToolByName(toolName) then
+        CloneToolFromWorkspaceIntoBackpack(toolName)
+        EquipToolByName(toolName)
+      end
+      if toolName == "Build" and LocalPlayerInstance.Character
+        and LocalPlayerInstance.Character:FindFirstChild("Build") then
+        hasBuildToolEquipped = true
       end
     end
-    if not hasBuild and warn_missing then
-      local now = os.clock()
-      if now - lastToolWarnTime > 6 then
-        lastToolWarnTime = now
-        log("Build tool missing. Grant yourself bkit, then retry.")
+    if not hasBuildToolEquipped and shouldWarnIfMissing then
+      local currentClockTime = os.clock()
+      if currentClockTime - lastMissingToolWarningTimestamp > 6 then
+        lastMissingToolWarningTimestamp = currentClockTime
+        LogMessage("Build tool missing. Grant yourself bkit, then retry.")
       end
     end
-    return hasBuild
-  end
-  local function partMatches(part, center, sz)
-    return part and part:IsA("BasePart")
-        and vecClose(part.Position, center, POS_TOL)
-        and vecClose(part.Size,     sz,     SIZE_TOL)
+    DebugLog("EnsureRequiredToolsAreEquipped: hasBuildToolEquipped =", hasBuildToolEquipped)
+    return hasBuildToolEquipped
   end
 
-  local function findBlock(center, sz)
-    if not BlockFolder or not BlockFolder.Parent then return nil end
-    local searchSz = sz or Vector3.new(GridUnitSize, GridUnitSize, GridUnitSize)
-    local ok, hits = pcall(function()
-      local p = OverlapParams.new()
-      p.FilterType = Enum.RaycastFilterType.Include
-      p.FilterDescendantsInstances = { BlockFolder }
-      p.MaxParts = 30
-      return workspace:GetPartBoundsInBox(CFrame.new(center), searchSz + Vector3.new(1,1,1), p)
+  local function DoesPartMatchExpectedTransform(candidatePartInstance, expectedCenterPosition, expectedSize)
+    return candidatePartInstance and candidatePartInstance:IsA("BasePart")
+        and AreVectorsWithinTolerance(candidatePartInstance.Position, expectedCenterPosition, POSITION_TOLERANCE_STUDS)
+        and AreVectorsWithinTolerance(candidatePartInstance.Size, expectedSize, SIZE_TOLERANCE_STUDS)
+  end
+
+  local function FindExistingBlockAtPosition(expectedCenterPosition, expectedSizeOverride)
+    if not BlockContainerFolder or not BlockContainerFolder.Parent then return nil end
+    local expectedSize = expectedSizeOverride
+      or Vector3.new(DefaultGridUnitSizeInStuds, DefaultGridUnitSizeInStuds, DefaultGridUnitSizeInStuds)
+    local wasOverlapQuerySuccessful, overlapQueryHitList = pcall(function()
+      local overlapParameters = OverlapParams.new()
+      overlapParameters.FilterType = Enum.RaycastFilterType.Include
+      overlapParameters.FilterDescendantsInstances = { BlockContainerFolder }
+      overlapParameters.MaxParts = 30
+      return workspace:GetPartBoundsInBox(
+        CFrame.new(expectedCenterPosition), expectedSize + Vector3.new(1, 1, 1), overlapParameters)
     end)
-    if ok and hits then
-      for _, part in ipairs(hits) do
-        if partMatches(part, center, searchSz) then return part end
+    if wasOverlapQuerySuccessful and overlapQueryHitList then
+      for _, hitPartInstance in ipairs(overlapQueryHitList) do
+        if DoesPartMatchExpectedTransform(hitPartInstance, expectedCenterPosition, expectedSize) then
+          return hitPartInstance
+        end
       end
       return nil
     end
-    for _, part in ipairs(BlockFolder:GetDescendants()) do
-      if partMatches(part, center, searchSz) then return part end
+    for _, descendantPartInstance in ipairs(BlockContainerFolder:GetDescendants()) do
+      if DoesPartMatchExpectedTransform(descendantPartInstance, expectedCenterPosition, expectedSize) then
+        return descendantPartInstance
+      end
     end
     return nil
   end
 
-  local function blockVerified(center, sz, color, mat, anchored, collide)
-    local part = findBlock(center, sz)
-    if not part then return false end
-    if color    and not colorClose(part.Color, color)     then return false end
-    if mat      and part.Material ~= mat                  then return false end
-    if anchored ~= nil and part.Anchored   ~= anchored    then return false end
-    if collide  ~= nil and part.CanCollide ~= collide     then return false end
+  local function IsBlockAtPositionVerified(expectedCenterPosition, expectedSize, expectedColor,
+    expectedMaterialEnum, expectedAnchoredState, expectedCollideState)
+    local matchedPartInstance = FindExistingBlockAtPosition(expectedCenterPosition, expectedSize)
+    if not matchedPartInstance then return false end
+    if expectedColor and not AreColorsWithinTolerance(matchedPartInstance.Color, expectedColor) then return false end
+    if expectedMaterialEnum and matchedPartInstance.Material ~= expectedMaterialEnum then return false end
+    if expectedAnchoredState ~= nil and matchedPartInstance.Anchored ~= expectedAnchoredState then return false end
+    if expectedCollideState ~= nil and matchedPartInstance.CanCollide ~= expectedCollideState then return false end
     return true
   end
-  local function makePreview(pos, sz, color, mat, transp, anchored, collide, sprays)
-    if typeof(pos) == "CFrame" then pos = pos.Position end
-    local p = Instance.new("Part")
-    previewPart      = p
-    p.Anchored       = anchored ~= false
-    p.CanCollide     = collide or false
-    p.CastShadow     = false
-    p.CanQuery       = false
-    p.Color          = color
-    p.Transparency   = transp or 0.5
-    p.Material       = mat or Enum.Material.SmoothPlastic
-    p.Size           = sz or Vector3.new(GridUnitSize, GridUnitSize, GridUnitSize)
-    if sz then
-      pos = Vector3.new(pos.X + sz.X/2 - 0.5, pos.Y + sz.Y/2 - 0.5, pos.Z + sz.Z/2 - 0.5)
+
+  local function CreatePreviewPartInstance(cornerOrCenterPosition, blockSize, blockColor, blockMaterialEnum,
+    transparencyOverride, anchoredOverride, collideOverride, sprayDataList)
+    if typeof(cornerOrCenterPosition) == "CFrame" then cornerOrCenterPosition = cornerOrCenterPosition.Position end
+    local previewPartInstance = Instance.new("Part")
+    currentPreviewPartInstance    = previewPartInstance
+    previewPartInstance.Anchored     = anchoredOverride ~= false
+    previewPartInstance.CanCollide   = collideOverride or false
+    previewPartInstance.CastShadow   = false
+    previewPartInstance.CanQuery     = false
+    previewPartInstance.Color        = blockColor
+    previewPartInstance.Transparency = transparencyOverride or 0.5
+    previewPartInstance.Material     = blockMaterialEnum or Enum.Material.SmoothPlastic
+    previewPartInstance.Size = blockSize
+      or Vector3.new(DefaultGridUnitSizeInStuds, DefaultGridUnitSizeInStuds, DefaultGridUnitSizeInStuds)
+    local finalCenterPosition = cornerOrCenterPosition
+    if blockSize then
+      finalCenterPosition = Vector3.new(
+        cornerOrCenterPosition.X + blockSize.X / 2 - 0.5,
+        cornerOrCenterPosition.Y + blockSize.Y / 2 - 0.5,
+        cornerOrCenterPosition.Z + blockSize.Z / 2 - 0.5
+      )
     end
-    p.CFrame = CFrame.new(pos)
-    if sprays then
-      for _, spray in pairs(sprays) do
-        local face    = Enum.NormalId[spray[1]]
-        local payload = spray[3] or ""
-        local gui     = Instance.new("SurfaceGui")
-        gui.Face          = face
-        gui.SizingMode    = Enum.SurfaceGuiSizingMode.PixelsPerStud
-        gui.PixelsPerStud = 50
-        local _, hashCount = string.gsub(payload, "#", "l")
-        if hashCount == #payload then
-          local img = Instance.new("ImageLabel", gui)
-          img.Image = spray[2]; img.BackgroundTransparency = 1; img.Size = UDim2.new(1,0,1,0)
+    previewPartInstance.CFrame = CFrame.new(finalCenterPosition)
+    if sprayDataList then
+      for _, singleSprayData in pairs(sprayDataList) do
+        local sprayFaceEnum = Enum.NormalId[singleSprayData[1]]
+        local sprayPayloadText = singleSprayData[3] or ""
+        local surfaceGuiInstance = Instance.new("SurfaceGui")
+        surfaceGuiInstance.Face          = sprayFaceEnum
+        surfaceGuiInstance.SizingMode    = Enum.SurfaceGuiSizingMode.PixelsPerStud
+        surfaceGuiInstance.PixelsPerStud = 50
+        local _, hashCharacterCount = string.gsub(sprayPayloadText, "#", "l")
+        if hashCharacterCount == #sprayPayloadText then
+          local sprayImageLabelInstance = Instance.new("ImageLabel", surfaceGuiInstance)
+          sprayImageLabelInstance.Image = singleSprayData[2]
+          sprayImageLabelInstance.BackgroundTransparency = 1
+          sprayImageLabelInstance.Size = UDim2.new(1, 0, 1, 0)
         else
-          local lbl = Instance.new("TextLabel", gui)
-          lbl.Text = payload; lbl.BackgroundTransparency = 1; lbl.TextScaled = true
-          lbl.TextColor3 = Color3.new(1,1,1); lbl.Font = Enum.Font.FredokaOne; lbl.Size = UDim2.new(1,0,1,0)
+          local sprayTextLabelInstance = Instance.new("TextLabel", surfaceGuiInstance)
+          sprayTextLabelInstance.Text = sprayPayloadText
+          sprayTextLabelInstance.BackgroundTransparency = 1
+          sprayTextLabelInstance.TextScaled = true
+          sprayTextLabelInstance.TextColor3 = Color3.new(1, 1, 1)
+          sprayTextLabelInstance.Font = Enum.Font.FredokaOne
+          sprayTextLabelInstance.Size = UDim2.new(1, 0, 1, 0)
         end
-        gui.Parent = p
+        surfaceGuiInstance.Parent = previewPartInstance
       end
     end
-    p.Parent = workspace
-    return p
+    previewPartInstance.Parent = workspace
+    return previewPartInstance
   end
-  local function fireEvent(toolName, args)
+
+  local function FireToolRemoteEvent(toolName, remoteArgumentList)
     pcall(function()
-      if fetchTools then
-        local event = fetchTools(toolName)
-        if event == nil then return end
-        if typeof(event) == "Instance" and event:IsA("BindableFunction") then
-          event:Invoke(table.unpack(args))
+      if customFetchToolsFunction then
+        local resolvedRemoteEventOrFunction = customFetchToolsFunction(toolName)
+        if resolvedRemoteEventOrFunction == nil then return end
+        if typeof(resolvedRemoteEventOrFunction) == "Instance"
+          and resolvedRemoteEventOrFunction:IsA("BindableFunction") then
+          resolvedRemoteEventOrFunction:Invoke(table.unpack(remoteArgumentList))
         else
-          event:FireServer(table.unpack(args))
+          resolvedRemoteEventOrFunction:FireServer(table.unpack(remoteArgumentList))
         end
         return
       end
-      local char = LocalPlayer.Character
-      if not char then return end
-      local tool = char:FindFirstChild(toolName)
-      if not tool then
-        local bp = LocalPlayer:FindFirstChildOfClass("Backpack")
-        local bt = bp and bp:FindFirstChild(toolName)
-        if bt then bt.Parent = char end
-        tool = char:FindFirstChild(toolName)
+      local characterModelInstance = LocalPlayerInstance.Character
+      if not characterModelInstance then return end
+      local toolInstance = characterModelInstance:FindFirstChild(toolName)
+      if not toolInstance then
+        local backpackInstance = LocalPlayerInstance:FindFirstChildOfClass("Backpack")
+        local toolInBackpack = backpackInstance and backpackInstance:FindFirstChild(toolName)
+        if toolInBackpack then toolInBackpack.Parent = characterModelInstance end
+        toolInstance = characterModelInstance:FindFirstChild(toolName)
       end
-      if not tool then return end
-      local bind = tool:FindFirstChild("origevent")
-      if bind then bind:Invoke(table.unpack(args))
-      else tool.Script.Event:FireServer(table.unpack(args)) end
+      if not toolInstance then return end
+      local originalEventBindableFunction = toolInstance:FindFirstChild("origevent")
+      if originalEventBindableFunction then
+        originalEventBindableFunction:Invoke(table.unpack(remoteArgumentList))
+      else
+        toolInstance.Script.Event:FireServer(table.unpack(remoteArgumentList))
+      end
     end)
   end
 
-  local function fireBuild(args) fireEvent("Build", args) end
-  local function firePaint(args) fireEvent("Paint", args) end
-  local function onBlockAdded(child)
-    if not child:IsA("BasePart") then return end
-    recentBlock = child
-    historyIdx  = (historyIdx % cfg.historymax) + 1
-    history[historyIdx] = child
-    built = true
+  local function FireBuildToolEvent(remoteArgumentList) FireToolRemoteEvent("Build", remoteArgumentList) end
+  local function FirePaintToolEvent(remoteArgumentList) FireToolRemoteEvent("Paint", remoteArgumentList) end
+
+  local function HandleNewBlockAddedToHistory(newChildInstance)
+    if not newChildInstance:IsA("BasePart") then return end
+    mostRecentlyBuiltBlockInstance = newChildInstance
+    recentlyBuiltBlockHistoryWriteIndex =
+      (recentlyBuiltBlockHistoryWriteIndex % sessionConfiguration.historymax) + 1
+    recentlyBuiltBlockHistoryList[recentlyBuiltBlockHistoryWriteIndex] = newChildInstance
+    wasBlockJustConfirmedBuilt = true
+    DebugLog("HandleNewBlockAddedToHistory: new block at", tostring(newChildInstance.Position),
+      "| historyIndex =", recentlyBuiltBlockHistoryWriteIndex)
   end
 
   do
-    if not BlockFolder:FindFirstChild(LocalPlayer.Name) then
-      ensureTools(true)
-      local probe = Vector3.new(6777, 6969, 6777)
+    if not BlockContainerFolder:FindFirstChild(LocalPlayerInstance.Name) then
+      EnsureRequiredToolsAreEquipped(true)
+      local probePosition = Vector3.new(6777, 6969, 6777)
+      DebugLog("No block folder found for local player yet; probing with a throwaway build at", tostring(probePosition))
       repeat
-        fireBuild({ workspace.Terrain, Enum.NormalId.Top, probe, "normal" })
+        FireBuildToolEvent({ workspace.Terrain, Enum.NormalId.Top, probePosition, "normal" })
         task.wait(0.2)
-      until BlockFolder:FindFirstChild(LocalPlayer.Name) or getgenv()[GENKEY] ~= moduleGen
+      until BlockContainerFolder:FindFirstChild(LocalPlayerInstance.Name)
+        or getgenv()[GENERATION_COUNTER_GLOBAL_KEY] ~= currentModuleGenerationNumber
     end
-    local conn = BlockFolder[LocalPlayer.Name].ChildAdded:Connect(onBlockAdded)
-    getgenv()[CONNKEY] = conn
+    local childAddedConnection =
+      BlockContainerFolder[LocalPlayerInstance.Name].ChildAdded:Connect(HandleNewBlockAddedToHistory)
+    getgenv()[CONNECTION_HANDLE_GLOBAL_KEY] = childAddedConnection
   end
-  local tpTarget = nil
+
+  local currentTeleportTargetPosition = nil
   task.spawn(function()
-    while not stopped or tpTarget do
-      if tpTarget then
+    while not isBuildSessionStopped or currentTeleportTargetPosition do
+      if currentTeleportTargetPosition then
         pcall(function()
-          LocalPlayer.Character.HumanoidRootPart.CFrame =
-            typeof(tpTarget) == "CFrame" and tpTarget or CFrame.new(tpTarget)
+          LocalPlayerInstance.Character.HumanoidRootPart.CFrame =
+            typeof(currentTeleportTargetPosition) == "CFrame"
+              and currentTeleportTargetPosition
+              or CFrame.new(currentTeleportTargetPosition)
         end)
       end
       task.wait(0.01)
-      if stopped and not tpTarget then break end
+      if isBuildSessionStopped and not currentTeleportTargetPosition then break end
     end
   end)
 
-  local function teleportTo(pos)
-    tpTarget = pos
+  local function RequestTeleportToPosition(targetPositionOrCFrame)
+    currentTeleportTargetPosition = targetPositionOrCFrame
     task.wait(0.01)
   end
 
-  local function stopTeleport()
-    tpTarget = nil
+  local function CancelActiveTeleportRequest()
+    currentTeleportTargetPosition = nil
   end
-  local function buildSign(signData, xform)
-    local cf  = CFrame.new(table.unpack(signData.p))
-    local pos = cf.Position + (xform and xform.offset or Vector3.zero)
 
-    local normalId    = NormalIdFromName[signData.sid] or Enum.NormalId.Front
-    local faceDir     = cf:VectorToWorldSpace(AxisMap[normalId][1])
-    local standPos    = pos + faceDir * 3
-    local up          = math.abs(faceDir:Dot(Vector3.yAxis)) > 0.99 and Vector3.zAxis or Vector3.yAxis
-    local standCFrame = CFrame.lookAt(standPos, pos, up)
-    local searchPos   = pos - faceDir * 4
+  local function BuildAndConfigureSignBlock(signDataEntry, activeTransform)
+    local signCFrame = CFrame.new(table.unpack(signDataEntry.p))
+    local signWorldPosition = signCFrame.Position + (activeTransform and activeTransform.offset or Vector3.zero)
 
-    local ref, refNormal = workspace.Terrain, Enum.NormalId.Top
+    local signNormalIdEnum = FaceNameToNormalIdEnumMap[signDataEntry.sid] or Enum.NormalId.Front
+    local signFaceDirection = signCFrame:VectorToWorldSpace(NormalIdToDirectionAndAxisNameMap[signNormalIdEnum][1])
+    local playerStandPosition = signWorldPosition + signFaceDirection * 3
+    local upVectorForLookAt =
+      math.abs(signFaceDirection:Dot(Vector3.yAxis)) > 0.99 and Vector3.zAxis or Vector3.yAxis
+    local playerStandCFrame = CFrame.lookAt(playerStandPosition, signWorldPosition, upVectorForLookAt)
 
-    built = false; recentBlock = nil
-    local tries = 0
+    local buildReferencePart, buildReferenceNormalId = workspace.Terrain, Enum.NormalId.Top
+
+    wasBlockJustConfirmedBuilt = false
+    mostRecentlyBuiltBlockInstance = nil
+    local attemptCount = 0
     repeat
-      tries = tries + 1
-      teleportTo(standCFrame)
+      attemptCount = attemptCount + 1
+      RequestTeleportToPosition(playerStandCFrame)
       task.wait(0.3)
-      fireEvent("Sign", { ref, refNormal, Vector3.new(pos.X, pos.Y - 1, pos.Z) })
-    until built or stopped or skip or tries > 10
-    stopTeleport()
+      FireToolRemoteEvent("Sign", { buildReferencePart, buildReferenceNormalId,
+        Vector3.new(signWorldPosition.X, signWorldPosition.Y - 1, signWorldPosition.Z) })
+    until wasBlockJustConfirmedBuilt or isBuildSessionStopped or isCurrentBlockSkipRequested or attemptCount > 10
+    CancelActiveTeleportRequest()
+    DebugLog("BuildAndConfigureSignBlock: build attempts =", attemptCount, "| built =", wasBlockJustConfirmedBuilt)
 
-    if recentBlock and signData.txt and signData.txt ~= "" then
+    if mostRecentlyBuiltBlockInstance and signDataEntry.txt and signDataEntry.txt ~= "" then
       task.wait(0.3)
       pcall(function()
-        recentBlock:WaitForChild("Input"):WaitForChild("Label"):WaitForChild("Script"):WaitForChild("Event"):FireServer(signData.txt)
+        mostRecentlyBuiltBlockInstance:WaitForChild("Input"):WaitForChild("Label")
+          :WaitForChild("Script"):WaitForChild("Event"):FireServer(signDataEntry.txt)
       end)
     end
 
-    if recentBlock and signData.c then
-      local color    = Color3.fromRGB(table.unpack(signData.c))
-      local paintPos = recentBlock.Position + recentBlock.Size / 2
-      local eargs    = { recentBlock, Enum.NormalId.Top, paintPos, "color", color, "tiles", "" }
-      local pc = 0
+    if mostRecentlyBuiltBlockInstance and signDataEntry.c then
+      local signColor = Color3.fromRGB(table.unpack(signDataEntry.c))
+      local signPaintPosition = mostRecentlyBuiltBlockInstance.Position + mostRecentlyBuiltBlockInstance.Size / 2
+      local paintEventArgumentList =
+        { mostRecentlyBuiltBlockInstance, Enum.NormalId.Top, signPaintPosition, "color", signColor, "tiles", "" }
+      local paintAttemptCount = 0
       repeat
-        pc = pc + 1
-        firePaint(eargs)
-        teleportTo(pos)
+        paintAttemptCount = paintAttemptCount + 1
+        FirePaintToolEvent(paintEventArgumentList)
+        RequestTeleportToPosition(signWorldPosition)
         task.wait(0.2)
-      until not recentBlock or not recentBlock.Parent
-          or recentBlock.Color == color
-          or stopped or skip or pc > 20
-      stopTeleport()
+      until not mostRecentlyBuiltBlockInstance or not mostRecentlyBuiltBlockInstance.Parent
+          or mostRecentlyBuiltBlockInstance.Color == signColor
+          or isBuildSessionStopped or isCurrentBlockSkipRequested or paintAttemptCount > 20
+      CancelActiveTeleportRequest()
     end
 
-    built = false; recentBlock = nil; skip = false
+    wasBlockJustConfirmedBuilt = false
+    mostRecentlyBuiltBlockInstance = nil
+    isCurrentBlockSkipRequested = false
   end
-  local function placeBlock(pos, matName, color, sizeMode, sizeVec, isPremade, origMat, sprays, anchored, collide)
-    if anchored == nil then anchored = true end
-    if collide  == nil then collide  = true end
-    local needsResize = false
+
+  local function PlaceSingleBlock(targetCornerPosition, materialShortName, targetColor, requestedSizeMode,
+    requestedSizeVector, isFromPremadeSaveFile, originalMaterialEnumName, sprayDataList,
+    requestedAnchoredState, requestedCollideState)
+    if requestedAnchoredState == nil then requestedAnchoredState = true end
+    if requestedCollideState  == nil then requestedCollideState  = true end
+    local needsShapeToolResize = false
 
     pcall(function()
-      pcall(function() LocalPlayer.Backpack.Build.Parent = LocalPlayer.Character end)
-      local adjFound, retries = false, 0
-      recentBlock = nil
-      if #history > 0 and previewPart then
-        local candidates = {}
-        for idx = 1, cfg.historymax do
-          local hb = history[idx]
-          if hb == nil or hb.Parent == nil then history[idx] = nil; continue end
-          if previewPart.Size ~= hb.Size then continue end
-          local minDim = math.min(hb.Size.X, hb.Size.Y, hb.Size.Z)
-          local tol = hb.Anchored and 0.01 or math.min(0.75, minDim * 0.25)
-          for nid, ax in pairs(AxisMap) do
-            local adjPos = hb.Position + ax[1] * hb.Size[ax[2]]
-            local diff = adjPos - previewPart.Position
-            if diff.X*diff.X + diff.Y*diff.Y + diff.Z*diff.Z <= tol*tol then
-              local entry = { nid, hb, hb.Position + ax[1] * hb.Size[ax[2]] / 2 }
-              table.insert(candidates, entry)
-              adjFound = entry
+      pcall(function() LocalPlayerInstance.Backpack.Build.Parent = LocalPlayerInstance.Character end)
+      local adjacentReuseCandidate, retryCount = false, 0
+      mostRecentlyBuiltBlockInstance = nil
+
+      -- Step 1: try to reuse a directly-adjacent block from history instead of
+      -- building fresh off the terrain (much faster when chaining blocks).
+      if #recentlyBuiltBlockHistoryList > 0 and currentPreviewPartInstance then
+        local adjacencyCandidateList = {}
+        for historySlotIndex = 1, sessionConfiguration.historymax do
+          local historyBlockInstance = recentlyBuiltBlockHistoryList[historySlotIndex]
+          if historyBlockInstance == nil or historyBlockInstance.Parent == nil then
+            recentlyBuiltBlockHistoryList[historySlotIndex] = nil
+            continue
+          end
+          if currentPreviewPartInstance.Size ~= historyBlockInstance.Size then continue end
+          local minimumBlockDimension =
+            math.min(historyBlockInstance.Size.X, historyBlockInstance.Size.Y, historyBlockInstance.Size.Z)
+          local adjacencyToleranceStuds = historyBlockInstance.Anchored and 0.01
+            or math.min(0.75, minimumBlockDimension * 0.25)
+          for candidateNormalId, candidateAxisInfo in pairs(NormalIdToDirectionAndAxisNameMap) do
+            local candidateAdjacentPosition = historyBlockInstance.Position
+              + candidateAxisInfo[1] * historyBlockInstance.Size[candidateAxisInfo[2]]
+            local positionDifference = candidateAdjacentPosition - currentPreviewPartInstance.Position
+            if positionDifference.X * positionDifference.X + positionDifference.Y * positionDifference.Y
+              + positionDifference.Z * positionDifference.Z <= adjacencyToleranceStuds * adjacencyToleranceStuds then
+              local adjacencyCandidateEntry = { candidateNormalId, historyBlockInstance,
+                historyBlockInstance.Position + candidateAxisInfo[1] * historyBlockInstance.Size[candidateAxisInfo[2]] / 2 }
+              table.insert(adjacencyCandidateList, adjacencyCandidateEntry)
+              adjacentReuseCandidate = adjacencyCandidateEntry
             end
           end
         end
-        if #candidates > 1 and color and adjFound and adjFound[2].Color ~= color then
-          for _, c in pairs(candidates) do
-            if c[2].Color == color then adjFound = c end
+        if #adjacencyCandidateList > 1 and targetColor and adjacentReuseCandidate
+          and adjacentReuseCandidate[2].Color ~= targetColor then
+          for _, candidateEntry in pairs(adjacencyCandidateList) do
+            if candidateEntry[2].Color == targetColor then adjacentReuseCandidate = candidateEntry end
           end
         end
 
-        if adjFound and adjFound[2] and adjFound[2].Parent then
-          local origPos = pos
-          local args    = { adjFound[2], adjFound[1], adjFound[3] or previewPart.Position, "normal" }
-          built = false; recentBlock = nil; retries = 0
+        if adjacentReuseCandidate and adjacentReuseCandidate[2] and adjacentReuseCandidate[2].Parent then
+          DebugLog("PlaceSingleBlock: reusing directly-adjacent history block at",
+            tostring(adjacentReuseCandidate[2].Position))
+          local originalTargetPosition = targetCornerPosition
+          local buildEventArgumentList = { adjacentReuseCandidate[2], adjacentReuseCandidate[1],
+            adjacentReuseCandidate[3] or currentPreviewPartInstance.Position, "normal" }
+          wasBlockJustConfirmedBuilt = false
+          mostRecentlyBuiltBlockInstance = nil
+          retryCount = 0
           repeat
-            retries = retries + 1
-            fireBuild(args)
+            retryCount = retryCount + 1
+            FireBuildToolEvent(buildEventArgumentList)
             pcall(function()
-              pos = adjFound[3] or pos
-              teleportTo(pos)
+              targetCornerPosition = adjacentReuseCandidate[3] or targetCornerPosition
+              RequestTeleportToPosition(targetCornerPosition)
             end)
             RunService.Heartbeat:Wait()
-          until (built and recentBlock) or adjFound[2] == nil or adjFound[2].Parent == nil
-              or stopped or skip or retries > cfg.maxtry
-          stopTeleport()
-          if adjFound[2] == nil or adjFound[2].Parent == nil or retries > cfg.maxtry then
-            adjFound = false
+          until (wasBlockJustConfirmedBuilt and mostRecentlyBuiltBlockInstance)
+              or adjacentReuseCandidate[2] == nil or adjacentReuseCandidate[2].Parent == nil
+              or isBuildSessionStopped or isCurrentBlockSkipRequested or retryCount > sessionConfiguration.maxtry
+          CancelActiveTeleportRequest()
+          if adjacentReuseCandidate[2] == nil or adjacentReuseCandidate[2].Parent == nil
+            or retryCount > sessionConfiguration.maxtry then
+            adjacentReuseCandidate = false
           else
-            if previewPart then previewPart:Destroy() end
+            if currentPreviewPartInstance then currentPreviewPartInstance:Destroy() end
           end
-          pos = origPos
+          targetCornerPosition = originalTargetPosition
         end
       end
+
       -- Toggle CanCollide on an existing block via the Paint tool's "collide" action,
       -- run fn(), then restore original collision state. Used to pass a temp block
       -- through an obstruction at a step position without leaving world state changed.
-      local function withNoCollide(obstruct, fn)
-        if not obstruct or not obstruct.Parent then return fn() end
-        local origCollide = obstruct.CanCollide
-        if origCollide == false then return fn() end
-        local function setCollide(target, value)
-          pcall(function() LocalPlayer.Backpack.Paint.Parent = LocalPlayer.Character end)
-          local cp   = target.Position + target.Size / 2
-          local args = { target, Enum.NormalId.Top, cp, "material", nil, "collide", "" }
-          local r = 0
+      local function TemporarilyDisableCollisionAndRun(obstructingPartInstance, functionToRun)
+        if not obstructingPartInstance or not obstructingPartInstance.Parent then return functionToRun() end
+        local originalCollideState = obstructingPartInstance.CanCollide
+        if originalCollideState == false then return functionToRun() end
+        local function SetCollideStateOnPart(targetPartInstance, desiredCollideState)
+          pcall(function() LocalPlayerInstance.Backpack.Paint.Parent = LocalPlayerInstance.Character end)
+          local collideTogglePaintPosition = targetPartInstance.Position + targetPartInstance.Size / 2
+          local collideToggleArgumentList =
+            { targetPartInstance, Enum.NormalId.Top, collideTogglePaintPosition, "material", nil, "collide", "" }
+          local collideToggleRetryCount = 0
           repeat
-            r = r + 1
-            if LocalPlayer.Character and not LocalPlayer.Character:FindFirstChild("Paint")
-              and LocalPlayer.Backpack:FindFirstChild("Paint") then
-              LocalPlayer.Backpack.Paint.Parent = LocalPlayer.Character
+            collideToggleRetryCount = collideToggleRetryCount + 1
+            if LocalPlayerInstance.Character and not LocalPlayerInstance.Character:FindFirstChild("Paint")
+              and LocalPlayerInstance.Backpack:FindFirstChild("Paint") then
+              LocalPlayerInstance.Backpack.Paint.Parent = LocalPlayerInstance.Character
             end
-            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Paint")
-              and target and target.Parent and target.CanCollide ~= value then
-              firePaint(args)
+            if LocalPlayerInstance.Character and LocalPlayerInstance.Character:FindFirstChild("Paint")
+              and targetPartInstance and targetPartInstance.Parent
+              and targetPartInstance.CanCollide ~= desiredCollideState then
+              FirePaintToolEvent(collideToggleArgumentList)
             end
-            task.wait(math.max(0.03, delay()))
-          until not target or not target.Parent or target.CanCollide == value
-              or stopped or skip or r > cfg.maxtry
+            task.wait(math.max(0.03, GetCurrentStepDelaySeconds()))
+          until not targetPartInstance or not targetPartInstance.Parent
+              or targetPartInstance.CanCollide == desiredCollideState
+              or isBuildSessionStopped or isCurrentBlockSkipRequested
+              or collideToggleRetryCount > sessionConfiguration.maxtry
         end
-        setCollide(obstruct, false)
-        local ok, result = pcall(fn)
-        if obstruct and obstruct.Parent then setCollide(obstruct, true) end
-        if not ok then return nil end
-        return result
+        SetCollideStateOnPart(obstructingPartInstance, false)
+        local wasFunctionSuccessful, functionResult = pcall(functionToRun)
+        if obstructingPartInstance and obstructingPartInstance.Parent then
+          SetCollideStateOnPart(obstructingPartInstance, true)
+        end
+        if not wasFunctionSuccessful then return nil end
+        return functionResult
       end
 
-      -- Fire a single build step from `fromPart` toward `facePos`, returning the
-      -- newly built part or nil. If an existing block occupies the target spot,
-      -- temporarily disable its collision so the step can pass through it.
-      local function stepBuild(fromPart, nid, facePos)
-        local obstruct = findBlock(facePos, fromPart.Size)
-        local function attempt()
-          built = false; recentBlock = nil
-          local r = 0
+      -- Fire a single build step from `fromPartInstance` toward `faceTargetPosition`,
+      -- returning the newly built part or nil. If an existing block occupies the
+      -- target spot, temporarily disable its collision so the step can pass through it.
+      local function BuildSingleHopStepTowardTarget(fromPartInstance, hopNormalId, faceTargetPosition)
+        local obstructingPartInstance = FindExistingBlockAtPosition(faceTargetPosition, fromPartInstance.Size)
+        local function AttemptSingleHopBuild()
+          wasBlockJustConfirmedBuilt = false
+          mostRecentlyBuiltBlockInstance = nil
+          local hopAttemptCount = 0
           repeat
-            r = r + 1
-            fireBuild({ fromPart, nid, facePos, "normal" })
-            pcall(function() teleportTo(facePos) end)
+            hopAttemptCount = hopAttemptCount + 1
+            FireBuildToolEvent({ fromPartInstance, hopNormalId, faceTargetPosition, "normal" })
+            pcall(function() RequestTeleportToPosition(faceTargetPosition) end)
             RunService.Heartbeat:Wait()
-          until (built and recentBlock) or fromPart.Parent == nil or stopped or skip or r > cfg.maxtry
-          return (built and recentBlock) and recentBlock or nil
+          until (wasBlockJustConfirmedBuilt and mostRecentlyBuiltBlockInstance)
+              or fromPartInstance.Parent == nil or isBuildSessionStopped or isCurrentBlockSkipRequested
+              or hopAttemptCount > sessionConfiguration.maxtry
+          DebugLog("BuildSingleHopStepTowardTarget: attempts =", hopAttemptCount,
+            "| succeeded =", wasBlockJustConfirmedBuilt and mostRecentlyBuiltBlockInstance ~= nil)
+          return (wasBlockJustConfirmedBuilt and mostRecentlyBuiltBlockInstance) and mostRecentlyBuiltBlockInstance or nil
         end
-        if obstruct and obstruct.Parent then
-          return withNoCollide(obstruct, attempt)
+        if obstructingPartInstance and obstructingPartInstance.Parent then
+          return TemporarilyDisableCollisionAndRun(obstructingPartInstance, AttemptSingleHopBuild)
         end
-        return attempt()
+        return AttemptSingleHopBuild()
       end
 
       -- Delete a temp block via the Delete tool, retrying until the SERVER
@@ -644,574 +822,775 @@ local function CreateSession(filePath, settingsTable, fetchFn, isPreDecoded, fet
       -- adjacency scans on the server's copy of the world. If the Delete
       -- tool round-trip genuinely can't get a confirmation, the block is
       -- left in place and logged rather than faked away.
-      local function deleteTemp(temp)
-        if not temp then return end
-        local r = 0
+      local function DeleteTemporaryHopBlock(temporaryBlockInstance)
+        if not temporaryBlockInstance then return end
+        local deleteRetryCount = 0
         repeat
-          r = r + 1
+          deleteRetryCount = deleteRetryCount + 1
+          -- Teleport the player to the block's own position first and give the
+          -- server a moment to register proximity before firing the Delete event.
+          pcall(function() RequestTeleportToPosition(temporaryBlockInstance.Position) end)
+          task.wait(0.2)
           pcall(function()
-            if not temp or not temp.Parent then return end
-            if LocalPlayer.Character and not LocalPlayer.Character:FindFirstChild("Delete")
-              and LocalPlayer.Backpack:FindFirstChild("Delete") then
-              LocalPlayer.Backpack.Delete.Parent = LocalPlayer.Character
+            if not temporaryBlockInstance or not temporaryBlockInstance.Parent then return end
+            if LocalPlayerInstance.Character and not LocalPlayerInstance.Character:FindFirstChild("Delete")
+              and LocalPlayerInstance.Backpack:FindFirstChild("Delete") then
+              LocalPlayerInstance.Backpack.Delete.Parent = LocalPlayerInstance.Character
             end
-            local del = LocalPlayer.Character:FindFirstChild("Delete") or LocalPlayer.Backpack:FindFirstChild("Delete")
-            if del then
-              local script = del:FindFirstChild("Script")
-              local event  = script and script:FindFirstChild("Event")
-              if event then
-                event:FireServer(temp, temp.Position)
+            local deleteToolInstance = LocalPlayerInstance.Character:FindFirstChild("Delete")
+              or LocalPlayerInstance.Backpack:FindFirstChild("Delete")
+            if deleteToolInstance then
+              local deleteScriptInstance = deleteToolInstance:FindFirstChild("Script")
+              local deleteRemoteEvent = deleteScriptInstance and deleteScriptInstance:FindFirstChild("Event")
+              if deleteRemoteEvent then
+                deleteRemoteEvent:FireServer(temporaryBlockInstance, temporaryBlockInstance.Position)
               end
             end
           end)
-          task.wait(math.max(0.03, delay()))
-        until not temp or not temp.Parent or stopped or skip or r > cfg.maxtry
-        if temp and temp.Parent then
-          log("WARNING: temp block at " .. tostring(temp.Position) .. " could not be confirmed deleted after " .. cfg.maxtry .. " tries; left in place.")
+          task.wait(math.max(0.03, GetCurrentStepDelaySeconds()))
+        until not temporaryBlockInstance or not temporaryBlockInstance.Parent
+            or isBuildSessionStopped or isCurrentBlockSkipRequested
+            or deleteRetryCount > sessionConfiguration.maxtry
+        CancelActiveTeleportRequest()
+        DebugLog("DeleteTemporaryHopBlock: attempts =", deleteRetryCount,
+          "| confirmedDeleted =", not (temporaryBlockInstance and temporaryBlockInstance.Parent))
+        if temporaryBlockInstance and temporaryBlockInstance.Parent then
+          LogMessage("WARNING: temp block at " .. tostring(temporaryBlockInstance.Position)
+            .. " could not be confirmed deleted after " .. sessionConfiguration.maxtry .. " tries; left in place.")
         end
       end
 
-      if adjFound == false and #history > 0 and previewPart then
-        local nb, hops = nil, nil
-        local tgt = previewPart.Position
+      -- Step 2: no direct neighbor found — search history for a block 2 or 3
+      -- grid-steps diagonally away and, if found, walk toward the target via
+      -- one or two disposable "hop" blocks.
+      if adjacentReuseCandidate == false and #recentlyBuiltBlockHistoryList > 0 and currentPreviewPartInstance then
+        local diagonalAnchorBlockInstance, hopNormalIdSequence = nil, nil
+        local diagonalTargetPosition = currentPreviewPartInstance.Position
 
-        for idx = 1, cfg.historymax do
-          local hb = history[idx]
-          if hb == nil or hb.Parent == nil then history[idx] = nil; continue end
-          if previewPart.Size ~= hb.Size then continue end
-          local minDim = math.min(hb.Size.X, hb.Size.Y, hb.Size.Z)
-          local tol = hb.Anchored and 0.01 or math.min(0.75, minDim * 0.25)
-          local d = tgt - hb.Position
-          local off = (math.abs(d.X)>tol and 1 or 0)+(math.abs(d.Y)>tol and 1 or 0)+(math.abs(d.Z)>tol and 1 or 0)
-          if off ~= 2 and off ~= 3 then continue end
+        for historySlotIndex = 1, sessionConfiguration.historymax do
+          local historyBlockInstance = recentlyBuiltBlockHistoryList[historySlotIndex]
+          if historyBlockInstance == nil or historyBlockInstance.Parent == nil then
+            recentlyBuiltBlockHistoryList[historySlotIndex] = nil
+            continue
+          end
+          if currentPreviewPartInstance.Size ~= historyBlockInstance.Size then continue end
 
-          if off == 2 then
+          -- Diagonal fast-hop math below assumes every block in the chain is a
+          -- standard GridUnitSize cube: BuildSingleHopStepTowardTarget always
+          -- fires the "normal" build mode, which the server always resolves to
+          -- a 4x4x4 (DefaultGridUnitSizeInStuds) cube regardless of the source
+          -- part's actual size. If historyBlockInstance (and therefore
+          -- currentPreviewPartInstance, since it's already gated equal above)
+          -- is not a plain GridUnitSize cube -- e.g. a resized 4x4x40 block --
+          -- then using its size for the face offset would either understate the
+          -- step (short axis of a long block) or wildly overstate it (hopping
+          -- along the long axis itself), landing the temp/real block far from
+          -- where the tolerance check below expects it. Rather than trying to
+          -- generalize the corner/face-diagonal geometry to arbitrary block
+          -- shapes, we just skip the fast-hop route for non-standard sizes and
+          -- let this fall through to a normal terrain placement (+ later
+          -- Shape-tool resize) instead.
+          if historyBlockInstance.Size.X ~= DefaultGridUnitSizeInStuds
+            or historyBlockInstance.Size.Y ~= DefaultGridUnitSizeInStuds
+            or historyBlockInstance.Size.Z ~= DefaultGridUnitSizeInStuds then
+            continue
+          end
+
+          local minimumBlockDimension =
+            math.min(historyBlockInstance.Size.X, historyBlockInstance.Size.Y, historyBlockInstance.Size.Z)
+          local diagonalToleranceStuds = historyBlockInstance.Anchored and 0.01
+            or math.min(0.75, minimumBlockDimension * 0.25)
+          local positionDelta = diagonalTargetPosition - historyBlockInstance.Position
+          local numberOfOffsetAxes =
+            (math.abs(positionDelta.X) > diagonalToleranceStuds and 1 or 0)
+            + (math.abs(positionDelta.Y) > diagonalToleranceStuds and 1 or 0)
+            + (math.abs(positionDelta.Z) > diagonalToleranceStuds and 1 or 0)
+          if numberOfOffsetAxes ~= 2 and numberOfOffsetAxes ~= 3 then continue end
+
+          if numberOfOffsetAxes == 2 then
             -- 2-axis face diagonal: one intermediate hop
-            for nid1, ax1 in pairs(AxisMap) do
-              local mid = hb.Position + ax1[1] * hb.Size[ax1[2]]
-              for nid2, ax2 in pairs(AxisMap) do
-                local diff = mid + ax2[1] * hb.Size[ax2[2]] - tgt
-                if diff.X*diff.X + diff.Y*diff.Y + diff.Z*diff.Z < 0.0225 then
-                  nb = hb; hops = { nid1, nid2 }; break
+            for firstHopNormalId, firstHopAxisInfo in pairs(NormalIdToDirectionAndAxisNameMap) do
+              local intermediateHopPosition = historyBlockInstance.Position
+                + firstHopAxisInfo[1] * historyBlockInstance.Size[firstHopAxisInfo[2]]
+              for secondHopNormalId, secondHopAxisInfo in pairs(NormalIdToDirectionAndAxisNameMap) do
+                local finalPositionDifference = intermediateHopPosition
+                  + secondHopAxisInfo[1] * historyBlockInstance.Size[secondHopAxisInfo[2]] - diagonalTargetPosition
+                if finalPositionDifference.X * finalPositionDifference.X
+                  + finalPositionDifference.Y * finalPositionDifference.Y
+                  + finalPositionDifference.Z * finalPositionDifference.Z < 0.0225 then
+                  diagonalAnchorBlockInstance = historyBlockInstance
+                  hopNormalIdSequence = { firstHopNormalId, secondHopNormalId }
+                  break
                 end
               end
-              if hops then break end
+              if hopNormalIdSequence then break end
             end
           else
             -- 3-axis corner diagonal: two intermediate hops
-            for nid1, ax1 in pairs(AxisMap) do
-              local mid1 = hb.Position + ax1[1] * hb.Size[ax1[2]]
-              for nid2, ax2 in pairs(AxisMap) do
-                local mid2 = mid1 + ax2[1] * hb.Size[ax2[2]]
-                for nid3, ax3 in pairs(AxisMap) do
-                  local diff = mid2 + ax3[1] * hb.Size[ax3[2]] - tgt
-                  if diff.X*diff.X + diff.Y*diff.Y + diff.Z*diff.Z < 0.0225 then
-                    nb = hb; hops = { nid1, nid2, nid3 }; break
+            for firstHopNormalId, firstHopAxisInfo in pairs(NormalIdToDirectionAndAxisNameMap) do
+              local firstIntermediateHopPosition = historyBlockInstance.Position
+                + firstHopAxisInfo[1] * historyBlockInstance.Size[firstHopAxisInfo[2]]
+              for secondHopNormalId, secondHopAxisInfo in pairs(NormalIdToDirectionAndAxisNameMap) do
+                local secondIntermediateHopPosition = firstIntermediateHopPosition
+                  + secondHopAxisInfo[1] * historyBlockInstance.Size[secondHopAxisInfo[2]]
+                for thirdHopNormalId, thirdHopAxisInfo in pairs(NormalIdToDirectionAndAxisNameMap) do
+                  local finalPositionDifference = secondIntermediateHopPosition
+                    + thirdHopAxisInfo[1] * historyBlockInstance.Size[thirdHopAxisInfo[2]] - diagonalTargetPosition
+                  if finalPositionDifference.X * finalPositionDifference.X
+                    + finalPositionDifference.Y * finalPositionDifference.Y
+                    + finalPositionDifference.Z * finalPositionDifference.Z < 0.0225 then
+                    diagonalAnchorBlockInstance = historyBlockInstance
+                    hopNormalIdSequence = { firstHopNormalId, secondHopNormalId, thirdHopNormalId }
+                    break
                   end
                 end
-                if hops then break end
+                if hopNormalIdSequence then break end
               end
-              if hops then break end
+              if hopNormalIdSequence then break end
             end
           end
-          if hops then break end
+          if hopNormalIdSequence then break end
         end
 
-        if nb and nb.Parent and hops then
-          local temps = {}
-          local cur   = nb
-          local okAll = true
+        if diagonalAnchorBlockInstance and diagonalAnchorBlockInstance.Parent and hopNormalIdSequence then
+          DebugLog("PlaceSingleBlock: attempting diagonal fast-hop with", #hopNormalIdSequence, "hop(s) from",
+            tostring(diagonalAnchorBlockInstance.Position))
+          local temporaryHopBlockList = {}
+          local currentHopSourcePart = diagonalAnchorBlockInstance
+          local wasEveryHopSuccessful = true
 
-          for i = 1, #hops do
-            local nid  = hops[i]
-            local face = cur.Position + AxisMap[nid][1] * cur.Size[AxisMap[nid][2]] / 2
-            local isLast = (i == #hops)
-            local produced = stepBuild(cur, nid, face)
-            if not produced or stopped or skip then
-              okAll = false
+          for hopIndex = 1, #hopNormalIdSequence do
+            local hopNormalId = hopNormalIdSequence[hopIndex]
+            local hopFacePosition = currentHopSourcePart.Position
+              + NormalIdToDirectionAndAxisNameMap[hopNormalId][1]
+                * currentHopSourcePart.Size[NormalIdToDirectionAndAxisNameMap[hopNormalId][2]] / 2
+            local isFinalHop = (hopIndex == #hopNormalIdSequence)
+            local producedBlockInstance = BuildSingleHopStepTowardTarget(currentHopSourcePart, hopNormalId, hopFacePosition)
+            if not producedBlockInstance or isBuildSessionStopped or isCurrentBlockSkipRequested then
+              wasEveryHopSuccessful = false
               break
             end
-            if not isLast then
-              table.insert(temps, produced)
+            if not isFinalHop then
+              table.insert(temporaryHopBlockList, producedBlockInstance)
             else
               -- final hop produced the real block
-              for _, t in ipairs(temps) do deleteTemp(t) end
-              adjFound    = { nid, cur, face }
-              recentBlock = produced
-              if previewPart then previewPart:Destroy() end
+              for _, temporaryHopBlockInstance in ipairs(temporaryHopBlockList) do
+                DeleteTemporaryHopBlock(temporaryHopBlockInstance)
+              end
+              adjacentReuseCandidate = { hopNormalId, currentHopSourcePart, hopFacePosition }
+              mostRecentlyBuiltBlockInstance = producedBlockInstance
+              if currentPreviewPartInstance then currentPreviewPartInstance:Destroy() end
             end
-            cur = produced
+            currentHopSourcePart = producedBlockInstance
           end
 
-          if not okAll then
-            for _, t in ipairs(temps) do deleteTemp(t) end
-            adjFound = false; recentBlock = nil
+          if not wasEveryHopSuccessful then
+            for _, temporaryHopBlockInstance in ipairs(temporaryHopBlockList) do
+              DeleteTemporaryHopBlock(temporaryHopBlockInstance)
+            end
+            adjacentReuseCandidate = false
+            mostRecentlyBuiltBlockInstance = nil
           end
         end
       end
-      if adjFound == false then
-        if sizeMode == nil then
-          sizeMode = "normal"
-          if LocalPlayer.PlayerGui:FindFirstChild("Build") and LocalPlayer.PlayerGui.Build:FindFirstChild("Button") then
-            sizeMode = LocalPlayer.PlayerGui.Build.Button.Text
+
+      -- Step 3: fall back to a plain terrain placement.
+      if adjacentReuseCandidate == false then
+        DebugLog("PlaceSingleBlock: falling back to terrain placement at", tostring(targetCornerPosition))
+        if requestedSizeMode == nil then
+          requestedSizeMode = "normal"
+          if LocalPlayerInstance.PlayerGui:FindFirstChild("Build")
+            and LocalPlayerInstance.PlayerGui.Build:FindFirstChild("Button") then
+            requestedSizeMode = LocalPlayerInstance.PlayerGui.Build.Button.Text
           end
-          if sizeVec and (sizeVec.X ~= GridUnitSize or sizeVec.Y ~= GridUnitSize or sizeVec.Z ~= GridUnitSize) then
-            sizeMode = "detailed"
-          elseif sizeVec then
-            sizeMode = "normal"
+          if requestedSizeVector and (requestedSizeVector.X ~= DefaultGridUnitSizeInStuds
+            or requestedSizeVector.Y ~= DefaultGridUnitSizeInStuds
+            or requestedSizeVector.Z ~= DefaultGridUnitSizeInStuds) then
+            requestedSizeMode = "detailed"
+          elseif requestedSizeVector then
+            requestedSizeMode = "normal"
           end
-          if not sizeVec and sizeMode ~= "detailed" and previewPart
-            and previewPart.Position ~= snapToGrid(pos, previewPart.Size.X) then
-            sizeMode   = "detailed"
-            needsResize = true
-            sizeVec    = previewPart.Size
-            pos = Vector3.new(
-              pos.X - sizeVec.X/2 + 0.5,
-              pos.Y - sizeVec.Y/2 + 0.5,
-              pos.Z - sizeVec.Z/2 + 0.5
+          if not requestedSizeVector and requestedSizeMode ~= "detailed" and currentPreviewPartInstance
+            and currentPreviewPartInstance.Position ~= SnapPositionToGrid(targetCornerPosition, currentPreviewPartInstance.Size.X) then
+            requestedSizeMode      = "detailed"
+            needsShapeToolResize   = true
+            requestedSizeVector    = currentPreviewPartInstance.Size
+            targetCornerPosition = Vector3.new(
+              targetCornerPosition.X - requestedSizeVector.X / 2 + 0.5,
+              targetCornerPosition.Y - requestedSizeVector.Y / 2 + 0.5,
+              targetCornerPosition.Z - requestedSizeVector.Z / 2 + 0.5
             )
           end
         end
-        local args = { workspace.Terrain, Enum.NormalId.Top, pos, sizeMode or "normal" }
-        built = false
-        fireBuild(args)
-        retries = 0
+        local terrainBuildArgumentList =
+          { workspace.Terrain, Enum.NormalId.Top, targetCornerPosition, requestedSizeMode or "normal" }
+        wasBlockJustConfirmedBuilt = false
+        FireBuildToolEvent(terrainBuildArgumentList)
+        retryCount = 0
         repeat
-          retries = retries + 1
-          if LocalPlayer.Character and not LocalPlayer.Character:FindFirstChild("Build")
-            and LocalPlayer.Backpack:FindFirstChild("Build") then
-            LocalPlayer.Backpack.Build.Parent = LocalPlayer.Character
+          retryCount = retryCount + 1
+          if LocalPlayerInstance.Character and not LocalPlayerInstance.Character:FindFirstChild("Build")
+            and LocalPlayerInstance.Backpack:FindFirstChild("Build") then
+            LocalPlayerInstance.Backpack.Build.Parent = LocalPlayerInstance.Character
           end
-          if LocalPlayer.Character:FindFirstChild("Build") then fireBuild(args) end
-          pcall(function() teleportTo(pos + Vector3.new(0, 6, 0)) end)
+          if LocalPlayerInstance.Character:FindFirstChild("Build") then
+            FireBuildToolEvent(terrainBuildArgumentList)
+          end
+          pcall(function() RequestTeleportToPosition(targetCornerPosition + Vector3.new(0, 6, 0)) end)
           RunService.Heartbeat:Wait()
-        until (built and recentBlock) or stopped or skip or retries > cfg.maxtry
-        stopTeleport()
-        built = false; retries = 0
-      end
-      if recentBlock and typeof(color) == "Color3"
-        and (LocalPlayer.Backpack:FindFirstChild("Paint") or LocalPlayer.Character:FindFirstChild("Paint"))
-      then
-        local paintPos  = recentBlock.Position + recentBlock.Size / 2
-        local paintArgs = { recentBlock, Enum.NormalId.Top, paintPos, "color", color, "tiles", "" }
-        pcall(function() LocalPlayer.Backpack.Paint.Parent = LocalPlayer.Character end)
-        if matName then
-          paintArgs[4] = color == nil and "material" or "both \u{1F91D}"
-          paintArgs[6] = matName
-        end
-        if not recentBlock then if previewPart then previewPart:Destroy() end; return end
-        highlight.Adornee = recentBlock; retries = 0
-        pcall(function()
-          repeat
-            retries = retries + 1
-            if LocalPlayer.Character and not LocalPlayer.Character:FindFirstChild("Paint")
-              and LocalPlayer.Backpack:FindFirstChild("Paint") then
-              LocalPlayer.Backpack.Paint.Parent = LocalPlayer.Character
-            end
-            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Paint") then
-              firePaint(paintArgs)
-            end
-            pcall(function() teleportTo(paintPos + Vector3.new(0, 6, 0)) end)
-            RunService.Heartbeat:Wait()
-          until not recentBlock or not recentBlock.Parent
-              or recentBlock.Color == color
-              or (matName and recentBlock.Material == Enum.Material[origMat])
-              or stopped or skip or retries > 250
-        end)
-      end
-      if recentBlock and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Paint")
-        and recentBlock.Anchored ~= anchored then
-        local ap   = recentBlock.Position + recentBlock.Size / 2
-        local args = { recentBlock, Enum.NormalId.Top, ap, "material", nil, "anchor", "" }
-        retries = 0
-        repeat
-          retries = retries + 1
-          if LocalPlayer.Character and not LocalPlayer.Character:FindFirstChild("Paint")
-            and LocalPlayer.Backpack:FindFirstChild("Paint") then
-            LocalPlayer.Backpack.Paint.Parent = LocalPlayer.Character
-          end
-          if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Paint")
-            and recentBlock and recentBlock.Anchored ~= anchored then
-            firePaint(args)
-          end
-          pcall(function() teleportTo(ap + Vector3.new(0, 8, 0)) end)
-          task.wait(0.15)
-        until not recentBlock or not recentBlock.Parent or recentBlock.Anchored == anchored
-            or not LocalPlayer.Character
-            or (not LocalPlayer.Character:FindFirstChild("Paint") and not LocalPlayer.Backpack:FindFirstChild("Paint"))
-            or stopped or skip or retries > 12
-      end
-      if recentBlock and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Paint")
-        and recentBlock.CanCollide ~= collide then
-        local cp   = recentBlock.Position + recentBlock.Size / 2
-        local args = { recentBlock, Enum.NormalId.Top, cp, "material", nil, "collide", "" }
-        retries = 0
-        repeat
-          retries = retries + 1
-          if LocalPlayer.Character and not LocalPlayer.Character:FindFirstChild("Paint")
-            and LocalPlayer.Backpack:FindFirstChild("Paint") then
-            LocalPlayer.Backpack.Paint.Parent = LocalPlayer.Character
-          end
-          if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Paint")
-            and recentBlock and recentBlock.CanCollide ~= collide then
-            firePaint(args)
-          end
-          pcall(function() teleportTo(cp + Vector3.new(0, 8, 0)) end)
-          task.wait(0.15)
-        until not recentBlock or not recentBlock.Parent or recentBlock.CanCollide == collide
-            or not LocalPlayer.Character
-            or (not LocalPlayer.Character:FindFirstChild("Paint") and not LocalPlayer.Backpack:FindFirstChild("Paint"))
-            or stopped or skip or retries > 12
+        until (wasBlockJustConfirmedBuilt and mostRecentlyBuiltBlockInstance)
+            or isBuildSessionStopped or isCurrentBlockSkipRequested or retryCount > sessionConfiguration.maxtry
+        CancelActiveTeleportRequest()
+        wasBlockJustConfirmedBuilt = false
+        retryCount = 0
       end
 
-      highlight.Adornee = nil
-      if recentBlock and (LocalPlayer.Backpack:FindFirstChild("Paint") or LocalPlayer.Character:FindFirstChild("Paint"))
-        and sprays then
-        local sprayArgs = { recentBlock, Enum.NormalId.Front, recentBlock.Position + Vector3.new(1,0,0), "material", nil, "spray", "ha" }
-        for _, s in pairs(sprays) do
-          sprayArgs[2] = Enum.NormalId[s[1]]
-          local payload = s[3]
-          if (not payload or payload == "") and type(s[2]) == "string" and s[2] ~= "" then payload = s[2] end
-          sprayArgs[7] = payload or ""
-          if recentBlock and (LocalPlayer.Backpack:FindFirstChild("Paint") or LocalPlayer.Character:FindFirstChild("Paint"))
-            and not stopped and not skip then
-            pcall(function() LocalPlayer.Backpack.Paint.Parent = LocalPlayer.Character end)
+      -- Paint color/material.
+      if mostRecentlyBuiltBlockInstance and typeof(targetColor) == "Color3"
+        and (LocalPlayerInstance.Backpack:FindFirstChild("Paint") or LocalPlayerInstance.Character:FindFirstChild("Paint"))
+      then
+        local paintTargetPosition = mostRecentlyBuiltBlockInstance.Position + mostRecentlyBuiltBlockInstance.Size / 2
+        local paintEventArgumentList =
+          { mostRecentlyBuiltBlockInstance, Enum.NormalId.Top, paintTargetPosition, "color", targetColor, "tiles", "" }
+        pcall(function() LocalPlayerInstance.Backpack.Paint.Parent = LocalPlayerInstance.Character end)
+        if materialShortName then
+          paintEventArgumentList[4] = targetColor == nil and "material" or "both \u{1F91D}"
+          paintEventArgumentList[6] = materialShortName
+        end
+        if not mostRecentlyBuiltBlockInstance then
+          if currentPreviewPartInstance then currentPreviewPartInstance:Destroy() end
+          return
+        end
+        currentBlockHighlightInstance.Adornee = mostRecentlyBuiltBlockInstance
+        retryCount = 0
+        pcall(function()
+          repeat
+            retryCount = retryCount + 1
+            if LocalPlayerInstance.Character and not LocalPlayerInstance.Character:FindFirstChild("Paint")
+              and LocalPlayerInstance.Backpack:FindFirstChild("Paint") then
+              LocalPlayerInstance.Backpack.Paint.Parent = LocalPlayerInstance.Character
+            end
+            if LocalPlayerInstance.Character and LocalPlayerInstance.Character:FindFirstChild("Paint") then
+              FirePaintToolEvent(paintEventArgumentList)
+            end
+            pcall(function() RequestTeleportToPosition(paintTargetPosition + Vector3.new(0, 6, 0)) end)
+            RunService.Heartbeat:Wait()
+          until not mostRecentlyBuiltBlockInstance or not mostRecentlyBuiltBlockInstance.Parent
+              or mostRecentlyBuiltBlockInstance.Color == targetColor
+              or (materialShortName and mostRecentlyBuiltBlockInstance.Material == Enum.Material[originalMaterialEnumName])
+              or isBuildSessionStopped or isCurrentBlockSkipRequested or retryCount > 250
+        end)
+      end
+
+      -- Fix anchored state.
+      if mostRecentlyBuiltBlockInstance and LocalPlayerInstance.Character
+        and LocalPlayerInstance.Character:FindFirstChild("Paint")
+        and mostRecentlyBuiltBlockInstance.Anchored ~= requestedAnchoredState then
+        local anchorTogglePosition = mostRecentlyBuiltBlockInstance.Position + mostRecentlyBuiltBlockInstance.Size / 2
+        local anchorToggleArgumentList =
+          { mostRecentlyBuiltBlockInstance, Enum.NormalId.Top, anchorTogglePosition, "material", nil, "anchor", "" }
+        retryCount = 0
+        repeat
+          retryCount = retryCount + 1
+          if LocalPlayerInstance.Character and not LocalPlayerInstance.Character:FindFirstChild("Paint")
+            and LocalPlayerInstance.Backpack:FindFirstChild("Paint") then
+            LocalPlayerInstance.Backpack.Paint.Parent = LocalPlayerInstance.Character
+          end
+          if LocalPlayerInstance.Character and LocalPlayerInstance.Character:FindFirstChild("Paint")
+            and mostRecentlyBuiltBlockInstance and mostRecentlyBuiltBlockInstance.Anchored ~= requestedAnchoredState then
+            FirePaintToolEvent(anchorToggleArgumentList)
+          end
+          pcall(function() RequestTeleportToPosition(anchorTogglePosition + Vector3.new(0, 8, 0)) end)
+          task.wait(0.15)
+        until not mostRecentlyBuiltBlockInstance or not mostRecentlyBuiltBlockInstance.Parent
+            or mostRecentlyBuiltBlockInstance.Anchored == requestedAnchoredState
+            or not LocalPlayerInstance.Character
+            or (not LocalPlayerInstance.Character:FindFirstChild("Paint")
+              and not LocalPlayerInstance.Backpack:FindFirstChild("Paint"))
+            or isBuildSessionStopped or isCurrentBlockSkipRequested or retryCount > 12
+      end
+
+      -- Fix collide state.
+      if mostRecentlyBuiltBlockInstance and LocalPlayerInstance.Character
+        and LocalPlayerInstance.Character:FindFirstChild("Paint")
+        and mostRecentlyBuiltBlockInstance.CanCollide ~= requestedCollideState then
+        local collideTogglePosition = mostRecentlyBuiltBlockInstance.Position + mostRecentlyBuiltBlockInstance.Size / 2
+        local collideToggleArgumentList =
+          { mostRecentlyBuiltBlockInstance, Enum.NormalId.Top, collideTogglePosition, "material", nil, "collide", "" }
+        retryCount = 0
+        repeat
+          retryCount = retryCount + 1
+          if LocalPlayerInstance.Character and not LocalPlayerInstance.Character:FindFirstChild("Paint")
+            and LocalPlayerInstance.Backpack:FindFirstChild("Paint") then
+            LocalPlayerInstance.Backpack.Paint.Parent = LocalPlayerInstance.Character
+          end
+          if LocalPlayerInstance.Character and LocalPlayerInstance.Character:FindFirstChild("Paint")
+            and mostRecentlyBuiltBlockInstance and mostRecentlyBuiltBlockInstance.CanCollide ~= requestedCollideState then
+            FirePaintToolEvent(collideToggleArgumentList)
+          end
+          pcall(function() RequestTeleportToPosition(collideTogglePosition + Vector3.new(0, 8, 0)) end)
+          task.wait(0.15)
+        until not mostRecentlyBuiltBlockInstance or not mostRecentlyBuiltBlockInstance.Parent
+            or mostRecentlyBuiltBlockInstance.CanCollide == requestedCollideState
+            or not LocalPlayerInstance.Character
+            or (not LocalPlayerInstance.Character:FindFirstChild("Paint")
+              and not LocalPlayerInstance.Backpack:FindFirstChild("Paint"))
+            or isBuildSessionStopped or isCurrentBlockSkipRequested or retryCount > 12
+      end
+
+      currentBlockHighlightInstance.Adornee = nil
+
+      -- Apply spray decals.
+      if mostRecentlyBuiltBlockInstance
+        and (LocalPlayerInstance.Backpack:FindFirstChild("Paint") or LocalPlayerInstance.Character:FindFirstChild("Paint"))
+        and sprayDataList then
+        local sprayEventArgumentList = { mostRecentlyBuiltBlockInstance, Enum.NormalId.Front,
+          mostRecentlyBuiltBlockInstance.Position + Vector3.new(1, 0, 0), "material", nil, "spray", "ha" }
+        for _, singleSprayData in pairs(sprayDataList) do
+          sprayEventArgumentList[2] = Enum.NormalId[singleSprayData[1]]
+          local sprayPayloadText = singleSprayData[3]
+          if (not sprayPayloadText or sprayPayloadText == "") and type(singleSprayData[2]) == "string"
+            and singleSprayData[2] ~= "" then
+            sprayPayloadText = singleSprayData[2]
+          end
+          sprayEventArgumentList[7] = sprayPayloadText or ""
+          if mostRecentlyBuiltBlockInstance
+            and (LocalPlayerInstance.Backpack:FindFirstChild("Paint") or LocalPlayerInstance.Character:FindFirstChild("Paint"))
+            and not isBuildSessionStopped and not isCurrentBlockSkipRequested then
+            pcall(function() LocalPlayerInstance.Backpack.Paint.Parent = LocalPlayerInstance.Character end)
             pcall(function()
               task.wait(0.25)
-              firePaint(sprayArgs)
+              FirePaintToolEvent(sprayEventArgumentList)
             end)
           end
         end
       end
-      if recentBlock
-        and ((sizeVec and (sizeVec.X ~= GridUnitSize or sizeVec.Y ~= GridUnitSize or sizeVec.Z ~= GridUnitSize)) or needsResize)
-        and (LocalPlayer.Character:FindFirstChild("Shape") or LocalPlayer.Backpack:FindFirstChild("Shape"))
+
+      -- Resize via Shape tool if the requested size differs from the grid default.
+      if mostRecentlyBuiltBlockInstance
+        and ((requestedSizeVector and (requestedSizeVector.X ~= DefaultGridUnitSizeInStuds
+          or requestedSizeVector.Y ~= DefaultGridUnitSizeInStuds
+          or requestedSizeVector.Z ~= DefaultGridUnitSizeInStuds)) or needsShapeToolResize)
+        and (LocalPlayerInstance.Character:FindFirstChild("Shape") or LocalPlayerInstance.Backpack:FindFirstChild("Shape"))
       then
-        if not LocalPlayer.Character:FindFirstChild("Shape") and LocalPlayer.Backpack:FindFirstChild("Shape") then
-          LocalPlayer.Backpack.Shape.Parent = LocalPlayer.Character
+        if not LocalPlayerInstance.Character:FindFirstChild("Shape")
+          and LocalPlayerInstance.Backpack:FindFirstChild("Shape") then
+          LocalPlayerInstance.Backpack.Shape.Parent = LocalPlayerInstance.Character
         end
-        local resizeArgs = { recentBlock, Enum.NormalId.Right, "", "" }
-        local function resizeAxis(axisName, target)
-          if not (recentBlock and recentBlock.Size[axisName] ~= target) then return end
-          retries = 0
+        local resizeEventArgumentList = { mostRecentlyBuiltBlockInstance, Enum.NormalId.Right, "", "" }
+        local function ResizeSingleAxis(axisComponentName, targetAxisSize)
+          if not (mostRecentlyBuiltBlockInstance
+            and mostRecentlyBuiltBlockInstance.Size[axisComponentName] ~= targetAxisSize) then
+            return
+          end
+          retryCount = 0
           repeat
-            retries = retries + 1
-            local rpos = (recentBlock and recentBlock.Position + recentBlock.Size / 2) or pos
-            resizeArgs[3] = rpos; resizeArgs[4] = nil
-            if recentBlock then
-              if   recentBlock.Size[axisName] > target then resizeArgs[4] = "decrease"
-              elseif recentBlock.Size[axisName] < target then resizeArgs[4] = "increase" end
+            retryCount = retryCount + 1
+            local resizeReferencePosition = (mostRecentlyBuiltBlockInstance
+              and mostRecentlyBuiltBlockInstance.Position + mostRecentlyBuiltBlockInstance.Size / 2)
+              or targetCornerPosition
+            resizeEventArgumentList[3] = resizeReferencePosition
+            resizeEventArgumentList[4] = nil
+            if mostRecentlyBuiltBlockInstance then
+              if mostRecentlyBuiltBlockInstance.Size[axisComponentName] > targetAxisSize then
+                resizeEventArgumentList[4] = "decrease"
+              elseif mostRecentlyBuiltBlockInstance.Size[axisComponentName] < targetAxisSize then
+                resizeEventArgumentList[4] = "increase"
+              end
             end
-            if not LocalPlayer.Character:FindFirstChild("Shape") and LocalPlayer.Backpack:FindFirstChild("Shape") then
-              LocalPlayer.Backpack.Shape.Parent = LocalPlayer.Character
+            if not LocalPlayerInstance.Character:FindFirstChild("Shape")
+              and LocalPlayerInstance.Backpack:FindFirstChild("Shape") then
+              LocalPlayerInstance.Backpack.Shape.Parent = LocalPlayerInstance.Character
             end
-            if LocalPlayer.Character:FindFirstChild("Shape") then
+            if LocalPlayerInstance.Character:FindFirstChild("Shape") then
               pcall(function()
-                local bind = LocalPlayer.Character.Shape:FindFirstChild("origevent")
-                if bind then bind:Invoke(table.unpack(resizeArgs))
-                else LocalPlayer.Character.Shape.Script.Event:FireServer(table.unpack(resizeArgs)) end
+                local shapeOriginalEventBindableFunction =
+                  LocalPlayerInstance.Character.Shape:FindFirstChild("origevent")
+                if shapeOriginalEventBindableFunction then
+                  shapeOriginalEventBindableFunction:Invoke(table.unpack(resizeEventArgumentList))
+                else
+                  LocalPlayerInstance.Character.Shape.Script.Event:FireServer(table.unpack(resizeEventArgumentList))
+                end
               end)
             end
-            pcall(function() teleportTo(rpos + Vector3.new(0, 6, 0)) end)
-            task.wait(cfg.resizewait)
-          until resizeArgs[4] == nil
-              or (resizeArgs[4] == "decrease" and recentBlock and recentBlock.Size[axisName] <= 1)
-              or (recentBlock and recentBlock.Size[axisName] == target)
-              or stopped or skip
-              or retries > (target * 3) / cfg.resizewait
+            pcall(function() RequestTeleportToPosition(resizeReferencePosition + Vector3.new(0, 6, 0)) end)
+            task.wait(sessionConfiguration.resizewait)
+          until resizeEventArgumentList[4] == nil
+              or (resizeEventArgumentList[4] == "decrease" and mostRecentlyBuiltBlockInstance
+                and mostRecentlyBuiltBlockInstance.Size[axisComponentName] <= 1)
+              or (mostRecentlyBuiltBlockInstance
+                and mostRecentlyBuiltBlockInstance.Size[axisComponentName] == targetAxisSize)
+              or isBuildSessionStopped or isCurrentBlockSkipRequested
+              or retryCount > (targetAxisSize * 3) / sessionConfiguration.resizewait
         end
-        resizeArgs[2] = Enum.NormalId.Right; resizeAxis("X", sizeVec.X)
-        resizeArgs[2] = Enum.NormalId.Top;   resizeAxis("Y", sizeVec.Y)
-        resizeArgs[2] = Enum.NormalId.Back;  resizeAxis("Z", sizeVec.Z)
+        resizeEventArgumentList[2] = Enum.NormalId.Right; ResizeSingleAxis("X", requestedSizeVector.X)
+        resizeEventArgumentList[2] = Enum.NormalId.Top;   ResizeSingleAxis("Y", requestedSizeVector.Y)
+        resizeEventArgumentList[2] = Enum.NormalId.Back;  ResizeSingleAxis("Z", requestedSizeVector.Z)
       end
-      skip = false
+      isCurrentBlockSkipRequested = false
     end)
-    if previewPart then previewPart:Destroy() end
-    recentBlock = nil
-  end
-  local function applyTransform(rawPos, sz, xform)
-    if not xform or not xform.enabled then return rawPos end
-    local half  = Vector3.new(sz.X/2-0.5, sz.Y/2-0.5, sz.Z/2-0.5)
-    local center = rawPos + half
-    center = (xform.center or Vector3.zero)
-           + (xform.rotation or CFrame.identity) * (center - (xform.center or Vector3.zero))
-           + (xform.offset   or Vector3.zero)
-    return center - half
+    if currentPreviewPartInstance then currentPreviewPartInstance:Destroy() end
+    mostRecentlyBuiltBlockInstance = nil
   end
 
-  local function resolveBlock(entry, xform)
-    local posArr = entry and (entry.p or entry.pos); if not posArr then return nil end
-    local szArr  = entry.s or entry.size
-    local sz     = szArr and Vector3.new(table.unpack(szArr)) or Vector3.new(GridUnitSize, GridUnitSize, GridUnitSize)
-    local raw    = Vector3.new(posArr[1], posArr[2], posArr[3]) * cfg.mult
-    local tpos   = applyTransform(raw, sz, xform)
-    local color  = (entry.c or entry.color) and Color3.fromRGB(table.unpack(entry.c or entry.color)) or DefaultColor
-    local mname  = entry.m or entry.mat
-    local omat   = entry.o or entry.origmat
-    local menum  = NameToMat[mname] or Enum.Material.SmoothPlastic
-    if not NameToMat[mname] and omat then
-      pcall(function() menum = Enum.Material[omat] or menum end)
+  local function ApplyOffsetAndRotationTransform(rawCornerPosition, blockSize, activeTransform)
+    if not activeTransform or not activeTransform.enabled then return rawCornerPosition end
+    local halfSizeOffset = Vector3.new(blockSize.X / 2 - 0.5, blockSize.Y / 2 - 0.5, blockSize.Z / 2 - 0.5)
+    local centerPosition = rawCornerPosition + halfSizeOffset
+    centerPosition = (activeTransform.center or Vector3.zero)
+      + (activeTransform.rotation or CFrame.identity) * (centerPosition - (activeTransform.center or Vector3.zero))
+      + (activeTransform.offset or Vector3.zero)
+    return centerPosition - halfSizeOffset
+  end
+
+  local function ResolveBlockDataEntryToWorldPlacement(blockDataEntry, activeTransform)
+    local rawPositionArray = blockDataEntry and (blockDataEntry.p or blockDataEntry.pos)
+    if not rawPositionArray then return nil end
+    local rawSizeArray = blockDataEntry.s or blockDataEntry.size
+    local resolvedBlockSize = rawSizeArray and Vector3.new(table.unpack(rawSizeArray))
+      or Vector3.new(DefaultGridUnitSizeInStuds, DefaultGridUnitSizeInStuds, DefaultGridUnitSizeInStuds)
+    local rawWorldPosition =
+      Vector3.new(rawPositionArray[1], rawPositionArray[2], rawPositionArray[3]) * sessionConfiguration.mult
+    local transformedCornerPosition = ApplyOffsetAndRotationTransform(rawWorldPosition, resolvedBlockSize, activeTransform)
+    local resolvedColor = (blockDataEntry.c or blockDataEntry.color)
+      and Color3.fromRGB(table.unpack(blockDataEntry.c or blockDataEntry.color)) or DefaultBlockColor
+    local resolvedMaterialShortName = blockDataEntry.m or blockDataEntry.mat
+    local resolvedOriginalMaterialName = blockDataEntry.o or blockDataEntry.origmat
+    local resolvedMaterialEnum = ShortNameToMaterialEnumMap[resolvedMaterialShortName] or Enum.Material.SmoothPlastic
+    if not ShortNameToMaterialEnumMap[resolvedMaterialShortName] and resolvedOriginalMaterialName then
+      pcall(function() resolvedMaterialEnum = Enum.Material[resolvedOriginalMaterialName] or resolvedMaterialEnum end)
     end
-    local center = szArr and cornerToCenter(tpos, sz) or tpos
+    local resolvedCenterPosition = rawSizeArray
+      and ConvertCornerPositionToCenterPosition(transformedCornerPosition, resolvedBlockSize)
+      or transformedCornerPosition
     return {
-      pos = tpos, size = sz, color = color, matName = mname,
-      expectMat = menum, center = center,
-      anchored = entry.a, collide = entry.cc,
+      pos = transformedCornerPosition, size = resolvedBlockSize, color = resolvedColor,
+      matName = resolvedMaterialShortName, expectMat = resolvedMaterialEnum, center = resolvedCenterPosition,
+      anchored = blockDataEntry.a, collide = blockDataEntry.cc,
     }
   end
 
-  local function placeAndVerify(entry, xform)
-    if entry.type == "sign" then
-      ensureTools(true)
-      buildSign(entry, xform)
+  local function PlaceAndVerifySingleBlockEntry(blockDataEntry, activeTransform)
+    if blockDataEntry.type == "sign" then
+      EnsureRequiredToolsAreEquipped(true)
+      BuildAndConfigureSignBlock(blockDataEntry, activeTransform)
       return true -- signs don't verify by position
     end
-    local r = resolveBlock(entry, xform)
-    if not r then return true end
-    if blockVerified(r.center, r.size, r.color, r.expectMat, r.anchored, r.collide) then return true end
-    ensureTools(true)
-    makePreview(r.pos, r.size, r.color, r.expectMat)
-    placeBlock(r.pos, r.matName, r.color, nil, r.size, true, entry.o or entry.origmat,
-               entry.sp or entry.sprayed, r.anchored, r.collide)
-    task.wait(math.max(0.03, delay()))
-    return blockVerified(r.center, r.size, r.color, r.expectMat, r.anchored, r.collide)
+    local resolvedPlacement = ResolveBlockDataEntryToWorldPlacement(blockDataEntry, activeTransform)
+    if not resolvedPlacement then return true end
+    if IsBlockAtPositionVerified(resolvedPlacement.center, resolvedPlacement.size, resolvedPlacement.color,
+      resolvedPlacement.expectMat, resolvedPlacement.anchored, resolvedPlacement.collide) then
+      return true
+    end
+    EnsureRequiredToolsAreEquipped(true)
+    CreatePreviewPartInstance(resolvedPlacement.pos, resolvedPlacement.size, resolvedPlacement.color,
+      resolvedPlacement.expectMat)
+    PlaceSingleBlock(resolvedPlacement.pos, resolvedPlacement.matName, resolvedPlacement.color, nil,
+      resolvedPlacement.size, true, blockDataEntry.o or blockDataEntry.origmat,
+      blockDataEntry.sp or blockDataEntry.sprayed, resolvedPlacement.anchored, resolvedPlacement.collide)
+    task.wait(math.max(0.03, GetCurrentStepDelaySeconds()))
+    return IsBlockAtPositionVerified(resolvedPlacement.center, resolvedPlacement.size, resolvedPlacement.color,
+      resolvedPlacement.expectMat, resolvedPlacement.anchored, resolvedPlacement.collide)
   end
-  local function sortByAdjacency(blocks)
-    local ref
-    local spawn = workspace:FindFirstChild("SpawnLocation") or workspace:FindFirstChild("Spawn")
-    if spawn then
-      if spawn:IsA("Model") then
-        local root = spawn:FindFirstChildOfClass("HumanoidRootPart")
-        if root then ref = root.Position end
-      elseif spawn:IsA("BasePart") then
-        ref = spawn.Position
+
+  local function SortBlockListByStartingPointAdjacency(unsortedBlockDataList)
+    local referenceStartingPosition
+    local spawnLocationInstance = workspace:FindFirstChild("SpawnLocation") or workspace:FindFirstChild("Spawn")
+    if spawnLocationInstance then
+      if spawnLocationInstance:IsA("Model") then
+        local spawnRootPart = spawnLocationInstance:FindFirstChildOfClass("HumanoidRootPart")
+        if spawnRootPart then referenceStartingPosition = spawnRootPart.Position end
+      elseif spawnLocationInstance:IsA("BasePart") then
+        referenceStartingPosition = spawnLocationInstance.Position
       end
     end
-    if not ref then
-      for _, p in ipairs(Players:GetPlayers()) do
-        if p.Character then
-          local root = p.Character:FindFirstChild("HumanoidRootPart")
-          if root then ref = root.Position; break end
+    if not referenceStartingPosition then
+      for _, otherPlayerInstance in ipairs(PlayersService:GetPlayers()) do
+        if otherPlayerInstance.Character then
+          local otherPlayerRootPart = otherPlayerInstance.Character:FindFirstChild("HumanoidRootPart")
+          if otherPlayerRootPart then referenceStartingPosition = otherPlayerRootPart.Position; break end
         end
       end
     end
-    ref = ref or Vector3.new(0, 100, 0)
+    referenceStartingPosition = referenceStartingPosition or Vector3.new(0, 100, 0)
 
-    local n = #blocks
-    if n <= 1 then return blocks end
-    local centers, sizes = {}, {}
-    for i, b in ipairs(blocks) do
-      local pa = b.p or b.pos
-      local bp
-      if pa then
-        bp = Vector3.new(pa[1], pa[2], pa[3])
-        local sa = b.s or b.size
-        if sa then bp = Vector3.new(bp.X+sa[1]/2-0.5, bp.Y+sa[2]/2-0.5, bp.Z+sa[3]/2-0.5) end
-        sizes[i] = sa and Vector3.new(sa[1], sa[2], sa[3]) or Vector3.new(GridUnitSize, GridUnitSize, GridUnitSize)
+    local blockCount = #unsortedBlockDataList
+    if blockCount <= 1 then return unsortedBlockDataList end
+    local blockCenterPositionList, blockSizeList = {}, {}
+    for blockIndex, blockDataEntry in ipairs(unsortedBlockDataList) do
+      local rawPositionArray = blockDataEntry.p or blockDataEntry.pos
+      local blockCenterPosition
+      if rawPositionArray then
+        blockCenterPosition = Vector3.new(rawPositionArray[1], rawPositionArray[2], rawPositionArray[3])
+        local rawSizeArray = blockDataEntry.s or blockDataEntry.size
+        if rawSizeArray then
+          blockCenterPosition = Vector3.new(
+            blockCenterPosition.X + rawSizeArray[1] / 2 - 0.5,
+            blockCenterPosition.Y + rawSizeArray[2] / 2 - 0.5,
+            blockCenterPosition.Z + rawSizeArray[3] / 2 - 0.5)
+        end
+        blockSizeList[blockIndex] = rawSizeArray and Vector3.new(rawSizeArray[1], rawSizeArray[2], rawSizeArray[3])
+          or Vector3.new(DefaultGridUnitSizeInStuds, DefaultGridUnitSizeInStuds, DefaultGridUnitSizeInStuds)
       else
-        bp = Vector3.new(math.huge, math.huge, math.huge)
-        sizes[i] = Vector3.new(GridUnitSize, GridUnitSize, GridUnitSize)
+        blockCenterPosition = Vector3.new(math.huge, math.huge, math.huge)
+        blockSizeList[blockIndex] = Vector3.new(DefaultGridUnitSizeInStuds, DefaultGridUnitSizeInStuds, DefaultGridUnitSizeInStuds)
       end
-      centers[i] = bp
+      blockCenterPositionList[blockIndex] = blockCenterPosition
     end
-    local cellSize   = GridUnitSize
-    local bigThresh  = cellSize * 4  -- anything larger than this in any axis is "big"
-    local cellRadius = 2             -- fixed, cheap radius for normal-size blocks
-    local function cellKey(pos)
-      local x = math.floor(pos.X / cellSize)
-      local y = math.floor(pos.Y / cellSize)
-      local z = math.floor(pos.Z / cellSize)
-      return bit32.bxor(bit32.bxor(x * 92837111, y * 689287499), z * 283923481)
+
+    local spatialCellSizeStuds        = DefaultGridUnitSizeInStuds
+    local bigBlockDimensionThreshold  = spatialCellSizeStuds * 4  -- anything larger than this in any axis is "big"
+    local spatialCellSearchRadius     = 2                          -- fixed, cheap radius for normal-size blocks
+
+    local function ComputeSpatialCellKey(cellPosition)
+      local cellX = math.floor(cellPosition.X / spatialCellSizeStuds)
+      local cellY = math.floor(cellPosition.Y / spatialCellSizeStuds)
+      local cellZ = math.floor(cellPosition.Z / spatialCellSizeStuds)
+      return bit32.bxor(bit32.bxor(cellX * 92837111, cellY * 689287499), cellZ * 283923481)
     end
-    local buckets, bigList, isBig = {}, {}, {}
-    for i = 1, n do
-      local maxDim = math.max(sizes[i].X, sizes[i].Y, sizes[i].Z)
-      if maxDim > bigThresh then
-        bigList[#bigList+1] = i
-        isBig[i] = true
+
+    local spatialCellBucketMap, oversizedBlockIndexList, isBlockOversizedMap = {}, {}, {}
+    for blockIndex = 1, blockCount do
+      local largestBlockDimension = math.max(
+        blockSizeList[blockIndex].X, blockSizeList[blockIndex].Y, blockSizeList[blockIndex].Z)
+      if largestBlockDimension > bigBlockDimensionThreshold then
+        oversizedBlockIndexList[#oversizedBlockIndexList + 1] = blockIndex
+        isBlockOversizedMap[blockIndex] = true
       else
-        local key = cellKey(centers[i])
-        if not buckets[key] then buckets[key] = {} end
-        table.insert(buckets[key], i)
+        local cellKey = ComputeSpatialCellKey(blockCenterPositionList[blockIndex])
+        if not spatialCellBucketMap[cellKey] then spatialCellBucketMap[cellKey] = {} end
+        table.insert(spatialCellBucketMap[cellKey], blockIndex)
       end
     end
-    local abs = math.abs
-    local function isAdjacent(i, j)
-      local ci, cj = centers[i], centers[j]
-      local si, sj = sizes[i], sizes[j]
-      return abs(ci.X-cj.X) <= (si.X+sj.X)*0.5 + 0.6
-         and abs(ci.Y-cj.Y) <= (si.Y+sj.Y)*0.5 + 0.6
-         and abs(ci.Z-cj.Z) <= (si.Z+sj.Z)*0.5 + 0.6
+
+    local mathAbs = math.abs
+    local function AreBlocksAdjacent(firstBlockIndex, secondBlockIndex)
+      local firstCenter, secondCenter = blockCenterPositionList[firstBlockIndex], blockCenterPositionList[secondBlockIndex]
+      local firstSize, secondSize = blockSizeList[firstBlockIndex], blockSizeList[secondBlockIndex]
+      return mathAbs(firstCenter.X - secondCenter.X) <= (firstSize.X + secondSize.X) * 0.5 + 0.6
+         and mathAbs(firstCenter.Y - secondCenter.Y) <= (firstSize.Y + secondSize.Y) * 0.5 + 0.6
+         and mathAbs(firstCenter.Z - secondCenter.Z) <= (firstSize.Z + secondSize.Z) * 0.5 + 0.6
     end
-    local function candidates(i, out)
-      if isBig[i] then
-        for j = 1, n do
-          if j ~= i then out[#out+1] = j end
+
+    local function CollectAdjacencyCandidates(blockIndex, outputList)
+      if isBlockOversizedMap[blockIndex] then
+        for otherBlockIndex = 1, blockCount do
+          if otherBlockIndex ~= blockIndex then outputList[#outputList + 1] = otherBlockIndex end
         end
         return
       end
-      local base = centers[i]
-      local bx, by, bz = math.floor(base.X/cellSize), math.floor(base.Y/cellSize), math.floor(base.Z/cellSize)
-      for dx = -cellRadius, cellRadius do
-        for dy = -cellRadius, cellRadius do
-          for dz = -cellRadius, cellRadius do
-            local bucket = buckets[bit32.bxor(bit32.bxor((bx+dx)*92837111,(by+dy)*689287499),(bz+dz)*283923481)]
-            if bucket then
-              for _, j in ipairs(bucket) do
-                if j ~= i then out[#out+1] = j end
+      local basePosition = blockCenterPositionList[blockIndex]
+      local baseCellX = math.floor(basePosition.X / spatialCellSizeStuds)
+      local baseCellY = math.floor(basePosition.Y / spatialCellSizeStuds)
+      local baseCellZ = math.floor(basePosition.Z / spatialCellSizeStuds)
+      for cellOffsetX = -spatialCellSearchRadius, spatialCellSearchRadius do
+        for cellOffsetY = -spatialCellSearchRadius, spatialCellSearchRadius do
+          for cellOffsetZ = -spatialCellSearchRadius, spatialCellSearchRadius do
+            local neighboringBucket = spatialCellBucketMap[bit32.bxor(bit32.bxor(
+              (baseCellX + cellOffsetX) * 92837111, (baseCellY + cellOffsetY) * 689287499),
+              (baseCellZ + cellOffsetZ) * 283923481)]
+            if neighboringBucket then
+              for _, candidateBlockIndex in ipairs(neighboringBucket) do
+                if candidateBlockIndex ~= blockIndex then outputList[#outputList + 1] = candidateBlockIndex end
               end
             end
           end
         end
       end
-      for _, j in ipairs(bigList) do
-        if j ~= i then out[#out+1] = j end
+      for _, oversizedBlockIndex in ipairs(oversizedBlockIndexList) do
+        if oversizedBlockIndex ~= blockIndex then outputList[#outputList + 1] = oversizedBlockIndex end
       end
     end
 
-    local visited = {}
-    local order = {}
-    local scratch = {}
-    local distToRef = {}
-    for i = 1, n do distToRef[i] = (centers[i] - ref).Magnitude end
-
-    local byDist = {}
-    for i = 1, n do byDist[i] = i end
-    table.sort(byDist, function(a, b) return distToRef[a] < distToRef[b] end)
-    local byDistCursor = 1
-
-    local function nearestUnvisitedTo()
-      while byDistCursor <= n and visited[byDist[byDistCursor]] do
-        byDistCursor = byDistCursor + 1
-      end
-      if byDistCursor > n then return nil end
-      return byDist[byDistCursor]
+    local visitedBlockIndexMap = {}
+    local finalBlockOrderIndexList = {}
+    local candidateScratchList = {}
+    local distanceToReferenceList = {}
+    for blockIndex = 1, blockCount do
+      distanceToReferenceList[blockIndex] = (blockCenterPositionList[blockIndex] - referenceStartingPosition).Magnitude
     end
-    while #order < n do
-      local seed = nearestUnvisitedTo()
-      if not seed then break end
 
-      local queue = { seed }
-      visited[seed] = true
-      local qi = 1
-      while qi <= #queue do
-        local cur = queue[qi]; qi = qi + 1
-        order[#order+1] = cur
+    local blockIndicesSortedByDistance = {}
+    for blockIndex = 1, blockCount do blockIndicesSortedByDistance[blockIndex] = blockIndex end
+    table.sort(blockIndicesSortedByDistance,
+      function(a, b) return distanceToReferenceList[a] < distanceToReferenceList[b] end)
+    local nearestUnvisitedSearchCursor = 1
 
-        for k = #scratch, 1, -1 do scratch[k] = nil end
-        candidates(cur, scratch)
-        table.sort(scratch, function(a, b) return distToRef[a] < distToRef[b] end)
-        for _, j in ipairs(scratch) do
-          if not visited[j] and isAdjacent(cur, j) then
-            visited[j] = true
-            queue[#queue+1] = j
+    local function FindNearestUnvisitedBlockIndex()
+      while nearestUnvisitedSearchCursor <= blockCount
+        and visitedBlockIndexMap[blockIndicesSortedByDistance[nearestUnvisitedSearchCursor]] do
+        nearestUnvisitedSearchCursor = nearestUnvisitedSearchCursor + 1
+      end
+      if nearestUnvisitedSearchCursor > blockCount then return nil end
+      return blockIndicesSortedByDistance[nearestUnvisitedSearchCursor]
+    end
+
+    while #finalBlockOrderIndexList < blockCount do
+      local newRegionSeedBlockIndex = FindNearestUnvisitedBlockIndex()
+      if not newRegionSeedBlockIndex then break end
+
+      local breadthFirstQueue = { newRegionSeedBlockIndex }
+      visitedBlockIndexMap[newRegionSeedBlockIndex] = true
+      local queueReadCursor = 1
+      while queueReadCursor <= #breadthFirstQueue do
+        local currentBlockIndex = breadthFirstQueue[queueReadCursor]
+        queueReadCursor = queueReadCursor + 1
+        finalBlockOrderIndexList[#finalBlockOrderIndexList + 1] = currentBlockIndex
+
+        for scratchIndex = #candidateScratchList, 1, -1 do candidateScratchList[scratchIndex] = nil end
+        CollectAdjacencyCandidates(currentBlockIndex, candidateScratchList)
+        table.sort(candidateScratchList,
+          function(a, b) return distanceToReferenceList[a] < distanceToReferenceList[b] end)
+        for _, candidateBlockIndex in ipairs(candidateScratchList) do
+          if not visitedBlockIndexMap[candidateBlockIndex] and AreBlocksAdjacent(currentBlockIndex, candidateBlockIndex) then
+            visitedBlockIndexMap[candidateBlockIndex] = true
+            breadthFirstQueue[#breadthFirstQueue + 1] = candidateBlockIndex
           end
         end
       end
     end
 
-    local result = {}
-    for _, i in ipairs(order) do result[#result+1] = blocks[i] end
-    return result
-  end
-  local function buildLoop(data, xform)
-    if type(data) ~= "table" or #data == 0 then log("Build data empty."); return false end
-    if not ensureTools(true) then return false end
-
-    runGen = runGen + 1
-    local thisGen = runGen
-    lastState = { blocks = data, transform = xform }
-
-    stopped = false; skip = false
-    local sorted = sortByAdjacency(data)
-    totalBlocks   = #sorted
-    verifiedBlocks = 0
-    buildStart    = tick()
-    updateStats()
-
-    local verified = {}; local count = 0
-
-    local function aborted()
-      if getgenv()[GENKEY] ~= moduleGen then stopped = true end
-      return stopped or runGen ~= thisGen
+    local sortedBlockDataList = {}
+    for _, blockIndex in ipairs(finalBlockOrderIndexList) do
+      sortedBlockDataList[#sortedBlockDataList + 1] = unsortedBlockDataList[blockIndex]
     end
-    local function markVerified(i)
-      if not verified[i] then
-        verified[i] = true; count = count + 1
-        verifiedBlocks = count; updateStats()
+    DebugLog("SortBlockListByStartingPointAdjacency: sorted", #sortedBlockDataList, "blocks starting near",
+      tostring(referenceStartingPosition))
+    return sortedBlockDataList
+  end
+
+  local function RunFullBuildLoop(blockDataList, activeTransform)
+    if type(blockDataList) ~= "table" or #blockDataList == 0 then
+      LogMessage("Build data empty.")
+      return false
+    end
+    if not EnsureRequiredToolsAreEquipped(true) then return false end
+
+    currentBuildRunGenerationNumber = currentBuildRunGenerationNumber + 1
+    local thisBuildRunGenerationNumber = currentBuildRunGenerationNumber
+    lastKnownBuildStateSnapshot = { blocks = blockDataList, transform = activeTransform }
+
+    isBuildSessionStopped = false
+    isCurrentBlockSkipRequested = false
+    local sortedBlockDataList = SortBlockListByStartingPointAdjacency(blockDataList)
+    totalBlockCountForCurrentBuild    = #sortedBlockDataList
+    verifiedBlockCountForCurrentBuild = 0
+    buildStartTimestamp = tick()
+    UpdateSessionStatistics()
+
+    local verifiedBlockIndexMap = {}
+    local verifiedBlockCount = 0
+
+    local function HasBuildBeenAborted()
+      if getgenv()[GENERATION_COUNTER_GLOBAL_KEY] ~= currentModuleGenerationNumber then isBuildSessionStopped = true end
+      return isBuildSessionStopped or currentBuildRunGenerationNumber ~= thisBuildRunGenerationNumber
+    end
+    local function MarkBlockIndexVerified(blockIndex)
+      if not verifiedBlockIndexMap[blockIndex] then
+        verifiedBlockIndexMap[blockIndex] = true
+        verifiedBlockCount = verifiedBlockCount + 1
+        verifiedBlockCountForCurrentBuild = verifiedBlockCount
+        UpdateSessionStatistics()
       end
     end
 
-    for i, entry in ipairs(sorted) do
-      if aborted() then break end
-      if i % 25 == 0 then ensureTools(false) end
-      if placeAndVerify(entry, xform) then markVerified(i) end
-      task.wait(math.max(0.03, delay()))
+    DebugLog("RunFullBuildLoop: starting first pass over", #sortedBlockDataList, "blocks")
+    for blockIndex, blockDataEntry in ipairs(sortedBlockDataList) do
+      if HasBuildBeenAborted() then break end
+      if blockIndex % 25 == 0 then EnsureRequiredToolsAreEquipped(false) end
+      if PlaceAndVerifySingleBlockEntry(blockDataEntry, activeTransform) then MarkBlockIndexVerified(blockIndex) end
+      task.wait(math.max(0.03, GetCurrentStepDelaySeconds()))
     end
 
-    local pass = 0
-    while not aborted() and count < #sorted and pass < 4 do
-      pass = pass + 1
-      local repaired = 0
-      if cfg.wbs then task.wait(1) end
-      for i, entry in ipairs(sorted) do
-        if aborted() then break end
-        if not verified[i] then
-          if placeAndVerify(entry, xform) then markVerified(i); repaired = repaired + 1 end
-          task.wait(math.max(0.03, delay()))
+    local repairPassNumber = 0
+    while not HasBuildBeenAborted() and verifiedBlockCount < #sortedBlockDataList and repairPassNumber < 4 do
+      repairPassNumber = repairPassNumber + 1
+      local repairedBlockCountThisPass = 0
+      if sessionConfiguration.wbs then task.wait(1) end
+      DebugLog("RunFullBuildLoop: starting repair pass", repairPassNumber)
+      for blockIndex, blockDataEntry in ipairs(sortedBlockDataList) do
+        if HasBuildBeenAborted() then break end
+        if not verifiedBlockIndexMap[blockIndex] then
+          if PlaceAndVerifySingleBlockEntry(blockDataEntry, activeTransform) then
+            MarkBlockIndexVerified(blockIndex)
+            repairedBlockCountThisPass = repairedBlockCountThisPass + 1
+          end
+          task.wait(math.max(0.03, GetCurrentStepDelaySeconds()))
         end
       end
-      if repaired == 0 then break end
+      if repairedBlockCountThisPass == 0 then break end
     end
 
-    local wasAborted = aborted()
-    local missing    = #sorted - count
-    if runGen == thisGen then stopped = false; skip = false end
-    totalBlocks = 0; verifiedBlocks = 0; updateStats()
+    local wasBuildAborted = HasBuildBeenAborted()
+    local missingBlockCount = #sortedBlockDataList - verifiedBlockCount
+    if currentBuildRunGenerationNumber == thisBuildRunGenerationNumber then
+      isBuildSessionStopped = false
+      isCurrentBlockSkipRequested = false
+    end
+    totalBlockCountForCurrentBuild = 0
+    verifiedBlockCountForCurrentBuild = 0
+    UpdateSessionStatistics()
 
-    if wasAborted then
-      log("Build stopped.")
-    elseif missing > 0 then
-      log(string.format("Build finished: %d/%d verified (%d need manual attention).", count, #sorted, missing))
+    if wasBuildAborted then
+      LogMessage("Build stopped.")
+    elseif missingBlockCount > 0 then
+      LogMessage(string.format("Build finished: %d/%d verified (%d need manual attention).",
+        verifiedBlockCount, #sortedBlockDataList, missingBlockCount))
     else
-      log(string.format("Build complete: %d/%d blocks.", count, #sorted))
+      LogMessage(string.format("Build complete: %d/%d blocks.", verifiedBlockCount, #sortedBlockDataList))
     end
-    return not wasAborted
+    return not wasBuildAborted
   end
-  local function loadData()
-    if isPreDecoded then
-      if type(filePath) == "table" then return filePath, nil end
+
+  local function LoadBlockDataFromSource()
+    if isDataSourcePreDecoded then
+      if type(dataSourcePathOrTable) == "table" then return dataSourcePathOrTable, nil end
       return nil, "isData=true but filepath is not a table"
     end
-    local raw
-    if type(fetchFn) == "function" then
-      raw = fetchFn(filePath)
-    elseif type(filePath) == "string" and filePath:match("^https?://") then
-      local ok, res = pcall(function() return game:HttpGet(filePath) end)
-      if ok then raw = res end
-    elseif type(filePath) == "string" then
-      local ok, res = pcall(function() return readfile(filePath) end)
-      if ok and res and res ~= "" then raw = res else raw = filePath end
+    local rawLoadedString
+    if type(customFetchFunction) == "function" then
+      rawLoadedString = customFetchFunction(dataSourcePathOrTable)
+    elseif type(dataSourcePathOrTable) == "string" and dataSourcePathOrTable:match("^https?://") then
+      local wasHttpGetSuccessful, httpGetResult = pcall(function() return game:HttpGet(dataSourcePathOrTable) end)
+      if wasHttpGetSuccessful then rawLoadedString = httpGetResult end
+    elseif type(dataSourcePathOrTable) == "string" then
+      local wasReadFileSuccessful, readFileResult = pcall(function() return readfile(dataSourcePathOrTable) end)
+      if wasReadFileSuccessful and readFileResult and readFileResult ~= "" then
+        rawLoadedString = readFileResult
+      else
+        rawLoadedString = dataSourcePathOrTable
+      end
     end
-    if not raw or raw == "" then return nil, "Could not load: " .. tostring(filePath) end
-    if type(raw) ~= "string" then return nil, "Expected string, got " .. type(raw) end
-    if raw:sub(1,1) == "{" then
-      local ok, res = pcall(function() return HttpService:JSONDecode(raw) end)
-      if not ok then return nil, "JSON decode failed: " .. tostring(res) end
-      if type(res) ~= "table" then return nil, "Decoded JSON is not a table" end
-      return res, nil
+    if not rawLoadedString or rawLoadedString == "" then
+      return nil, "Could not load: " .. tostring(dataSourcePathOrTable)
     end
-    local ok, res = pcall(Decompress, raw)
-    if not ok then return nil, "Decompress failed: " .. tostring(res) end
-    if type(res) ~= "table" then return nil, "Decompressed data is not a table" end
-    return res, nil
+    if type(rawLoadedString) ~= "string" then
+      return nil, "Expected string, got " .. type(rawLoadedString)
+    end
+    if rawLoadedString:sub(1, 1) == "{" then
+      local wasJsonDecodeSuccessful, jsonDecodeResult =
+        pcall(function() return HttpService:JSONDecode(rawLoadedString) end)
+      if not wasJsonDecodeSuccessful then
+        return nil, "JSON decode failed: " .. tostring(jsonDecodeResult)
+      end
+      if type(jsonDecodeResult) ~= "table" then return nil, "Decoded JSON is not a table" end
+      return jsonDecodeResult, nil
+    end
+    local wasDecompressSuccessful, decompressResult = pcall(DecompressBufferToBlockDataTable, rawLoadedString)
+    if not wasDecompressSuccessful then
+      return nil, "Decompress failed: " .. tostring(decompressResult)
+    end
+    if type(decompressResult) ~= "table" then return nil, "Decompressed data is not a table" end
+    return decompressResult, nil
   end
 
-  local function makeXform()
-    if cfg.offset == Vector3.zero and cfg.mult == 1 then return nil end
-    return { enabled = true, center = Vector3.zero, rotation = CFrame.identity, offset = cfg.offset }
+  local function BuildTransformFromSessionConfig()
+    if sessionConfiguration.offset == Vector3.zero and sessionConfiguration.mult == 1 then return nil end
+    return { enabled = true, center = Vector3.zero, rotation = CFrame.identity, offset = sessionConfiguration.offset }
   end
-  local remoteTemplate = [[
+
+  local REMOTE_WORKER_SCRIPT_TEMPLATE = [[
+--// ts script was generated idk
 local hs  = game:GetService("HttpService")
 local lib = loadstring(game:HttpGet(%s, true))()
 local d   = hs:JSONDecode(%s)
@@ -1221,86 +1600,110 @@ s.ox, s.oy, s.oz = nil, nil, nil
 lib.build(d, s, nil, true).start()
 ]]
 
-  local function buildRemoteScript(chunkJson, settingsJson)
-    return string.format(remoteTemplate,
+  local function BuildRemoteWorkerScriptSource(chunkJsonString, settingsJsonString)
+    return string.format(REMOTE_WORKER_SCRIPT_TEMPLATE,
       string.format("%q", "https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/shared/autobuildv2.lua"),
-      string.format("%q", chunkJson),
-      string.format("%q", settingsJson)
+      string.format("%q", chunkJsonString),
+      string.format("%q", settingsJsonString)
     )
   end
 
-  local function serializeSettings()
+  local function SerializeSessionSettingsToJson()
     return HttpService:JSONEncode({
-      mult        = cfg.mult,
-      historymax  = cfg.historymax,
-      resizewait  = cfg.resizewait,
-      wbs         = cfg.wbs,
-      maxtry      = cfg.maxtry,
-      maxtrydelay = cfg.maxtrydelay,
-      ox          = cfg.offset.X,
-      oy          = cfg.offset.Y,
-      oz          = cfg.offset.Z,
+      mult        = sessionConfiguration.mult,
+      historymax  = sessionConfiguration.historymax,
+      resizewait  = sessionConfiguration.resizewait,
+      wbs         = sessionConfiguration.wbs,
+      maxtry      = sessionConfiguration.maxtry,
+      maxtrydelay = sessionConfiguration.maxtrydelay,
+      ox          = sessionConfiguration.offset.X,
+      oy          = sessionConfiguration.offset.Y,
+      oz          = sessionConfiguration.offset.Z,
     })
   end
-  local session = {}
-  session.stats = stats
 
-  function session.settings() return cfg, DEFAULTS end
-  function session.stop()        stopped = true; skip = true; tpTarget = nil end
-  function session.skip()        skip = true end
-  function session.wbs(v)        cfg.wbs = v end
-  function session.resizewait(v) cfg.resizewait = v end
-  function session.try(d, m)
-    if d then cfg.maxtrydelay = d end
-    if m then cfg.maxtry      = m end
+  local autoBuildSessionHandle = {}
+  autoBuildSessionHandle.stats = sessionStatisticsTable
+
+  function autoBuildSessionHandle.settings() return sessionConfiguration, DefaultSessionSettings end
+  function autoBuildSessionHandle.stop()
+    isBuildSessionStopped = true
+    isCurrentBlockSkipRequested = true
+    currentTeleportTargetPosition = nil
+  end
+  function autoBuildSessionHandle.skip() isCurrentBlockSkipRequested = true end
+  function autoBuildSessionHandle.wbs(newWbsEnabledState) sessionConfiguration.wbs = newWbsEnabledState end
+  function autoBuildSessionHandle.resizewait(newResizeWaitSeconds)
+    sessionConfiguration.resizewait = newResizeWaitSeconds
+  end
+  function autoBuildSessionHandle.try(newMaxTryDelaySeconds, newMaxTryCount)
+    if newMaxTryDelaySeconds then sessionConfiguration.maxtrydelay = newMaxTryDelaySeconds end
+    if newMaxTryCount then sessionConfiguration.maxtry = newMaxTryCount end
   end
 
-  function session.start()
-    stopped = false; skip = false
-    local data, err = loadData()
-    if not data then log("Load failed: " .. tostring(err)); return false end
-
-    if not asyncClients then
-      return buildLoop(data, makeXform())
-    end
-    if #asyncClients <= 0 then
-      log("async: no remote clients, running locally")
-      return buildLoop(data, makeXform())
+  function autoBuildSessionHandle.start()
+    isBuildSessionStopped = false
+    isCurrentBlockSkipRequested = false
+    local loadedBlockDataList, loadErrorMessage = LoadBlockDataFromSource()
+    if not loadedBlockDataList then
+      LogMessage("Load failed: " .. tostring(loadErrorMessage))
+      return false
     end
 
-    local allBlocks   = sortByAdjacency(data)
-    local total       = #allBlocks
-    local workers     = #asyncClients + 1
-    local base        = math.floor(total / workers)
-    local extra       = total % workers
-    local settings    = serializeSettings()
-    local cursor      = 1
+    if not asynchronousRemoteWorkerClientList then
+      return RunFullBuildLoop(loadedBlockDataList, BuildTransformFromSessionConfig())
+    end
+    if #asynchronousRemoteWorkerClientList <= 0 then
+      LogMessage("async: no remote clients, running locally")
+      return RunFullBuildLoop(loadedBlockDataList, BuildTransformFromSessionConfig())
+    end
 
-    for w = 1, workers do
-      local count = base + (w <= extra and 1 or 0)
-      if count == 0 then break end
-      local chunk = {}
-      for i = cursor, cursor + count - 1 do chunk[#chunk+1] = allBlocks[i] end
-      cursor = cursor + count
+    local allSortedBlocksList = SortBlockListByStartingPointAdjacency(loadedBlockDataList)
+    local totalBlockCount     = #allSortedBlocksList
+    local totalWorkerCount    = #asynchronousRemoteWorkerClientList + 1
+    local baseChunkSize       = math.floor(totalBlockCount / totalWorkerCount)
+    local extraBlockCount     = totalBlockCount % totalWorkerCount
+    local serializedSettingsJson = SerializeSessionSettingsToJson()
+    local chunkStartCursor    = 1
 
-      if w < workers then
-        local chunkJson = HttpService:JSONEncode(chunk)
-        asyncClients[w](buildRemoteScript(chunkJson, settings))
-        log(string.format("async: sent %d blocks to remote %d/%d", count, w, #asyncClients))
+    for workerIndex = 1, totalWorkerCount do
+      local thisWorkerChunkSize = baseChunkSize + (workerIndex <= extraBlockCount and 1 or 0)
+      if thisWorkerChunkSize == 0 then break end
+      local workerBlockChunkList = {}
+      for chunkSourceIndex = chunkStartCursor, chunkStartCursor + thisWorkerChunkSize - 1 do
+        workerBlockChunkList[#workerBlockChunkList + 1] = allSortedBlocksList[chunkSourceIndex]
+      end
+      chunkStartCursor = chunkStartCursor + thisWorkerChunkSize
+
+      if workerIndex < totalWorkerCount then
+        local workerChunkJson = HttpService:JSONEncode(workerBlockChunkList)
+        asynchronousRemoteWorkerClientList[workerIndex](
+          BuildRemoteWorkerScriptSource(workerChunkJson, serializedSettingsJson))
+        LogMessage(string.format("async: sent %d blocks to remote %d/%d",
+          thisWorkerChunkSize, workerIndex, #asynchronousRemoteWorkerClientList))
       else
-        log(string.format("async: running %d blocks locally (worker %d/%d)", count, workers, workers))
-        return buildLoop(chunk, makeXform())
+        LogMessage(string.format("async: running %d blocks locally (worker %d/%d)",
+          thisWorkerChunkSize, workerIndex, totalWorkerCount))
+        return RunFullBuildLoop(workerBlockChunkList, BuildTransformFromSessionConfig())
       end
     end
     return true
   end
 
-  return session
+  return autoBuildSessionHandle
 end
 
-local lib = {}
+local AutoBuildLibrary = {}
 
-function lib.save(filepath, players)  return SaveBlocks(filepath, players) end
-function lib.build(filepath, settings, fetchfn, isdata, fetchtools) return CreateSession(filepath, settings, fetchfn, isdata, fetchtools) end
+function AutoBuildLibrary.save(outputFilePath, ownerPlayerList)
+  return SaveOwnedBlocksToFile(outputFilePath, ownerPlayerList)
+end
+function AutoBuildLibrary.build(dataSourcePathOrTable, settingsTable, customFetchFunction, isDataSourcePreDecoded,
+  customFetchToolsFunction)
+  return CreateAutoBuildSession(dataSourcePathOrTable, settingsTable, customFetchFunction, isDataSourcePreDecoded,
+    customFetchToolsFunction)
+end
 
-return lib
+getgenv()["autobuildv2@hyperion"] = AutoBuildLibrary
+
+return AutoBuildLibrary

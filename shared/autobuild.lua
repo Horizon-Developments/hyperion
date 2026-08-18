@@ -1,5 +1,14 @@
-local args = ...
+--[[
+  Hyperion Project
+  Copyright (c) 2026 Horizon-Developments
+  Repository:
+  https://github.com/Horizon-Developments/hyperion
+  License:
+  https://raw.githubusercontent.com/Horizon-Developments/hyperion/refs/heads/main/LICENSE.md
+]]
 
+local args = ...
+ 
 local assets  = args.Assets
 local Helpers = args.Helpers
 
